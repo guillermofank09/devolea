@@ -16,13 +16,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 8px;
-  padding: 12px 16px 10px;
+  padding: 10px 16px 9px;
   border-bottom: 1.5px solid #ebebeb;
 }
 
-.cal-toolbar__nav,
+/* Left group: ‹ [label] › */
+.cal-toolbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Right group: Hoy + view buttons */
+.cal-toolbar__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .cal-toolbar__views {
   display: flex;
   align-items: center;
@@ -35,6 +47,8 @@
   color: #111;
   text-transform: capitalize;
   letter-spacing: -0.01em;
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .cal-btn {
@@ -296,33 +310,67 @@
     font-size: 12px;
   }
 
-  /* Toolbar: stack nav + views on two rows */
+  /* ── Mobile toolbar: two rows ── */
   .cal-toolbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
-    padding: 8px 10px 6px;
+    gap: 0;
+    padding: 0;
+    border-bottom: 1.5px solid #ebebeb;
   }
 
-  .cal-toolbar__nav,
-  .cal-toolbar__views {
-    justify-content: center;
+  /* Row 1: [‹] [date label] [›] */
+  .cal-toolbar__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid #f0f0f0;
   }
 
   .cal-toolbar__label {
+    flex: 1;
     text-align: center;
-    font-size: 0.88rem;
-    order: -1;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0 4px;
   }
 
+  /* Row 2: [Hoy] [Día] [Semana] */
+  .cal-toolbar__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 12px 8px;
+  }
+
+  /* Larger touch targets on mobile */
   .cal-btn {
-    font-size: 0.75rem;
-    padding: 4px 10px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .cal-btn--icon {
-    font-size: 1rem;
-    padding: 4px 8px;
+    height: 38px;
+    width: 42px;
+    padding: 0;
+    font-size: 1.35rem;
+    font-weight: 300;
+    color: #444;
+  }
+
+  .cal-btn--today {
+    padding: 0 14px;
+  }
+
+  .cal-btn--view {
+    padding: 0 14px;
   }
 
   /* Narrower time gutter */

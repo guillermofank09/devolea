@@ -80,24 +80,27 @@ function CustomToolbar({ label, onNavigate, onView, view, views }: ToolbarProps)
 
   return (
     <div className="cal-toolbar">
+      {/* Row 1 (mobile) / left group (desktop): arrows + date label */}
       <div className="cal-toolbar__nav">
         <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("PREV")}>‹</button>
-        <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
+        <span className="cal-toolbar__label">{label}</span>
         <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("NEXT")}>›</button>
       </div>
 
-      <span className="cal-toolbar__label">{label}</span>
-
-      <div className="cal-toolbar__views">
-        {views.map((v) => (
-          <button
-            key={v}
-            className={`cal-btn cal-btn--view ${view === v ? "cal-btn--active" : ""}`}
-            onClick={() => onView(v)}
-          >
-            {viewLabels[v] ?? v}
-          </button>
-        ))}
+      {/* Row 2 (mobile) / right group (desktop): today + view switcher */}
+      <div className="cal-toolbar__controls">
+        <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
+        <div className="cal-toolbar__views">
+          {views.map((v) => (
+            <button
+              key={v}
+              className={`cal-btn cal-btn--view ${view === v ? "cal-btn--active" : ""}`}
+              onClick={() => onView(v)}
+            >
+              {viewLabels[v] ?? v}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
