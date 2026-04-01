@@ -168,7 +168,7 @@ export default function AddPairDialog({ open, onClose, tournamentId, existingPai
   const [error, setError] = useState<string | null>(null);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
   const [creatingForSlot, setCreatingForSlot] = useState<1 | 2>(1);
-  const [createPlayerName, setCreatePlayerName] = useState("");
+  const [_createPlayerName, setCreatePlayerName] = useState("");
 
   const queryClient = useQueryClient();
 

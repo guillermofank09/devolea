@@ -48,7 +48,6 @@ async function searchCities(query: string): Promise<CityOption[]> {
     const city =
       addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? addr.county ?? place.display_name.split(",")[0];
     const state = addr.state ?? "";
-    const country = addr.country ?? "";
     const label = [city, state].filter(Boolean).join(", ");
 
     if (!seen.has(city.toLowerCase())) {

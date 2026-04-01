@@ -55,9 +55,6 @@ function stringToColor(str: string) {
   return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
 }
 
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
-}
 
 function pairInitials(pair: Pair) {
   return `${pair.player1.name.split(" ")[0][0]}${pair.player2.name.split(" ")[0][0]}`.toUpperCase();
@@ -200,14 +197,6 @@ export default function TournamentDetail() {
   const canNextRound = isBracket && currentRoundDone && currentRoundMatches.filter(m => m.status !== "BYE").length > 0;
 
   // Group matches by round for bracket
-  const matchesByRound: Record<number, TournamentMatch[]> = {};
-  data.matches.forEach(m => {
-    if (!matchesByRound[m.round]) matchesByRound[m.round] = [];
-    matchesByRound[m.round].push(m);
-  });
-
-  const roundNumbers = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
-
   return (
     <Box>
       <Box sx={{ mb: 2 }}>

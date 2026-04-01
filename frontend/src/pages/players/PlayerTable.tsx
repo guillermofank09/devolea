@@ -115,14 +115,6 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
 
   const sorted = sortPlayers(players, sortKey, sortDir);
 
-  const col = (key: SortKey) => (
-    <TableSortLabel
-      active={sortKey === key}
-      direction={sortKey === key ? sortDir : "asc"}
-      onClick={() => handleSort(key)}
-    />
-  );
-
   if (players.length === 0) {
     return (
       <Box textAlign="center" py={8}>
