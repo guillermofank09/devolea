@@ -11,8 +11,25 @@ import statsRoutes from "./routes/stats.routes";
 import { AppDataSource } from "./data-source";
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*",
+}));
 app.use(express.json({ limit: "5mb" }));
+
+// Lazy DB init — works both for serverless (Vercel) and long-running (local) processes.
+app.use(async (_req, res, next) => {
+  if (!AppDataSource.isInitialized) {
+    try {
+      await AppDataSource.initialize();
+    } catch (err) {
+      console.error("DB init error", err);
+      res.status(500).json({ error: "Database connection failed" });
+      return;
+    }
+  }
+  next();
+});
 
 app.use("/api", courtRoutes);
 app.use("/api", playerRoutes);
@@ -23,11 +40,11 @@ app.use("/api", appSettingsRoutes);
 app.use("/api", authRoutes);
 app.use("/api", statsRoutes);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log("Server is running on port", PORT));
-AppDataSource.initialize().then(() => {
-    console.log("Data Source has been initialized!");
-}).catch((err) => {
-    console.error("Error during Data Source initialization", err);
-});
+// Local development only — Vercel sets VERCEL=1 automatically.
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+}
+
+export default app;
 

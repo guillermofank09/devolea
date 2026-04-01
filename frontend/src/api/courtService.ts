@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { Court, CourtStatus, CreateCourt } from "../types/Court";
+import { API_BASE } from "./config";
 
-const API_URL = "http://localhost:3001/api/courts";
+const API_URL = `${API_BASE}/api/courts`;
 
 export async function createCourt(courtParams: CreateCourt): Promise<Court> {
   const data = courtParams;

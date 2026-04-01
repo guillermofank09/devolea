@@ -39,3 +39,6 @@ Thumbs.db
 
 # Docker volumes (if any local data)
 pgdata/
+
+# Claude Code local settings
+.claude/

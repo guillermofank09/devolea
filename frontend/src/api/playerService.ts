@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { Player, PlayerFormData } from "../types/Player";
+import { API_BASE } from "./config";
 
-const API_URL = "http://localhost:3001/api/players";
+const API_URL = `${API_BASE}/api/players`;
 
 export async function fetchPlayers(search?: string): Promise<Player[]> {
   const res = await axios.get(API_URL, {

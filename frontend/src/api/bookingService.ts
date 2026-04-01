@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { Booking, CreateBookingDto } from "../types/Booking";
+import { API_BASE } from "./config";
 
-const API_URL = "http://localhost:3001/api";
+const API_URL = `${API_BASE}/api`;
 
 export async function fetchBookingsByCourt(courtId: number): Promise<Booking[]> {
   const res = await axios.get(`${API_URL}/bookings/court/${courtId}`);

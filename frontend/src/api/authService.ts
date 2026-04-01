@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE } from "./config";
 
-const API = "http://localhost:3001/api";
+const API = `${API_BASE}/api`;
 
 export interface AuthUser {
   id: number;

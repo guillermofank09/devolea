@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { Tournament, TournamentDetail, TournamentFormData, Pair, TournamentMatch } from "../types/Tournament";
+import { API_BASE } from "./config";
 
-const BASE = "http://localhost:3001/api";
+const BASE = `${API_BASE}/api`;
 
 export const fetchTournaments = (): Promise<Tournament[]> =>
   axios.get(`${BASE}/tournaments`).then(r => r.data);

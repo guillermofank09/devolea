@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { AppSettings } from "../types/AppSettings";
+import { API_BASE } from "./config";
 
-const BASE = "http://localhost:3001/api";
+const BASE = `${API_BASE}/api`;
 
 export async function fetchSettings(): Promise<AppSettings> {
   const { data } = await axios.get(`${BASE}/settings`);

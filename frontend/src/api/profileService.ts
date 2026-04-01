@@ -1,8 +1,9 @@
 import axios from "axios";
 import type { ClubProfile, DaySchedule } from "../types/ClubProfile";
 import { DEFAULT_HOURS } from "../types/ClubProfile";
+import { API_BASE } from "./config";
 
-const BASE = "http://localhost:3001/api";
+const BASE = `${API_BASE}/api`;
 
 function parseProfile(raw: any): ClubProfile {
   let businessHours: DaySchedule[] = DEFAULT_HOURS;
