@@ -7,6 +7,8 @@ import {
   InputAdornment,
   OutlinedInput,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
@@ -24,6 +26,8 @@ export default function Players() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Player | null>(null);
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
   const { isPending, error, data } = useQuery<Player[]>({
@@ -49,7 +53,8 @@ export default function Players() {
     setSelectedPlayer(null);
   };
 
-  const headerAction = (
+  // Desktop: search + button inside PageHeader
+  const desktopAction = (
     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
       <OutlinedInput
         size="small"
@@ -79,8 +84,34 @@ export default function Players() {
       <PageHeader
         title="Jugadores"
         subtitle="Gestioná los jugadores registrados en el club"
-        action={headerAction}
+        action={isMobile ? undefined : desktopAction}
       />
+
+      {/* Mobile: search + button below the title, full width */}
+      {isMobile && (
+        <Box sx={{ display: "flex", gap: 1, mb: 2.5, mt: -2 }}>
+          <OutlinedInput
+            size="small"
+            fullWidth
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar jugador..."
+            startAdornment={
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            }
+            sx={{ borderRadius: 2, backgroundColor: "white", flex: 1 }}
+          />
+          <Button
+            variant="contained"
+            onClick={() => setAddEditOpen(true)}
+            sx={{ borderRadius: 2, minWidth: 44, px: 1.5, flexShrink: 0 }}
+          >
+            <AddIcon />
+          </Button>
+        </Box>
+      )}
 
       {isPending && (
         <Box display="flex" justifyContent="center" py={6}>

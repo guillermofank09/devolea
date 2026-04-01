@@ -29,8 +29,15 @@ body {
 .page-main {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;   /* prevent horizontal overflow breaking touch scroll */
   padding: 2rem;
   min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .page-main {
+    padding: 1.25rem 1rem;
+  }
 }
 
 /* Sidebar backdrop on mobile */
