@@ -12,6 +12,8 @@ import {
   Divider,
   IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -72,6 +74,8 @@ const CourtView = ({
   const [pendingSlot, setPendingSlot] = useState<SlotInfo | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { data: bookings = [], isFetching } = useQuery<Booking[]>({
     queryKey: ["bookingsData", court.id],
@@ -122,13 +126,20 @@ const CourtView = ({
   return (
     <>
       {/* ── Main schedule dialog ── */}
-      <Dialog maxWidth="lg" fullWidth open={isOpen} onClose={handleClose}>
-        <DialogTitle sx={{ pb: 1 }}>
+      <Dialog
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isMobile}
+        open={isOpen}
+        onClose={handleClose}
+        PaperProps={{ sx: isMobile ? {} : { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ pb: 1, px: isMobile ? 2 : 3 }}>
           <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 <CalendarMonthIcon color="action" fontSize="small" />
-                <Typography variant="h6" component="span" fontWeight={700}>
+                <Typography variant={isMobile ? "subtitle1" : "h6"} component="span" fontWeight={700} noWrap>
                   {court.name}
                 </Typography>
                 <Chip
@@ -137,15 +148,15 @@ const CourtView = ({
                   size="small"
                   sx={{ fontWeight: 700 }}
                 />
-                <Chip
-                  label={TYPE_LABEL[court.type] ?? court.type}
-                  variant="outlined"
-                  size="small"
-                />
+                {!isMobile && (
+                  <Chip label={TYPE_LABEL[court.type] ?? court.type} variant="outlined" size="small" />
+                )}
                 {isFetching && <CircularProgress size={16} />}
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-                Hacé clic en un horario libre para reservar · Hacé clic en una reserva para cancelarla
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                {isMobile
+                  ? "Tocá un horario para reservar"
+                  : "Hacé clic en un horario libre para reservar · Hacé clic en una reserva para cancelarla"}
               </Typography>
             </Box>
             <IconButton onClick={handleClose} size="small" sx={{ mt: -0.5, flexShrink: 0 }}>
@@ -154,14 +165,14 @@ const CourtView = ({
           </Box>
         </DialogTitle>
         <Divider />
-        <DialogContent sx={{ p: 0 }}>
-          <div className="calendarContainer">
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column" }}>
+          <Box sx={{ flex: 1, minHeight: 0 }}>
             <WeeklyCalendar
               events={events}
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
             />
-          </div>
+          </Box>
         </DialogContent>
       </Dialog>
 

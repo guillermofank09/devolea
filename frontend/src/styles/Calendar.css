@@ -284,3 +284,78 @@
     font-size: 0.85rem;
   }
 }
+
+@media (max-width: 600px) {
+  /* Fill fullscreen dialog (100dvh minus DialogTitle ~72px + Divider 1px) */
+  .calendarWrapper {
+    height: calc(100dvh - 73px);
+    height: calc(100vh - 73px); /* fallback */
+  }
+
+  .calendar {
+    font-size: 12px;
+  }
+
+  /* Toolbar: stack nav + views on two rows */
+  .cal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px 6px;
+  }
+
+  .cal-toolbar__nav,
+  .cal-toolbar__views {
+    justify-content: center;
+  }
+
+  .cal-toolbar__label {
+    text-align: center;
+    font-size: 0.88rem;
+    order: -1;
+  }
+
+  .cal-btn {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  .cal-btn--icon {
+    font-size: 1rem;
+    padding: 4px 8px;
+  }
+
+  /* Narrower time gutter */
+  .rbc-time-gutter {
+    font-size: 10px;
+    min-width: 44px;
+  }
+
+  .rbc-label {
+    padding: 0 4px !important;
+  }
+
+  .rbc-timeslot-group {
+    min-height: 48px;
+  }
+
+  /* Compact event blocks */
+  .cal-event {
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .cal-event__name {
+    font-size: 10.5px;
+  }
+
+  .cal-event__time {
+    font-size: 9.5px;
+  }
+
+  .cal-event__avatar {
+    width: 18px;
+    height: 18px;
+    font-size: 8px;
+  }
+}

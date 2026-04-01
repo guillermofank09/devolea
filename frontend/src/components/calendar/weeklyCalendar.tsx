@@ -3,6 +3,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { localizer } from "./calendarConfig";
 import "../../styles/Calendar.css";
 import type { CalendarEvent } from "../../types/Event";
+import { useMediaQuery } from "@mui/material";
 
 interface Props {
   events: CalendarEvent[];
@@ -105,6 +106,8 @@ function CustomToolbar({ label, onNavigate, onView, view, views }: ToolbarProps)
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
 export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: Props) {
+  const isMobile = useMediaQuery("(max-width:600px)");
+
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {
       backgroundColor: event.color,
@@ -121,8 +124,8 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: 
         localizer={localizer}
         culture="es"
         events={events}
-        defaultView={Views.WEEK}
-        views={[Views.DAY, Views.WEEK, Views.MONTH]}
+        defaultView={isMobile ? Views.DAY : Views.WEEK}
+        views={isMobile ? [Views.DAY, Views.WEEK] : [Views.DAY, Views.WEEK, Views.MONTH]}
         messages={spanishMessages}
         step={60}
         timeslots={1}

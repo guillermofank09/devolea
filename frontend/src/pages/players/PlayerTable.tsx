@@ -3,6 +3,7 @@ import {
   Avatar,
   Box,
   Chip,
+  Divider,
   IconButton,
   Paper,
   Table,
@@ -14,6 +15,8 @@ import {
   TableSortLabel,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,7 +32,6 @@ const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   SEPTIMA: "7ma",
 };
 
-// Numeric order for sorting categories
 const CATEGORY_ORDER: Record<PlayerCategory, number> = {
   PRIMERA: 1,
   SEGUNDA: 2,
@@ -81,7 +83,7 @@ function getValue(player: Player, key: SortKey): string | number {
     case "category": return CATEGORY_ORDER[player.category];
     case "city":     return player.city.toLowerCase();
     case "sex":      return player.sex;
-    case "age":      return -new Date(player.birthDate).getTime(); // newer birth = younger = higher age desc
+    case "age":      return -new Date(player.birthDate).getTime();
   }
 }
 
@@ -100,9 +102,67 @@ interface Props {
   onDelete: (player: Player) => void;
 }
 
+// ── Mobile card list ──────────────────────────────────────────────────────────
+
+function MobileList({ players, onEdit, onDelete }: Props) {
+  return (
+    <Paper sx={{ borderRadius: 3, boxShadow: 1, overflow: "hidden" }}>
+      {players.map((player, idx) => (
+        <Box key={player.id}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5 }}>
+            <Avatar
+              sx={{
+                bgcolor: stringToColor(player.name),
+                width: 40,
+                height: 40,
+                fontSize: "0.9rem",
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {getInitials(player.name)}
+            </Avatar>
+
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                <Typography variant="body2" fontWeight={700} noWrap sx={{ maxWidth: "55vw" }}>
+                  {player.name}
+                </Typography>
+                <Chip
+                  label={CATEGORY_LABEL[player.category]}
+                  color={CATEGORY_COLOR[player.category]}
+                  size="small"
+                  sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {player.city} · {player.sex === "MASCULINO" ? "M" : "F"} · {getAge(player.birthDate)} años
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", flexShrink: 0 }}>
+              <IconButton size="small" onClick={() => onEdit(player)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton size="small" color="error" onClick={() => onDelete(player)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+          {idx < players.length - 1 && <Divider />}
+        </Box>
+      ))}
+    </Paper>
+  );
+}
+
+// ── Desktop table ─────────────────────────────────────────────────────────────
+
 export default function PlayerTable({ players, onEdit, onDelete }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -121,6 +181,10 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
         <Typography color="text.secondary">No hay jugadores registrados.</Typography>
       </Box>
     );
+  }
+
+  if (isMobile) {
+    return <MobileList players={sorted} onEdit={onEdit} onDelete={onDelete} />;
   }
 
   return (
