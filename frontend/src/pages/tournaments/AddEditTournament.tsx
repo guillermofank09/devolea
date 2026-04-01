@@ -7,11 +7,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   FormLabel,
   MenuItem,
-  OutlinedInput,
   Select,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,9 +21,9 @@ const CATEGORIES: { value: TournamentCategory; label: string }[] = [
   { value: "PRIMERA", label: "1ra" },
   { value: "SEGUNDA", label: "2da" },
   { value: "TERCERA", label: "3ra" },
-  { value: "CUARTA", label: "4ta" },
-  { value: "QUINTA", label: "5ta" },
-  { value: "SEXTA", label: "6ta" },
+  { value: "CUARTA",  label: "4ta" },
+  { value: "QUINTA",  label: "5ta" },
+  { value: "SEXTA",   label: "6ta" },
   { value: "SEPTIMA", label: "7ma" },
 ];
 
@@ -33,6 +32,17 @@ const EMPTY: TournamentFormData = {
   category: "CUARTA",
   startDate: "",
   endDate: "",
+};
+
+const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
+const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
+const dateSx = {
+  ...fieldSx,
+  "& input[type='date']::-webkit-calendar-picker-indicator": {
+    opacity: 0.5,
+    cursor: "pointer",
+    "&:hover": { opacity: 1 },
+  },
 };
 
 interface Props {
@@ -85,77 +95,95 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
   const isValid = form.name.trim() && form.startDate && form.endDate;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? "Editar torneo" : "Agregar torneo"}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+        {isEditing ? "Editar torneo" : "Agregar torneo"}
+      </DialogTitle>
+
       <form onSubmit={handleSubmit}>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 0.5 }}>
-            <FormControl fullWidth>
-              <FormLabel htmlFor="tournament-name">Nombre del torneo</FormLabel>
-              <OutlinedInput
-                id="tournament-name"
+        <DialogContent sx={{ pt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+            <Box>
+              <FormLabel sx={labelSx}>Nombre del torneo</FormLabel>
+              <TextField
+                fullWidth
+                size="small"
                 value={form.name}
                 onChange={e => set("name", e.target.value)}
                 placeholder="Ej: Torneo de Otoño 2026"
                 autoFocus
+                sx={fieldSx}
               />
-            </FormControl>
+            </Box>
 
-            <FormControl fullWidth>
-              <FormLabel htmlFor="tournament-category">Categoría</FormLabel>
+            <Box>
+              <FormLabel sx={labelSx}>Categoría</FormLabel>
               <Select
-                id="tournament-category"
+                fullWidth
+                size="small"
                 value={form.category}
                 onChange={e => set("category", e.target.value)}
+                sx={{ height: 40, fontSize: "0.875rem" }}
               >
                 {CATEGORIES.map(c => (
-                  <MenuItem key={c.value} value={c.value}>
-                    {c.label}
-                  </MenuItem>
+                  <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
                 ))}
               </Select>
-            </FormControl>
+            </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-              <FormControl fullWidth>
-                <FormLabel htmlFor="tournament-start">Fecha de inicio</FormLabel>
-                <OutlinedInput
-                  id="tournament-start"
+              <Box>
+                <FormLabel sx={labelSx}>Fecha de inicio</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
                   type="date"
                   value={form.startDate}
                   onChange={e => set("startDate", e.target.value)}
+                  sx={dateSx}
                 />
-              </FormControl>
-
-              <FormControl fullWidth>
-                <FormLabel htmlFor="tournament-end">Fecha de fin</FormLabel>
-                <OutlinedInput
-                  id="tournament-end"
+              </Box>
+              <Box>
+                <FormLabel sx={labelSx}>Fecha de fin</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
                   type="date"
                   value={form.endDate}
                   onChange={e => set("endDate", e.target.value)}
+                  sx={dateSx}
                 />
-              </FormControl>
+              </Box>
             </Box>
 
             {error && (
-              <Typography variant="body2" color="error">
-                {error}
-              </Typography>
+              <Typography variant="body2" color="error">{error}</Typography>
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} sx={{ textTransform: "none" }}>
+
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={onClose}
+            sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}
+          >
             Cancelar
           </Button>
           <Button
             variant="contained"
             type="submit"
             disabled={!isValid || mutation.isPending}
-            sx={{ textTransform: "none", fontWeight: 600 }}
+            startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
           >
-            {mutation.isPending ? <CircularProgress size={18} /> : isEditing ? "Guardar cambios" : "Agregar"}
+            {mutation.isPending ? "Guardando…" : isEditing ? "Guardar cambios" : "Agregar"}
           </Button>
         </DialogActions>
       </form>

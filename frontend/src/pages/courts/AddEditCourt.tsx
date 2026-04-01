@@ -5,20 +5,21 @@ import {
   CircularProgress,
   Dialog,
   DialogActions,
-  DialogTitle,
   DialogContent,
-  FormControl,
+  DialogTitle,
   FormLabel,
-  OutlinedInput,
   MenuItem,
   Select,
+  TextField,
   Typography,
-  DialogContentText,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCourt } from "../../api/courtService";
 import type { Court, CourtType, CreateCourt } from "../../types/Court";
+
+const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
+const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
 
 const AddEditCourt = ({
   isEditing = false,
@@ -43,9 +44,6 @@ const AddEditCourt = ({
       queryClient.invalidateQueries({ queryKey: ["courtsData"] });
       setOpen(false);
     },
-    onError: (error) => {
-      console.error("Error al crear la cancha:", error.message);
-    },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -55,13 +53,6 @@ const AddEditCourt = ({
 
   return (
     <>
-      {mutation.isPending && <CircularProgress size={24} />}
-      {mutation.isError && (
-        <Typography variant="body2" color="error" mt={1}>
-          Ocurrió un error al guardar la cancha. Intentá de nuevo.
-        </Typography>
-      )}
-
       {!open && !isEditing && (
         <Button
           variant="contained"
@@ -78,51 +69,71 @@ const AddEditCourt = ({
         </Button>
       )}
 
-      <Dialog maxWidth="sm" fullWidth open={open} onClose={handleClose}>
-        <DialogTitle>
-          {isEditing ? "Editar Cancha" : "Agregar Nueva Cancha"}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+          {isEditing ? "Editar Cancha" : "Agregar Cancha"}
         </DialogTitle>
+
         <form onSubmit={handleSubmit}>
-          <DialogContent>
-            <DialogContentText sx={{ mb: 2 }}>
-              Ingresá los datos de la cancha y hacé clic en Guardar.
-            </DialogContentText>
-            <Box sx={{ pt: 1 }}>
-              <FormControl fullWidth>
-                <FormLabel htmlFor="name">Nombre</FormLabel>
-                <OutlinedInput
-                  id="name"
+          <DialogContent sx={{ pt: 1 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+              <Box>
+                <FormLabel sx={labelSx}>Nombre</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
                   value={name}
-                  placeholder="Nombre de la cancha"
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Ej: Cancha 1"
+                  autoFocus
+                  sx={fieldSx}
                 />
-              </FormControl>
-            </Box>
-            <Box sx={{ pt: 2 }}>
-              <FormControl fullWidth>
-                <FormLabel htmlFor="courtType">Tipo</FormLabel>
+              </Box>
+
+              <Box>
+                <FormLabel sx={labelSx}>Tipo</FormLabel>
                 <Select
-                  id="courtType"
+                  fullWidth
+                  size="small"
                   value={type}
-                  onChange={(e) => setCourtType(e.target.value as CourtType)}
+                  onChange={e => setCourtType(e.target.value as CourtType)}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
                 >
                   <MenuItem value="TECHADA">Techada · Iluminada</MenuItem>
                   <MenuItem value="DESCUBIERTA">Descubierta · Iluminada</MenuItem>
                 </Select>
-              </FormControl>
+              </Box>
+
+              {mutation.isError && (
+                <Typography variant="body2" color="error">
+                  Ocurrió un error al guardar la cancha. Intentá de nuevo.
+                </Typography>
+              )}
             </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose} sx={{ textTransform: "none" }}>
+
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button
+              onClick={handleClose}
+              sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}
+            >
               Cancelar
             </Button>
             <Button
               variant="contained"
               type="submit"
               disabled={mutation.isPending || !name.trim()}
-              sx={{ textTransform: "none", fontWeight: 600 }}
+              startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
             >
-              {isEditing ? "Guardar" : "Agregar"}
+              {mutation.isPending ? "Guardando…" : isEditing ? "Guardar cambios" : "Agregar"}
             </Button>
           </DialogActions>
         </form>
