@@ -1,0 +1,110 @@
+import { Repository, Between, Not } from "typeorm";
+import { Booking } from "../entities/Booking";
+
+export interface CreateBookingDto {
+  courtId: number;
+  playerId: number;
+  startTime: Date;
+  endTime: Date;
+  isRecurring?: boolean;
+}
+
+function generateGroupId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function addWeeks(date: Date, weeks: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + weeks * 7);
+  return d;
+}
+
+export class BookingService {
+  constructor(private repo: Repository<Booking>) {}
+
+  private async hasOverlap(courtId: number, startTime: Date, endTime: Date): Promise<boolean> {
+    const overlap = await this.repo.findOne({
+      where: {
+        court: { id: courtId },
+        status: "CONFIRMED",
+        startTime: Between(startTime, endTime),
+      },
+    });
+    return !!overlap;
+  }
+
+  async create(dto: CreateBookingDto): Promise<Booking | Booking[]> {
+    if (!dto.isRecurring) {
+      if (await this.hasOverlap(dto.courtId, dto.startTime, dto.endTime)) {
+        throw new Error("El horario ya está reservado");
+      }
+      const booking = this.repo.create({
+        court: { id: dto.courtId } as any,
+        player: { id: dto.playerId } as any,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        status: "CONFIRMED",
+        isRecurring: false,
+        recurringGroupId: null,
+      });
+      return await this.repo.save(booking);
+    }
+
+    // Recurring: create up to 52 weeks, skip weeks with conflicts
+    const groupId = generateGroupId();
+    const WEEKS = 52;
+    const created: Booking[] = [];
+
+    for (let w = 0; w < WEEKS; w++) {
+      const start = addWeeks(dto.startTime, w);
+      const end   = addWeeks(dto.endTime,   w);
+
+      if (await this.hasOverlap(dto.courtId, start, end)) continue;
+
+      const booking = this.repo.create({
+        court: { id: dto.courtId } as any,
+        player: { id: dto.playerId } as any,
+        startTime: start,
+        endTime: end,
+        status: "CONFIRMED",
+        isRecurring: true,
+        recurringGroupId: groupId,
+      });
+      created.push(await this.repo.save(booking));
+    }
+
+    if (created.length === 0) {
+      throw new Error("No se pudo crear ninguna reserva recurrente: todos los horarios están ocupados");
+    }
+
+    return created;
+  }
+
+  async getByCourtId(courtId: number): Promise<Booking[]> {
+    return await this.repo.find({
+      where: { court: { id: courtId }, status: Not("CANCELLED") },
+      order: { startTime: "ASC" },
+    });
+  }
+
+  async getAll(): Promise<Booking[]> {
+    return await this.repo.find({ order: { startTime: "ASC" } });
+  }
+
+  async cancel(id: number): Promise<Booking | null> {
+    await this.repo.update(id, { status: "CANCELLED" });
+    return await this.repo.findOneBy({ id });
+  }
+
+  async cancelGroup(groupId: string): Promise<number> {
+    const result = await this.repo.update(
+      { recurringGroupId: groupId, status: "CONFIRMED" },
+      { status: "CANCELLED" }
+    );
+    return result.affected ?? 0;
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
+  }
+}

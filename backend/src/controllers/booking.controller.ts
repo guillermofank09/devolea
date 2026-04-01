@@ -1,0 +1,70 @@
+import { Request, Response } from "express";
+import { AppDataSource } from "../data-source";
+import { Booking } from "../entities/Booking";
+import { BookingService } from "../services/booking.service";
+
+function getService() {
+  return new BookingService(AppDataSource.getRepository(Booking));
+}
+
+export const createBooking = async (req: Request, res: Response) => {
+  const { courtId, playerId, startTime, endTime, isRecurring } = req.body;
+  if (!courtId || !playerId || !startTime || !endTime) {
+    res.status(400).json({ error: "Faltan campos requeridos" });
+    return;
+  }
+  try {
+    const result = await getService().create({
+      courtId: Number(courtId),
+      playerId: Number(playerId),
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+      isRecurring: Boolean(isRecurring),
+    });
+    res.status(201).json(result);
+  } catch (err: any) {
+    const status = err.message.includes("ya está reservado") || err.message.includes("todos los horarios") ? 409 : 500;
+    res.status(status).json({ error: err.message });
+  }
+};
+
+export const getBookingsByCourt = async (req: Request, res: Response) => {
+  const courtId = Number(req.params.courtId);
+  if (isNaN(courtId)) { res.status(400).json({ error: "courtId inválido" }); return; }
+  try {
+    const bookings = await getService().getByCourtId(courtId);
+    res.json(bookings);
+  } catch {
+    res.status(500).json({ error: "Error al obtener reservas" });
+  }
+};
+
+export const cancelBooking = async (req: Request, res: Response) => {
+  try {
+    const booking = await getService().cancel(Number(req.params.id));
+    if (!booking) { res.status(404).json({ error: "Reserva no encontrada" }); return; }
+    res.json(booking);
+  } catch {
+    res.status(500).json({ error: "Error al cancelar la reserva" });
+  }
+};
+
+export const cancelBookingGroup = async (req: Request, res: Response) => {
+  const { groupId } = req.params;
+  if (!groupId) { res.status(400).json({ error: "groupId requerido" }); return; }
+  try {
+    const affected = await getService().cancelGroup(groupId);
+    res.json({ cancelled: affected });
+  } catch {
+    res.status(500).json({ error: "Error al cancelar la serie" });
+  }
+};
+
+export const deleteBooking = async (req: Request, res: Response) => {
+  try {
+    await getService().delete(Number(req.params.id));
+    res.json({ message: "Reserva eliminada" });
+  } catch {
+    res.status(500).json({ error: "Error al eliminar la reserva" });
+  }
+};

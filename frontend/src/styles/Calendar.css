@@ -1,0 +1,286 @@
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.calendarWrapper {
+  height: 82vh;
+  background: #fff;
+  border-radius: 0;
+  font-family: "Inter", "Roboto", Arial, sans-serif;
+}
+
+.calendar {
+  height: 100%;
+  font-size: 13px;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1.5px solid #ebebeb;
+}
+
+.cal-toolbar__nav,
+.cal-toolbar__views {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cal-toolbar__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111;
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+}
+
+.cal-btn {
+  border: 1.5px solid #e0e0e0;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #444;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+}
+.cal-btn:hover {
+  border-color: #F5AD27;
+  color: #111;
+  background: #fffbf0;
+}
+
+.cal-btn--icon {
+  padding: 5px 10px;
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #666;
+}
+
+.cal-btn--today {
+  padding: 5px 12px;
+}
+
+.cal-btn--view {
+  padding: 5px 12px;
+}
+
+.cal-btn--active {
+  background: #F5AD27;
+  border-color: #F5AD27;
+  color: #111;
+}
+.cal-btn--active:hover {
+  background: #e09b18;
+  border-color: #e09b18;
+}
+
+/* ── Grid header ─────────────────────────────────────────────────────────── */
+.rbc-time-header-content {
+  border-left: 1.5px solid #ebebeb;
+}
+
+.rbc-header {
+  font-size: 12px !important;
+  font-weight: 600;
+  color: #888;
+  background: #fafafa;
+  border-bottom: 1.5px solid #ebebeb !important;
+  padding: 8px 4px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rbc-header span {
+  font-weight: 600;
+}
+
+/* Today column header */
+.rbc-time-header-cell .rbc-today {
+  background: #fff8e8 !important;
+  color: #c47f00 !important;
+  border-bottom: 2px solid #F5AD27 !important;
+}
+
+.rbc-time-header-gutter {
+  background: #fafafa;
+  border-bottom: 1.5px solid #ebebeb;
+}
+
+/* ── Time gutter ─────────────────────────────────────────────────────────── */
+.rbc-time-gutter {
+  background: #fafafa;
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  letter-spacing: 0.02em;
+}
+
+.rbc-timeslot-group {
+  border-bottom: 1px solid #f0f0f0;
+  min-height: 52px;
+}
+
+.rbc-time-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Grid body ───────────────────────────────────────────────────────────── */
+.rbc-time-content {
+  border-top: none !important;
+  border-left: 1.5px solid #ebebeb;
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid #f5f5f5;
+}
+
+.rbc-day-slot .rbc-timeslot-group {
+  border-bottom: 1px solid #ebebeb;
+}
+
+/* Today column */
+.rbc-today {
+  background: rgba(245, 173, 39, 0.05) !important;
+}
+
+/* Hide all-day row */
+.rbc-allday-cell {
+  display: none;
+}
+
+/* No right margin on events container */
+.rbc-day-slot .rbc-events-container {
+  margin-right: 0;
+}
+
+/* ── Slot selection ──────────────────────────────────────────────────────── */
+.rbc-slot-selection {
+  background: rgba(245, 173, 39, 0.18);
+  border: 1.5px dashed #F5AD27;
+  border-radius: 6px;
+}
+
+/* ── Event base (overridden by eventPropGetter styles) ───────────────────── */
+.rbc-event {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.rbc-event:focus {
+  outline: none;
+}
+
+.rbc-event-label {
+  display: none; /* hide default time label — we render our own */
+}
+
+.rbc-event-content {
+  overflow: visible;
+  height: 100%;
+  width: 100%;
+}
+
+/* ── Custom event block ──────────────────────────────────────────────────── */
+.cal-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 7px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #fff;
+}
+
+.cal-event--compact {
+  align-items: center;
+  padding: 2px 6px;
+}
+
+.cal-event__avatar {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
+.cal-event--compact .cal-event__avatar {
+  width: 18px;
+  height: 18px;
+  font-size: 8px;
+  margin-top: 0;
+}
+
+.cal-event__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cal-event__name {
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.cal-event__time {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.85;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.cal-event__repeat {
+  font-size: 13px;
+  opacity: 0.8;
+  flex-shrink: 0;
+  margin-left: auto;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+/* ── Month view events ───────────────────────────────────────────────────── */
+.rbc-event.rbc-selected,
+.rbc-day-slot .rbc-selected.rbc-background-event {
+  outline: 2px solid rgba(255,255,255,0.7);
+  outline-offset: -2px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .calendarWrapper {
+    height: 72vh;
+  }
+  .cal-toolbar {
+    padding: 8px 12px;
+  }
+  .cal-toolbar__label {
+    font-size: 0.85rem;
+  }
+}

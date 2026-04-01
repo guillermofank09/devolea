@@ -1,0 +1,14 @@
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Tournament } from "./Tournament";
+import { Player } from "./Player";
+
+@Entity()
+export class Pair {
+  @PrimaryGeneratedColumn() id!: number;
+  @ManyToOne(() => Tournament, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tournamentId" }) tournament!: Tournament;
+  @ManyToOne(() => Player, { eager: true, onDelete: "CASCADE" })
+  @JoinColumn({ name: "player1Id" }) player1!: Player;
+  @ManyToOne(() => Player, { eager: true, onDelete: "CASCADE" })
+  @JoinColumn({ name: "player2Id" }) player2!: Player;
+}
