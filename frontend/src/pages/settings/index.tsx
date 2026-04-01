@@ -64,18 +64,19 @@ export default function Settings() {
     },
   });
 
-  const [hourlyRate, setHourlyRate] = useState<number>(0);
+  const [hourlyRate, setHourlyRate] = useState<string>("");
   const [shareSchedules, setShareSchedules] = useState<boolean>(false);
   const [snack, setSnack] = useState(false);
 
   useEffect(() => {
     if (!data) return;
-    setHourlyRate(Number(data.hourlyRate) ?? 0);
+    const rate = Number(data.hourlyRate);
+    setHourlyRate(rate > 0 ? String(rate) : "");
     setShareSchedules(data.shareSchedules ?? false);
   }, [data]);
 
   function handleSave() {
-    mutation.mutate({ hourlyRate, shareSchedules });
+    mutation.mutate({ hourlyRate: Number(hourlyRate) || 0, shareSchedules });
   }
 
   if (isPending) {
@@ -103,10 +104,18 @@ export default function Settings() {
           Precio por hora
         </Typography>
         <TextField
-          type="number"
+          type="text"
+          inputMode="decimal"
           size="small"
           value={hourlyRate}
-          onChange={(e) => setHourlyRate(Number(e.target.value))}
+          onChange={(e) => {
+            const raw = e.target.value;
+            // Allow empty string or valid positive number (no leading zeros)
+            if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+              setHourlyRate(raw.replace(/^0+(\d)/, "$1"));
+            }
+          }}
+          placeholder="0"
           inputProps={{ min: 0, step: 0.5 }}
           slotProps={{
             input: {
