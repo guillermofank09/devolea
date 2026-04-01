@@ -23,9 +23,11 @@ import type { Court, CourtType, CreateCourt } from "../../types/Court";
 const AddEditCourt = ({
   isEditing = false,
   courtNumber = 1,
+  compact = false,
 }: {
   isEditing?: boolean;
   courtNumber?: number;
+  compact?: boolean;
 }) => {
   const [name, setName] = useState(`Cancha ${courtNumber}`);
   const [type, setCourtType] = useState<CourtType>("TECHADA");
@@ -63,11 +65,16 @@ const AddEditCourt = ({
       {!open && !isEditing && (
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={compact ? undefined : <AddIcon />}
           onClick={handleClickOpen}
-          sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: 2,
+            ...(compact ? { minWidth: 44, px: 1.5 } : {}),
+          }}
         >
-          Agregar cancha
+          {compact ? <AddIcon /> : "Agregar cancha"}
         </Button>
       )}
 

@@ -6,11 +6,13 @@ import AddEditCourt from "./AddEditCourt";
 import PageHeader from "../../components/common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCourts } from "../../api/courtService";
-import { Alert, Box, CircularProgress, Typography } from "@mui/material";
+import { Alert, Box, CircularProgress, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 export default function Courts() {
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [open, setOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { isPending, error, data } = useQuery<Court[]>({
     queryKey: ["courtsData"],
@@ -26,6 +28,8 @@ export default function Courts() {
     setOpen(false);
     setSelectedCourt(null);
   };
+
+  const hasData = data && data.length > 0;
 
   const renderContent = () => {
     if (isPending) return <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>;
@@ -48,8 +52,9 @@ export default function Courts() {
       <PageHeader
         title="Canchas"
         subtitle="Administrá las canchas disponibles del club"
-        action={data && data.length > 0 ? <AddEditCourt /> : undefined}
+        action={hasData ? <AddEditCourt compact={isMobile} /> : undefined}
       />
+
       {renderContent()}
 
       {selectedCourt && (

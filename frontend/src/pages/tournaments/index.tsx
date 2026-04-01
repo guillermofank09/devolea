@@ -12,6 +12,8 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -52,6 +54,8 @@ export default function Tournaments() {
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Tournament | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Tournament | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { isPending, error, data } = useQuery<Tournament[]>({
     queryKey: ["tournamentsData"],
@@ -66,14 +70,19 @@ export default function Tournaments() {
     },
   });
 
-  const headerAction = (
+  const addButton = (
     <Button
       variant="contained"
-      startIcon={<AddIcon />}
+      startIcon={isMobile ? undefined : <AddIcon />}
       onClick={() => setAddOpen(true)}
-      sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2, whiteSpace: "nowrap" }}
+      sx={{
+        textTransform: "none",
+        fontWeight: 600,
+        borderRadius: 2,
+        ...(isMobile ? { minWidth: 44, px: 1.5 } : { whiteSpace: "nowrap" }),
+      }}
     >
-      Agregar torneo
+      {isMobile ? <AddIcon /> : "Agregar torneo"}
     </Button>
   );
 
@@ -82,7 +91,7 @@ export default function Tournaments() {
       <PageHeader
         title="Torneos"
         subtitle="Administrá los torneos del club"
-        action={headerAction}
+        action={addButton}
       />
 
       {isPending && (
@@ -190,17 +199,8 @@ export default function Tournaments() {
         </Grid>
       )}
 
-      <AddEditTournament
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-      />
-
-      <AddEditTournament
-        open={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        tournament={editTarget}
-      />
-
+      <AddEditTournament open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddEditTournament open={!!editTarget} onClose={() => setEditTarget(null)} tournament={editTarget} />
       <DeleteConfirmation
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
