@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { Booking } from "../entities/Booking";
 import { AppSettings } from "../entities/AppSettings";
 import { ClubProfile } from "../entities/ClubProfile";
+import { Court } from "../entities/Court";
 
 export interface RevenueEntry {
   label: string;
@@ -13,11 +14,11 @@ export interface RevenueEntry {
 export interface CourtOccupancy {
   courtId: number;
   courtName: string;
-  bookedHours: number;
-  availableHours: number;
-  occupancyPct: number; // bookedHours / availableHours * 100
-  bookings: number;
-  share: number;        // % of total booked hours among all courts (for pie slice size)
+  bookedHours: number;     // hours booked today
+  availableHours: number;  // available hours today (from schedule)
+  occupancyPct: number;    // bookedHours / availableHours * 100
+  bookings: number;        // number of bookings today
+  share: number;           // % of today's total booked hours (for pie slice size)
 }
 
 export interface RevenueStats {
@@ -33,10 +34,10 @@ export interface RevenueStats {
   };
   courtOccupancy: CourtOccupancy[];
   occupancySummary: {
-    availableHoursPerCourt: number;
-    totalBookedHours: number;
-    overallOccupancyPct: number;
-    periodDays: number;
+    availableHoursPerCourt: number;  // today's available hours per court
+    totalBookedHours: number;        // total booked hours today across all courts
+    overallOccupancyPct: number;     // overall today's occupancy %
+    periodDays: number;              // always 1 (today)
   };
 }
 
@@ -86,20 +87,7 @@ function availableHoursForDay(date: Date, schedule: DaySchedule[]): number {
   const name = DAY_NAME[date.getDay()];
   const entry = schedule.find((s) => s.day === name);
   if (!entry || !entry.isOpen) return 0;
-  const hours = parseHHMM(entry.closeTime) - parseHHMM(entry.openTime);
-  return Math.max(hours, 0);
-}
-
-/** Sum available hours from startDate to endDate inclusive */
-function totalAvailableHours(startDate: Date, endDate: Date, schedule: DaySchedule[]): number {
-  let total = 0;
-  const cur = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-  while (cur <= end) {
-    total += availableHoursForDay(cur, schedule);
-    cur.setDate(cur.getDate() + 1);
-  }
-  return total;
+  return Math.max(parseHHMM(entry.closeTime) - parseHHMM(entry.openTime), 0);
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -108,25 +96,27 @@ export class StatsService {
   constructor(
     private bookingRepo: Repository<Booking>,
     private settingsRepo: Repository<AppSettings>,
-    private profileRepo: Repository<ClubProfile>
+    private profileRepo: Repository<ClubProfile>,
+    private courtRepo: Repository<Court>
   ) {}
 
   async getRevenue(): Promise<RevenueStats> {
-    const [bookings, settings, profile] = await Promise.all([
+    const [bookings, settings, profile, allCourts] = await Promise.all([
       this.bookingRepo.find({ where: { status: "CONFIRMED" } }),
       this.settingsRepo.findOneBy({ id: 1 }),
       this.profileRepo.findOneBy({ id: 1 }),
+      this.courtRepo.find(),
     ]);
 
     const hourlyRate = Number(settings?.hourlyRate ?? 0);
     const now = new Date();
+    const todayKey = isoDay(now);
 
     // Parse business hours schedule
     let schedule: DaySchedule[] = [];
     if (profile?.businessHoursJson) {
       try { schedule = JSON.parse(profile.businessHoursJson); } catch { /* ignore */ }
     }
-    // Default: Mon–Sat 08:00–22:00, Sun closed
     if (!schedule.length) {
       schedule = [
         { day: "Lunes",     isOpen: true,  openTime: "08:00", closeTime: "22:00" },
@@ -139,7 +129,10 @@ export class StatsService {
       ];
     }
 
-    // ── Revenue buckets ───────────────────────────────────────────────────────
+    // Available hours today (based on today's day-of-week in the schedule)
+    const todayAvailableHours = availableHoursForDay(now, schedule);
+
+    // ── Revenue buckets (all-time) ────────────────────────────────────────────
     const dayMap   = new Map<string, { revenue: number; bookings: number; hours: number }>();
     const weekMap  = new Map<string, { revenue: number; bookings: number; hours: number }>();
     const monthMap = new Map<string, { revenue: number; bookings: number; hours: number }>();
@@ -156,9 +149,9 @@ export class StatsService {
       map.set(key, e);
     };
 
-    // ── Court occupancy accumulators ──────────────────────────────────────────
-    const courtMap = new Map<number, { name: string; hours: number; bookings: number }>();
-    let earliestDate: Date | null = null;
+    // ── Today's bookings per court ────────────────────────────────────────────
+    // key: courtId → { hours, bookings }
+    const todayCourtMap = new Map<number, { hours: number; bookings: number }>();
 
     for (const b of bookings) {
       const start = new Date(b.startTime);
@@ -166,43 +159,39 @@ export class StatsService {
       const hrs   = durationHours(start, end);
       if (hrs <= 0) continue;
 
-      // Revenue
+      // Revenue accumulators (all-time)
       addTo(dayMap,   isoDay(start),   hrs);
       addTo(weekMap,  isoWeek(start),  hrs);
       addTo(monthMap, isoMonth(start), hrs);
 
-      // Court accumulator
-      const cid   = b.court.id!;
-      const cname = b.court.name ?? `Cancha ${cid}`;
-      const ce    = courtMap.get(cid) ?? { name: cname, hours: 0, bookings: 0 };
-      ce.hours    += hrs;
-      ce.bookings += 1;
-      courtMap.set(cid, ce);
-
-      // Track earliest booking date
-      if (!earliestDate || start < earliestDate) earliestDate = start;
+      // Daily court occupancy — only today
+      if (isoDay(start) === todayKey) {
+        const cid = b.court.id!;
+        const ce  = todayCourtMap.get(cid) ?? { hours: 0, bookings: 0 };
+        ce.hours    += hrs;
+        ce.bookings += 1;
+        todayCourtMap.set(cid, ce);
+      }
     }
 
-    // ── Available hours calculation ───────────────────────────────────────────
-    const periodStart = earliestDate ?? now;
-    const availableHoursPerCourt = totalAvailableHours(periodStart, now, schedule);
-    const periodDays = Math.round(
-      (now.getTime() - new Date(periodStart.getFullYear(), periodStart.getMonth(), periodStart.getDate()).getTime())
-        / 86400000
-    ) + 1;
+    // ── Build courtOccupancy using ALL courts (even those with 0 today) ───────
+    const totalTodayBookedHours = Array.from(todayCourtMap.values())
+      .reduce((s, e) => s + e.hours, 0);
 
-    const totalBookedHours = Array.from(courtMap.values()).reduce((s, e) => s + e.hours, 0);
-
-    const courtOccupancy: CourtOccupancy[] = Array.from(courtMap.entries())
-      .map(([courtId, e]) => ({
-        courtId,
-        courtName: e.name,
-        bookedHours: e.hours,
-        availableHours: availableHoursPerCourt,
-        occupancyPct: availableHoursPerCourt > 0 ? (e.hours / availableHoursPerCourt) * 100 : 0,
-        bookings: e.bookings,
-        share: totalBookedHours > 0 ? (e.hours / totalBookedHours) * 100 : 0,
-      }))
+    const courtOccupancy: CourtOccupancy[] = allCourts
+      .filter(c => c.id !== undefined)
+      .map(c => {
+        const today = todayCourtMap.get(c.id!) ?? { hours: 0, bookings: 0 };
+        return {
+          courtId:       c.id!,
+          courtName:     c.name ?? `Cancha ${c.id}`,
+          bookedHours:   today.hours,
+          availableHours: todayAvailableHours,
+          occupancyPct:  todayAvailableHours > 0 ? (today.hours / todayAvailableHours) * 100 : 0,
+          bookings:      today.bookings,
+          share:         totalTodayBookedHours > 0 ? (today.hours / totalTodayBookedHours) * 100 : 0,
+        };
+      })
       .sort((a, b) => b.occupancyPct - a.occupancyPct);
 
     // ── Build time-series ─────────────────────────────────────────────────────
@@ -237,10 +226,9 @@ export class StatsService {
       return result;
     };
 
-    const todayKey  = isoDay(now);
-    const weekKey   = isoWeek(now);
-    const monthKey  = isoMonth(now);
-    const allTime   = Array.from(dayMap.values()).reduce((s, e) => s + e.revenue, 0);
+    const weekKey  = isoWeek(now);
+    const monthKey = isoMonth(now);
+    const allTime  = Array.from(dayMap.values()).reduce((s, e) => s + e.revenue, 0);
 
     return {
       hourlyRate,
@@ -248,20 +236,20 @@ export class StatsService {
       weekly:  buildWeekly(),
       monthly: buildMonthly(),
       totals: {
-        day:     dayMap.get(todayKey)?.revenue  ?? 0,
-        week:    weekMap.get(weekKey)?.revenue  ?? 0,
+        day:     dayMap.get(todayKey)?.revenue   ?? 0,
+        week:    weekMap.get(weekKey)?.revenue   ?? 0,
         month:   monthMap.get(monthKey)?.revenue ?? 0,
         allTime,
       },
       courtOccupancy,
       occupancySummary: {
-        availableHoursPerCourt,
-        totalBookedHours,
+        availableHoursPerCourt: todayAvailableHours,
+        totalBookedHours:       totalTodayBookedHours,
         overallOccupancyPct:
-          availableHoursPerCourt > 0 && courtMap.size > 0
-            ? (totalBookedHours / (availableHoursPerCourt * courtMap.size)) * 100
+          todayAvailableHours > 0 && allCourts.length > 0
+            ? (totalTodayBookedHours / (todayAvailableHours * allCourts.length)) * 100
             : 0,
-        periodDays,
+        periodDays: 1,
       },
     };
   }
