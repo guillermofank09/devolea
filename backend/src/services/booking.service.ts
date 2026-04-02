@@ -8,6 +8,7 @@ export interface CreateBookingDto {
   startTime: Date;
   endTime: Date;
   isRecurring?: boolean;
+  price?: number;
 }
 
 function generateGroupId(): string {
@@ -43,6 +44,7 @@ export class BookingService {
         court: { id: dto.courtId } as any,
         player: dto.playerId ? { id: dto.playerId } as any : null,
         profesor: dto.profesorId ? { id: dto.profesorId } as any : null,
+        price: dto.price ?? null,
         startTime: dto.startTime,
         endTime: dto.endTime,
         status: "CONFIRMED",
@@ -67,6 +69,7 @@ export class BookingService {
         court: { id: dto.courtId } as any,
         player: dto.playerId ? { id: dto.playerId } as any : null,
         profesor: dto.profesorId ? { id: dto.profesorId } as any : null,
+        price: dto.price ?? null,
         startTime: start,
         endTime: end,
         status: "CONFIRMED",

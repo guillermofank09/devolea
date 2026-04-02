@@ -9,6 +9,7 @@ export interface Booking {
   court: Court;
   player?: Player | null;
   profesor?: Profesor | null;
+  price?: number | null;
   startTime: string;
   endTime: string;
   status: BookingStatus;
@@ -21,6 +22,7 @@ export interface CreateBookingDto {
   courtId: number;
   playerId?: number;
   profesorId?: number;
+  price?: number;
   startTime: string;
   endTime: string;
   isRecurring?: boolean;

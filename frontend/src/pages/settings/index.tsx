@@ -65,18 +65,34 @@ export default function Settings() {
   });
 
   const [hourlyRate, setHourlyRate] = useState<string>("");
+  const [classHourlyRate, setClassHourlyRate] = useState<string>("");
   const [shareSchedules, setShareSchedules] = useState<boolean>(false);
   const [snack, setSnack] = useState(false);
 
   useEffect(() => {
     if (!data) return;
     const rate = Number(data.hourlyRate);
+    const classRate = Number(data.classHourlyRate);
     setHourlyRate(rate > 0 ? String(rate) : "");
+    setClassHourlyRate(classRate > 0 ? String(classRate) : "");
     setShareSchedules(data.shareSchedules ?? false);
   }, [data]);
 
   function handleSave() {
-    mutation.mutate({ hourlyRate: Number(hourlyRate) || 0, shareSchedules });
+    mutation.mutate({
+      hourlyRate: Number(hourlyRate) || 0,
+      classHourlyRate: Number(classHourlyRate) || 0,
+      shareSchedules,
+    });
+  }
+
+  function makePriceHandler(setter: (v: string) => void) {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+        setter(raw.replace(/^0+(\d)/, "$1"));
+      }
+    };
   }
 
   if (isPending) {
@@ -100,32 +116,48 @@ export default function Settings() {
 
       {/* ── Precios ── */}
       <Section icon={<MonetizationOnOutlinedIcon />} title="Precios">
-        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-          Precio por hora
-        </Typography>
-        <TextField
-          type="text"
-          inputMode="decimal"
-          size="small"
-          value={hourlyRate}
-          onChange={(e) => {
-            const raw = e.target.value;
-            // Allow empty string or valid positive number (no leading zeros)
-            if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-              setHourlyRate(raw.replace(/^0+(\d)/, "$1"));
-            }
-          }}
-          placeholder="0"
-          inputProps={{ min: 0, step: 0.5 }}
-          slotProps={{
-            input: {
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-            },
-            formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
-          }}
-          helperText="Este precio se mostrará en cada cancha"
-          sx={{ width: 200 }}
-        />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+              Precio por hora (general)
+            </Typography>
+            <TextField
+              type="text"
+              inputMode="decimal"
+              size="small"
+              value={hourlyRate}
+              onChange={makePriceHandler(setHourlyRate)}
+              placeholder="0"
+              inputProps={{ min: 0, step: 0.5 }}
+              slotProps={{
+                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
+              }}
+              helperText="Se aplica a reservas de jugadores"
+              sx={{ width: 200 }}
+            />
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+              Precio por hora (clase con profesor)
+            </Typography>
+            <TextField
+              type="text"
+              inputMode="decimal"
+              size="small"
+              value={classHourlyRate}
+              onChange={makePriceHandler(setClassHourlyRate)}
+              placeholder="0"
+              inputProps={{ min: 0, step: 0.5 }}
+              slotProps={{
+                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
+              }}
+              helperText="Se aplica cuando se reserva una clase con profesor"
+              sx={{ width: 200 }}
+            />
+          </Box>
+        </Box>
       </Section>
 
       {/* ── Disponibilidad ── */}

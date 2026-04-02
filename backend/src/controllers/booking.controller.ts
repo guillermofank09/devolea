@@ -8,7 +8,7 @@ function getService() {
 }
 
 export const createBooking = async (req: Request, res: Response) => {
-  const { courtId, playerId, profesorId, startTime, endTime, isRecurring } = req.body;
+  const { courtId, playerId, profesorId, startTime, endTime, isRecurring, price } = req.body;
   if (!courtId || (!playerId && !profesorId) || !startTime || !endTime) {
     res.status(400).json({ error: "Faltan campos requeridos" });
     return;
@@ -21,6 +21,7 @@ export const createBooking = async (req: Request, res: Response) => {
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       isRecurring: Boolean(isRecurring),
+      price: price != null ? Number(price) : undefined,
     });
     res.status(201).json(result);
   } catch (err: any) {

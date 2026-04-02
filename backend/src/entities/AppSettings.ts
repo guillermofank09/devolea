@@ -8,6 +8,9 @@ export class AppSettings {
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
   hourlyRate!: number;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  classHourlyRate!: number;
+
   @Column({ default: false })
   shareSchedules!: boolean;
 }

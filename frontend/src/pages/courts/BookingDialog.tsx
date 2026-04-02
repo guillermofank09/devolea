@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Autocomplete,
   Avatar,
@@ -12,6 +12,7 @@ import {
   DialogTitle,
   Divider,
   FormControlLabel,
+  InputAdornment,
   Switch,
   TextField,
   ToggleButton,
@@ -29,8 +30,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers } from "../../api/playerService";
 import { fetchProfesores } from "../../api/profesorService";
 import { createBooking } from "../../api/bookingService";
+import { fetchSettings } from "../../api/settingsService";
 import type { Player, PlayerCategory } from "../../types/Player";
 import type { Profesor } from "../../types/Profesor";
+import type { AppSettings } from "../../types/AppSettings";
 import AddEditPlayer from "../players/AddEditPlayer";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
@@ -80,8 +83,24 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
   const [isRecurring, setIsRecurring] = useState(false);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [price, setPrice] = useState<string>("");
 
   const queryClient = useQueryClient();
+
+  const { data: settings } = useQuery<AppSettings>({
+    queryKey: ["appSettings"],
+    queryFn: fetchSettings,
+    staleTime: 30_000,
+  });
+
+  // Auto-fill price when slot or booking type changes
+  useEffect(() => {
+    if (!slot || !settings) { setPrice(""); return; }
+    const hrs = (slot.end.getTime() - slot.start.getTime()) / 3_600_000;
+    const rate = bookingType === "profesor" ? Number(settings.classHourlyRate) : Number(settings.hourlyRate);
+    const computed = hrs * rate;
+    setPrice(computed > 0 ? String(computed) : "");
+  }, [slot, bookingType, settings]);
 
   const { data: players = [], isFetching: fetchingPlayers } = useQuery<Player[]>({
     queryKey: ["playersData"],
@@ -138,6 +157,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
     setIsRecurring(false);
     setBookingError(null);
     setBookingType("player");
+    setPrice("");
     onClose();
   };
 
@@ -153,6 +173,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
       startTime: slot.start.toISOString(),
       endTime: slot.end.toISOString(),
       isRecurring,
+      price: price !== "" ? Number(price) : undefined,
     });
   };
 
@@ -371,6 +392,29 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
               )}
             </>
           )}
+
+          {/* Price field */}
+          <Box sx={{ mt: 2.5 }}>
+            <TextField
+              label="Precio"
+              type="text"
+              inputMode="decimal"
+              size="small"
+              fullWidth
+              value={price}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                  setPrice(raw.replace(/^0+(\d)/, "$1"));
+                }
+              }}
+              placeholder="0"
+              slotProps={{
+                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+              }}
+              helperText="Precio total del turno (editable)"
+            />
+          </Box>
 
           {/* Recurring toggle */}
           <Box

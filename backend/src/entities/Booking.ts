@@ -35,6 +35,9 @@ export class Booking {
   @Column({ type: "timestamptz" })
   endTime!: Date;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  price?: number | null;
+
   @Column({ default: "CONFIRMED" })
   status!: BookingStatus;
 

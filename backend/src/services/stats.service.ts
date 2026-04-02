@@ -23,6 +23,7 @@ export interface CourtOccupancy {
 
 export interface RevenueStats {
   hourlyRate: number;
+  classHourlyRate: number;
   daily: RevenueEntry[];
   weekly: RevenueEntry[];
   monthly: RevenueEntry[];
@@ -109,6 +110,7 @@ export class StatsService {
     ]);
 
     const hourlyRate = Number(settings?.hourlyRate ?? 0);
+    const classHourlyRate = Number(settings?.classHourlyRate ?? 0);
     const now = new Date();
     const todayKey = isoDay(now);
 
@@ -140,11 +142,12 @@ export class StatsService {
     const addTo = (
       map: Map<string, { revenue: number; bookings: number; hours: number }>,
       key: string,
-      hours: number
+      hours: number,
+      revenue: number
     ) => {
       const e = map.get(key) ?? { revenue: 0, bookings: 0, hours: 0 };
       e.hours += hours;
-      e.revenue += hours * hourlyRate;
+      e.revenue += revenue;
       e.bookings += 1;
       map.set(key, e);
     };
@@ -159,10 +162,14 @@ export class StatsService {
       const hrs   = durationHours(start, end);
       if (hrs <= 0) continue;
 
+      // Revenue: use custom price if set, otherwise rate × hours
+      const defaultRate = b.profesor ? classHourlyRate : hourlyRate;
+      const revenue = b.price != null ? Number(b.price) : hrs * defaultRate;
+
       // Revenue accumulators (all-time)
-      addTo(dayMap,   isoDay(start),   hrs);
-      addTo(weekMap,  isoWeek(start),  hrs);
-      addTo(monthMap, isoMonth(start), hrs);
+      addTo(dayMap,   isoDay(start),   hrs, revenue);
+      addTo(weekMap,  isoWeek(start),  hrs, revenue);
+      addTo(monthMap, isoMonth(start), hrs, revenue);
 
       // Daily court occupancy — only today
       if (isoDay(start) === todayKey) {
@@ -232,6 +239,7 @@ export class StatsService {
 
     return {
       hourlyRate,
+      classHourlyRate,
       daily:   buildDaily(),
       weekly:  buildWeekly(),
       monthly: buildMonthly(),
