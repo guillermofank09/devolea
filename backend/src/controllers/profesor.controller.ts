@@ -8,10 +8,10 @@ function getService() {
 }
 
 export const createProfesor = async (req: Request, res: Response) => {
-  const { name, phone, email } = req.body;
+  const { name, phone } = req.body;
   if (!name) { res.status(400).json({ error: "El nombre es requerido" }); return; }
   try {
-    const profesor = await getService().create({ name, phone, email });
+    const profesor = await getService().create({ name, phone });
     res.status(201).json(profesor);
   } catch {
     res.status(500).json({ error: "Error al crear el profesor" });
@@ -38,9 +38,9 @@ export const getProfesorById = async (req: Request, res: Response) => {
 };
 
 export const updateProfesor = async (req: Request, res: Response) => {
-  const { name, phone, email } = req.body;
+  const { name, phone } = req.body;
   try {
-    const profesor = await getService().update(Number(req.params.id), { name, phone, email });
+    const profesor = await getService().update(Number(req.params.id), { name, phone });
     if (!profesor) { res.status(404).json({ error: "Profesor no encontrado" }); return; }
     res.json(profesor);
   } catch {

@@ -11,9 +11,6 @@ export class Profesor {
   @Column({ type: "varchar", nullable: true })
   phone?: string;
 
-  @Column({ type: "varchar", nullable: true })
-  email?: string;
-
   @CreateDateColumn()
   createdAt!: Date;
 }

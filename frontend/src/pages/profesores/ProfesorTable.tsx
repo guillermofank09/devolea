@@ -53,7 +53,7 @@ function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
                 {p.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {[p.phone, p.email].filter(Boolean).join(" · ") || "Sin datos de contacto"}
+                {p.phone || "Sin teléfono"}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", flexShrink: 0 }}>
@@ -98,7 +98,6 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
           <TableRow sx={{ "& th": { fontWeight: 700, backgroundColor: "#f5f5f5" } }}>
             <TableCell>Profesor</TableCell>
             <TableCell>Teléfono</TableCell>
-            <TableCell>Email</TableCell>
             <TableCell align="right">Acciones</TableCell>
           </TableRow>
         </TableHead>
@@ -115,12 +114,7 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
               </TableCell>
               <TableCell>
                 <Typography variant="body2" color={p.phone ? "text.primary" : "text.disabled"}>
-                  {p.phone || "—"}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="body2" color={p.email ? "text.primary" : "text.disabled"}>
-                  {p.email || "—"}
+                  {p.phone ? `+${p.phone}` : "—"}
                 </Typography>
               </TableCell>
               <TableCell align="right">

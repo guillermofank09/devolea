@@ -14,11 +14,12 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createProfesor, updateProfesor } from "../../api/profesorService";
 import type { Profesor, ProfesorFormData } from "../../types/Profesor";
+import PhoneField from "../../components/common/PhoneField";
 
 const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
 const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
 
-const EMPTY: ProfesorFormData = { name: "", phone: "", email: "" };
+const EMPTY: ProfesorFormData = { name: "", phone: "" };
 
 interface Props {
   open: boolean;
@@ -34,15 +35,12 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
 
   useEffect(() => {
     if (profesor) {
-      setForm({ name: profesor.name, phone: profesor.phone ?? "", email: profesor.email ?? "" });
+      setForm({ name: profesor.name, phone: profesor.phone ?? "" });
     } else {
       setForm(EMPTY);
     }
     setError(null);
   }, [profesor, open]);
-
-  const set = (field: keyof ProfesorFormData, value: string) =>
-    setForm(prev => ({ ...prev, [field]: value }));
 
   const mutation = useMutation({
     mutationFn: (data: ProfesorFormData) =>
@@ -84,38 +82,17 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 fullWidth
                 size="small"
                 value={form.name}
-                onChange={e => set("name", e.target.value)}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="Ej: Juan Pérez"
                 autoFocus
                 sx={fieldSx}
               />
             </Box>
 
-            <Box>
-              <FormLabel sx={labelSx}>Teléfono (opcional)</FormLabel>
-              <TextField
-                fullWidth
-                size="small"
-                value={form.phone}
-                onChange={e => set("phone", e.target.value)}
-                placeholder="Ej: +54 9 11 1234-5678"
-                inputMode="tel"
-                sx={fieldSx}
-              />
-            </Box>
-
-            <Box>
-              <FormLabel sx={labelSx}>Email (opcional)</FormLabel>
-              <TextField
-                fullWidth
-                size="small"
-                type="email"
-                value={form.email}
-                onChange={e => set("email", e.target.value)}
-                placeholder="Ej: juan@email.com"
-                sx={fieldSx}
-              />
-            </Box>
+            <PhoneField
+              value={form.phone}
+              onChange={(val) => setForm(p => ({ ...p, phone: val }))}
+            />
 
             {error && (
               <Typography variant="body2" color="error">{error}</Typography>

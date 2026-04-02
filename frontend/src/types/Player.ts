@@ -15,6 +15,7 @@ export interface Player {
   city: string;
   sex: PlayerSex;
   birthDate: string; // YYYY-MM-DD
+  phone?: string;
   createdAt: string;
 }
 
@@ -24,4 +25,5 @@ export interface PlayerFormData {
   city: string;
   sex: PlayerSex;
   birthDate: string;
+  phone: string;
 }

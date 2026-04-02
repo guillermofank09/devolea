@@ -7,6 +7,7 @@ export interface CreatePlayerDto {
   city: string;
   sex: PlayerSex;
   birthDate: string;
+  phone?: string;
 }
 
 export class PlayerService {

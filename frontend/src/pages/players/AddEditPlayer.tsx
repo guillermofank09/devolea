@@ -18,6 +18,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlayer, updatePlayer } from "../../api/playerService";
 import type { Player, PlayerCategory, PlayerFormData, PlayerSex } from "../../types/Player";
+import PhoneField from "../../components/common/PhoneField";
 
 // ── Nominatim city search ─────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ const EMPTY: PlayerFormData = {
   city: "",
   sex: "MASCULINO",
   birthDate: "",
+  phone: "",
 };
 
 interface Props {
@@ -105,6 +107,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
         city: player.city,
         sex: player.sex,
         birthDate: player.birthDate,
+        phone: player.phone ?? "",
       });
       setCityInput(player.city);
     } else {
@@ -250,6 +253,12 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                 />
               </Box>
             </Box>
+
+            {/* Teléfono */}
+            <PhoneField
+              value={form.phone}
+              onChange={(val) => set("phone", val)}
+            />
 
             {/* Categoría */}
             <Box>

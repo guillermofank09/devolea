@@ -137,6 +137,7 @@ function MobileList({ players, onEdit, onDelete }: Props) {
               </Box>
               <Typography variant="caption" color="text.secondary">
                 {player.city} · {player.sex === "MASCULINO" ? "M" : "F"} · {getAge(player.birthDate)} años
+                {player.phone ? ` · +${player.phone}` : ""}
               </Typography>
             </Box>
 

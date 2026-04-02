@@ -30,6 +30,9 @@ export class Player {
   @Column({ type: "date" })
   birthDate!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  phone?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }
