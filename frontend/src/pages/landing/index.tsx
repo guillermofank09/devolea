@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import screenshotDesktop from "../../assets/desktop-screenshot.png";
-import screenshotMobile from "../../assets/mobile-screenshot.png";
 import "./Landing.css";
 
 // ─── Padel ball SVG ──────────────────────────────────────────────────────────
@@ -48,7 +47,7 @@ function CourtNet() {
     <svg
       className="lp-footer-net"
       viewBox={`0 0 ${W} 110`}
-      preserveAspectRatio="xMidYMax meet"
+      preserveAspectRatio="xMidYMid slice"
       aria-hidden
     >
       {/* Floor shadow */}
@@ -266,14 +265,6 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Phone frame */}
-            <div className="lp-phone">
-              <div className="lp-phone-notch" />
-              <div className="lp-phone-screen">
-                <img src={screenshotMobile} alt="Vista móvil" className="lp-screenshot" />
-              </div>
-              <div className="lp-phone-home" />
-            </div>
           </div>
         </div>
       </section>
