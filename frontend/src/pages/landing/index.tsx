@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
+import screenshotDesktop from "../../assets/desktop-screenshot.png";
+import screenshotMobile from "../../assets/mobile-screenshot.png";
 import "./Landing.css";
 
 // ─── Padel ball SVG ──────────────────────────────────────────────────────────
@@ -170,36 +172,29 @@ export default function Landing() {
             </ul>
           </div>
 
-          {/* Animated phone mockup */}
-          <div className="lp-mockup-wrap">
-            <div className="lp-mockup">
-              <div className="lp-mockup-notch" />
-              <div className="lp-mockup-screen">
-                {/* Screen header */}
-                <div className="lp-ms-header">
-                  <div className="lp-ms-dot" />
-                  <div className="lp-ms-bar" style={{ width: "45%", background: "#F5AD27" }} />
+          {/* Screenshots */}
+          <div className="lp-screens-wrap">
+            {/* Laptop frame */}
+            <div className="lp-laptop">
+              <div className="lp-laptop-top">
+                <div className="lp-laptop-cam" />
+                <div className="lp-laptop-screen">
+                  <img src={screenshotDesktop} alt="Vista de escritorio" className="lp-screenshot" />
                 </div>
-                {/* Schedule rows */}
-                {[
-                  { label: "10:00 – 11:00", color: "lp-slot-free" },
-                  { label: "11:00 – 12:00", color: "lp-slot-busy" },
-                  { label: "12:00 – 13:00", color: "lp-slot-free" },
-                  { label: "13:00 – 14:00", color: "lp-slot-free" },
-                  { label: "14:00 – 15:00", color: "lp-slot-busy" },
-                  { label: "15:00 – 16:00", color: "lp-slot-free" },
-                ].map((s) => (
-                  <div className={`lp-slot ${s.color}`} key={s.label}>
-                    <span className="lp-slot-label">{s.label}</span>
-                    <span className="lp-slot-badge">
-                      {s.color === "lp-slot-free" ? "Disponible" : "Reservada"}
-                    </span>
-                  </div>
-                ))}
+              </div>
+              <div className="lp-laptop-base">
+                <div className="lp-laptop-notch" />
               </div>
             </div>
-            {/* Floating ball on mockup */}
-            <PadelBall className="lp-mockup-ball" />
+
+            {/* Phone frame */}
+            <div className="lp-phone">
+              <div className="lp-phone-notch" />
+              <div className="lp-phone-screen">
+                <img src={screenshotMobile} alt="Vista móvil" className="lp-screenshot" />
+              </div>
+              <div className="lp-phone-home" />
+            </div>
           </div>
         </div>
       </section>
@@ -220,7 +215,6 @@ export default function Landing() {
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="lp-footer">
         <div className="lp-container lp-footer-inner">
-          <img src={logoWhite} alt="Devolea" className="lp-footer-logo" />
           <p className="lp-footer-text">
             © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
           </p>
