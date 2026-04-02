@@ -48,43 +48,43 @@ function CourtNet() {
     <svg
       className="lp-footer-net"
       viewBox={`0 0 ${W} 110`}
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="xMidYMax meet"
       aria-hidden
     >
       {/* Floor shadow */}
       <ellipse cx={W / 2} cy={BOT + 14} rx={nw * 0.52} ry={5} fill="rgba(0,0,0,0.35)" />
 
       {/* Post left */}
-      <rect x={PL - 4} y={TOP - 12} width={8} height={nh + 20} rx="3" fill="rgba(255,255,255,0.28)" />
-      <rect x={PL - 10} y={BOT + 8} width={20} height={5} rx="2" fill="rgba(255,255,255,0.18)" />
+      <rect x={PL - 5} y={TOP - 16} width={10} height={nh + 26} rx="4" fill="rgba(255,255,255,0.55)" />
+      <rect x={PL - 14} y={BOT + 10} width={28} height={7} rx="3" fill="rgba(255,255,255,0.35)" />
 
       {/* Post right */}
-      <rect x={PR - 4} y={TOP - 12} width={8} height={nh + 20} rx="3" fill="rgba(255,255,255,0.28)" />
-      <rect x={PR - 10} y={BOT + 8} width={20} height={5} rx="2" fill="rgba(255,255,255,0.18)" />
+      <rect x={PR - 5} y={TOP - 16} width={10} height={nh + 26} rx="4" fill="rgba(255,255,255,0.55)" />
+      <rect x={PR - 14} y={BOT + 10} width={28} height={7} rx="3" fill="rgba(255,255,255,0.35)" />
 
       {/* Top cable */}
-      <line x1={PL} y1={TOP} x2={PR} y2={TOP} stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1={PL} y1={TOP} x2={PR} y2={TOP} stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinecap="round" />
 
       {/* Sway group — origin at top cable */}
       <g className="lp-net-sway" style={{ transformOrigin: `${W / 2}px ${TOP}px` }}>
         {/* Vertical strings */}
         {vLines.map((x, i) => (
           <line key={`v${i}`} x1={x} y1={TOP} x2={x} y2={BOT}
-            stroke="rgba(255,255,255,0.16)" strokeWidth="0.9" />
+            stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" />
         ))}
 
         {/* Horizontal strings */}
         {hLines.map((y, i) => (
           <line key={`h${i}`} x1={PL} y1={y} x2={PR} y2={y}
-            stroke={i === 0 ? "rgba(255,255,255,0.0)" : "rgba(255,255,255,0.14)"}
-            strokeWidth="0.9" />
+            stroke={i === 0 ? "rgba(255,255,255,0.0)" : "rgba(255,255,255,0.32)"}
+            strokeWidth="1.2" />
         ))}
 
         {/* White bottom band */}
-        <rect x={PL} y={BOT - 9} width={nw} height={9} fill="rgba(255,255,255,0.13)" />
+        <rect x={PL} y={BOT - 10} width={nw} height={10} fill="rgba(255,255,255,0.25)" />
 
         {/* Center strap */}
-        <rect x={W / 2 - 3} y={TOP} width={6} height={nh} rx="2" fill="rgba(255,255,255,0.32)" />
+        <rect x={W / 2 - 4} y={TOP} width={8} height={nh} rx="3" fill="rgba(255,255,255,0.55)" />
 
         {/* Shimmer overlay — moves across the net */}
         <rect x={PL} y={TOP} width={nw} height={nh} fill="url(#shimmer)" />
@@ -278,28 +278,30 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA ────────────────────────────────────────────────────────── */}
-      <section className="lp-section lp-section-light lp-cta-section">
-        <div className="lp-container lp-cta">
-          <h2 className="lp-section-title">Empezá hoy mismo</h2>
-          <p className="lp-section-sub">
-            Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
-          </p>
-          <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
-            Acceder a Devolea
-          </button>
-        </div>
-      </section>
-
-      {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <footer className="lp-footer">
+      {/* ── CTA + Footer — unified dark section with net ──────────────── */}
+      <div className="lp-dark-bottom">
         <CourtNet />
-        <div className="lp-container lp-footer-inner">
-          <p className="lp-footer-text">
-            © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
-          </p>
-        </div>
-      </footer>
+
+        <section className="lp-cta-section">
+          <div className="lp-container lp-cta">
+            <h2 className="lp-section-title lp-white">Empezá hoy mismo</h2>
+            <p className="lp-section-sub lp-muted">
+              Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
+            </p>
+            <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
+              Acceder a Devolea
+            </button>
+          </div>
+        </section>
+
+        <footer className="lp-footer">
+          <div className="lp-container lp-footer-inner">
+            <p className="lp-footer-text">
+              © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
+            </p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
