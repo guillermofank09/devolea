@@ -246,13 +246,13 @@ function OccupancyChart({
                 </>
               ) : (
                 <>
-                  <text x={cx} y={cy - 6} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#888">
+                  <text x={cx} y={cy - 8} textAnchor="middle" fontSize={isMobile ? 10 : 10} fill="#888">
                     Ocupación
                   </text>
-                  <text x={cx} y={cy + 9} textAnchor="middle" fontSize={isMobile ? 13 : 15} fill="#111" fontWeight={800}>
+                  <text x={cx} y={cy + 10} textAnchor="middle" fontSize={isMobile ? 20 : 15} fill="#111" fontWeight={800}>
                     {summary.overallOccupancyPct.toFixed(1)}%
                   </text>
-                  <text x={cx} y={cy + 22} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#888">
+                  <text x={cx} y={cy + 25} textAnchor="middle" fontSize={isMobile ? 10 : 10} fill="#888">
                     general
                   </text>
                 </>
