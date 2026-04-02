@@ -184,7 +184,9 @@
     top: 0;
     left: 0;
     width: var(--sb-width) !important;
-    height: 100vh;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+    height: 100dvh;
     z-index: var(--sb-z);
     transform: translateX(-105%);
     box-shadow: 6px 0 24px rgba(0, 0, 0, 0.55);

@@ -12,7 +12,10 @@ body {
 .root-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* 100dvh updates as the browser chrome (address/nav bar) shows/hides on mobile */
+  height: 100dvh;
+  height: 100vh; /* fallback for browsers without dvh support */
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -31,12 +34,16 @@ body {
   overflow-y: auto;
   overflow-x: hidden;   /* prevent horizontal overflow breaking touch scroll */
   padding: 2rem;
+  /* iOS safe area for home indicator / bottom bar */
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
   min-width: 0;
 }
 
 @media (max-width: 860px) {
   .page-main {
     padding: 1.25rem 1rem;
+    /* ensure bottom content clears browser navigation bar on mobile */
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
 }
 
