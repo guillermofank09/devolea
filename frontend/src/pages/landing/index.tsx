@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import logoWhite from "../../assets/logo-white.png";
 import "./Landing.css";
 
 // ─── Padel ball SVG ──────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ export default function Landing() {
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="lp-nav">
         <div className="lp-nav-inner">
-          <span className="lp-wordmark">Devolea</span>
+          <img src={logoWhite} alt="Devolea" className="lp-nav-logo" />
           <button className="lp-btn-outline" onClick={() => navigate("/login")}>
             Iniciar sesión
           </button>
@@ -219,7 +220,7 @@ export default function Landing() {
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="lp-footer">
         <div className="lp-container lp-footer-inner">
-          <span className="lp-wordmark lp-wordmark-sm lp-wordmark-muted">Devolea</span>
+          <img src={logoWhite} alt="Devolea" className="lp-footer-logo" />
           <p className="lp-footer-text">
             © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
           </p>

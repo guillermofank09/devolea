@@ -7,24 +7,18 @@
   overflow-x: hidden;
 }
 
-/* ─── Wordmark ──────────────────────────────────────────────────────────────── */
-.lp-wordmark {
-  font-family: 'Teko', 'Inter', sans-serif;
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #111111;
-  line-height: 1;
-  user-select: none;
+/* ─── Logo images ───────────────────────────────────────────────────────────── */
+.lp-nav-logo {
+  height: 34px;
+  display: block;
+  object-fit: contain;
 }
 
-.lp-wordmark-sm {
-  font-size: 26px;
-}
-
-.lp-wordmark-muted {
-  color: rgba(255, 255, 255, 0.35);
+.lp-footer-logo {
+  height: 26px;
+  display: block;
+  object-fit: contain;
+  opacity: 0.45;
 }
 
 /* ─── Navbar ────────────────────────────────────────────────────────────────── */
