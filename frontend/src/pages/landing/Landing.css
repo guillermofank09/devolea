@@ -7,6 +7,14 @@
   overflow-x: hidden;
 }
 
+.lp h2,
+.lp .lp-section-title {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  text-transform: none !important;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
 /* ─── Logo images ───────────────────────────────────────────────────────────── */
 .lp-nav-logo {
   height: 34px;
@@ -36,7 +44,6 @@
 }
 
 .lp-nav-inner {
-  max-width: 1400px;
   margin: 0 auto;
   padding: 0 56px;
   height: 64px;
@@ -643,7 +650,7 @@
 .lp-footer-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
 }
