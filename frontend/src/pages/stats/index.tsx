@@ -10,6 +10,8 @@ import {
   Tabs,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
@@ -163,84 +165,102 @@ function OccupancyChart({
   summary: OccupancySummary;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (data.length === 0) {
     return (
       <Box sx={{ py: 4, textAlign: "center" }}>
         <Typography variant="body2" color="text.secondary">
-          Sin reservas registradas todavía.
+          Sin canchas registradas todavía.
         </Typography>
       </Box>
     );
   }
 
-  // ── Donut (slices sized by relative share between courts) ──────────────────
-  const SIZE = 200;
+  const hasBookings = summary.totalBookedHours > 0;
+
+  // Assign palette colors to each court
+  const slices = data.map((d, i) => ({ ...d, color: PALETTE[i % PALETTE.length] }));
+
+  // Build donut slices only when there are bookings
+  let donutSlices: typeof slices & { startAngle: number; endAngle: number }[] = [];
+  if (hasBookings) {
+    let cursor = 0;
+    donutSlices = slices.map((s) => {
+      const sweep = (s.share / 100) * 360;
+      const slice = { ...s, startAngle: cursor, endAngle: cursor + sweep };
+      cursor += sweep;
+      return slice;
+    });
+  }
+
+  const active = hovered !== null && donutSlices.length > hovered ? donutSlices[hovered] : null;
+
+  const SIZE = isMobile ? 160 : 200;
   const cx = SIZE / 2;
   const cy = SIZE / 2;
-  const R = 80;
-  const R_INNER = 46;
-
-  let cursor = 0;
-  const slices = data.map((d, i) => {
-    const sweep = (d.share / 100) * 360;
-    const slice = { ...d, startAngle: cursor, endAngle: cursor + sweep, color: PALETTE[i % PALETTE.length] };
-    cursor += sweep;
-    return slice;
-  });
-
-  const active = hovered !== null ? slices[hovered] : null;
+  const R = isMobile ? 62 : 80;
+  const R_INNER = isMobile ? 36 : 46;
 
   return (
     <Box>
-      <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "center" }}>
-        {/* SVG donut */}
-        <Box sx={{ flexShrink: 0 }}>
-          <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-            {slices.map((s, i) => (
-              <path
-                key={s.courtId}
-                d={arcPath(cx, cy, hovered === i ? R + 7 : R, s.startAngle, s.endAngle)}
-                fill={s.color}
-                opacity={hovered !== null && hovered !== i ? 0.5 : 1}
-                style={{ transition: "all 0.15s ease", cursor: "pointer" }}
-                onMouseEnter={() => setHovered(i)}
-                onMouseLeave={() => setHovered(null)}
-              />
-            ))}
-            <circle cx={cx} cy={cy} r={R_INNER} fill="white" />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 2 : 3,
+          alignItems: isMobile ? "stretch" : "center",
+        }}
+      >
+        {/* SVG donut — only when there are bookings */}
+        {hasBookings && (
+          <Box sx={{ flexShrink: 0, display: "flex", justifyContent: "center" }}>
+            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+              {donutSlices.map((s, i) => (
+                <path
+                  key={s.courtId}
+                  d={arcPath(cx, cy, hovered === i ? R + 6 : R, s.startAngle, s.endAngle)}
+                  fill={s.color}
+                  opacity={hovered !== null && hovered !== i ? 0.45 : 1}
+                  style={{ transition: "all 0.15s ease", cursor: "pointer" }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                />
+              ))}
+              <circle cx={cx} cy={cy} r={R_INNER} fill="white" />
 
-            {/* Center text */}
-            {active ? (
-              <>
-                <text x={cx} y={cy - 12} textAnchor="middle" fontSize={10} fill="#666" fontWeight={600}>
-                  {active.courtName.length > 13 ? active.courtName.slice(0, 13) + "…" : active.courtName}
-                </text>
-                <text x={cx} y={cy + 6} textAnchor="middle" fontSize={15} fill="#111" fontWeight={800}>
-                  {active.occupancyPct.toFixed(1)}%
-                </text>
-                <text x={cx} y={cy + 20} textAnchor="middle" fontSize={10} fill="#888">
-                  ocupación
-                </text>
-              </>
-            ) : (
-              <>
-                <text x={cx} y={cy - 8} textAnchor="middle" fontSize={10} fill="#888">
-                  Ocupación
-                </text>
-                <text x={cx} y={cy + 10} textAnchor="middle" fontSize={15} fill="#111" fontWeight={800}>
-                  {summary.overallOccupancyPct.toFixed(1)}%
-                </text>
-                <text x={cx} y={cy + 24} textAnchor="middle" fontSize={10} fill="#888">
-                  general
-                </text>
-              </>
-            )}
-          </svg>
-        </Box>
+              {active ? (
+                <>
+                  <text x={cx} y={cy - 10} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#666" fontWeight={600}>
+                    {active.courtName.length > 12 ? active.courtName.slice(0, 12) + "…" : active.courtName}
+                  </text>
+                  <text x={cx} y={cy + 6} textAnchor="middle" fontSize={isMobile ? 13 : 15} fill="#111" fontWeight={800}>
+                    {active.occupancyPct.toFixed(1)}%
+                  </text>
+                  <text x={cx} y={cy + 19} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#888">
+                    ocupación
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text x={cx} y={cy - 6} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#888">
+                    Ocupación
+                  </text>
+                  <text x={cx} y={cy + 9} textAnchor="middle" fontSize={isMobile ? 13 : 15} fill="#111" fontWeight={800}>
+                    {summary.overallOccupancyPct.toFixed(1)}%
+                  </text>
+                  <text x={cx} y={cy + 22} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="#888">
+                    general
+                  </text>
+                </>
+              )}
+            </svg>
+          </Box>
+        )}
 
         {/* Progress bars por cancha */}
-        <Box sx={{ flex: 1, minWidth: 220 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           {slices.map((s, i) => (
             <Box
               key={s.courtId}
@@ -256,18 +276,16 @@ function OccupancyChart({
                 cursor: "default",
               }}
             >
-              {/* Header row */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                 <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: s.color, flexShrink: 0 }} />
-                <Typography variant="body2" fontWeight={hovered === i ? 700 : 500} sx={{ flex: 1 }}>
+                <Typography variant="body2" fontWeight={hovered === i ? 700 : 500} sx={{ flex: 1, minWidth: 0 }} noWrap>
                   {s.courtName}
                 </Typography>
-                <Typography variant="body2" fontWeight={700} sx={{ color: s.color }}>
+                <Typography variant="body2" fontWeight={700} sx={{ color: s.color, flexShrink: 0 }}>
                   {s.occupancyPct.toFixed(1)}%
                 </Typography>
               </Box>
 
-              {/* Progress bar */}
               <Box sx={{ height: 6, bgcolor: "action.hover", borderRadius: 3, overflow: "hidden" }}>
                 <Box
                   sx={{
@@ -280,12 +298,13 @@ function OccupancyChart({
                 />
               </Box>
 
-              {/* Detail row */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.4 }}>
-                <Typography variant="caption" color="text.disabled">
-                  {s.bookedHours.toFixed(1)}h reservadas / {s.availableHours.toFixed(0)}h disponibles
+              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.4, gap: 1 }}>
+                <Typography variant="caption" color="text.disabled" noWrap>
+                  {isMobile
+                    ? `${s.bookedHours.toFixed(1)}h / ${s.availableHours.toFixed(0)}h`
+                    : `${s.bookedHours.toFixed(1)}h reservadas / ${s.availableHours.toFixed(0)}h disponibles`}
                 </Typography>
-                <Typography variant="caption" color="text.disabled">
+                <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0 }}>
                   {s.bookings} {s.bookings === 1 ? "reserva" : "reservas"}
                 </Typography>
               </Box>
@@ -294,12 +313,18 @@ function OccupancyChart({
         </Box>
       </Box>
 
-      {/* Footer note */}
       <Divider sx={{ mt: 2, mb: 1.5 }} />
       <Typography variant="caption" color="text.secondary">
-        Período analizado: {summary.periodDays} {summary.periodDays === 1 ? "día" : "días"} ·{" "}
-        {summary.availableHoursPerCourt.toFixed(0)}h disponibles por cancha según horario de atención ·{" "}
-        {summary.totalBookedHours.toFixed(1)}h totales reservadas
+        {isMobile ? (
+          <>
+            {summary.availableHoursPerCourt.toFixed(0)}h disponibles · {summary.totalBookedHours.toFixed(1)}h reservadas
+          </>
+        ) : (
+          <>
+            Período: hoy · {summary.availableHoursPerCourt.toFixed(0)}h disponibles por cancha ·{" "}
+            {summary.totalBookedHours.toFixed(1)}h totales reservadas
+          </>
+        )}
       </Typography>
     </Box>
   );
@@ -465,12 +490,9 @@ export default function Stats() {
       {/* Occupancy pie chart card */}
       <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3 }}>
         <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
             <DonutLargeIcon sx={{ color: "#F5AD27" }} />
             <Typography variant="subtitle1" fontWeight={700}>Ocupación por cancha</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ ml: "auto" }}>
-              % del total de horas reservadas
-            </Typography>
           </Box>
           <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
         </CardContent>
