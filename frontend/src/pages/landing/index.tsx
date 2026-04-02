@@ -1,225 +1,226 @@
 import { useNavigate } from "react-router-dom";
 import "./Landing.css";
 
+// ─── Padel ball SVG ──────────────────────────────────────────────────────────
+function PadelBall({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <circle cx="30" cy="30" r="29" fill="#c8e63a" />
+      <circle cx="30" cy="30" r="29" fill="url(#ballGrad)" />
+      {/* Seam curves */}
+      <path d="M8 20 Q30 14 52 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+      <path d="M8 40 Q30 46 52 40" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+      {/* Fuzz texture */}
+      <circle cx="30" cy="30" r="29" fill="url(#fuzz)" />
+      <defs>
+        <radialGradient id="ballGrad" cx="35%" cy="30%" r="65%">
+          <stop offset="0%" stopColor="#d4f040" />
+          <stop offset="100%" stopColor="#a8cc20" />
+        </radialGradient>
+        <radialGradient id="fuzz" cx="50%" cy="50%" r="50%">
+          <stop offset="70%" stopColor="transparent" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.12)" />
+        </radialGradient>
+      </defs>
+    </svg>
+  );
+}
+
+// ─── Feature data ────────────────────────────────────────────────────────────
 const FEATURES = [
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-        <rect x="7" y="14" width="4" height="4" rx="0.5" fill="currentColor" stroke="none" opacity="0.5" />
-      </svg>
-    ),
-    title: "Gestión de canchas y horarios",
-    description:
-      "Administrá tus canchas con un calendario visual. Creá reservas para jugadores o clases con profesores, configurá reservas fijas semanales y evitá conflictos de horarios automáticamente.",
+    icon: "🗓️",
+    title: "Canchas y horarios",
+    desc: "Calendario visual para gestionar reservas, detectar conflictos automáticamente y configurar turnos fijos semanales.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 21l4-4 4 4" />
-        <path d="M12 17V3" />
-        <path d="M5 8l-2 2 2 2" />
-        <path d="M19 8l2 2-2 2" />
-        <path d="M3 10h4" />
-        <path d="M17 10h4" />
-        <path d="M6 3h12a1 1 0 0 1 1 1v4a7 7 0 0 1-14 0V4a1 1 0 0 1 1-1z" />
-      </svg>
-    ),
-    title: "Torneos y competencias",
-    description:
-      "Creá y gestioná torneos fácilmente. Organizá grupos, genera el fixture automáticamente, registrá resultados y llevá el seguimiento de posiciones en tiempo real.",
+    icon: "🏆",
+    title: "Torneos y fixtures",
+    desc: "Creá torneos, generá el fixture, registrá resultados y llevá el seguimiento de posiciones en tiempo real.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="9" cy="7" r="4" />
-        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-        <circle cx="18" cy="8" r="3" />
-        <path d="M21 21v-1a3 3 0 0 0-3-3h-1" />
-      </svg>
-    ),
+    icon: "👥",
     title: "Jugadores y profesores",
-    description:
-      "Registrá a tus jugadores con sus categorías y datos de contacto. Administrá a tus profesores y visualizá sus horarios de clase en un calendario dedicado.",
+    desc: "Registrá jugadores con categoría y contacto. Visualizá los horarios de clases de cada profesor en su propio calendario.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="18" cy="5" r="3" />
-        <circle cx="6" cy="12" r="3" />
-        <circle cx="18" cy="19" r="3" />
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-      </svg>
-    ),
+    icon: "🌐",
     title: "Información pública",
-    description:
-      "Compartí los horarios disponibles de tus canchas y la información de torneos en curso con todos tus clientes. Sin login, acceso directo desde el celular.",
+    desc: "Compartí horarios disponibles y torneos en curso con tus clientes sin que necesiten registrarse.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
-    title: "Control de precios e ingresos",
-    description:
-      "Configurá tarifas por hora para jugadores y clases con profesor. Ajustá el precio por reserva si hace falta, y llevá estadísticas de ingresos diarios, semanales y mensuales.",
+    icon: "💰",
+    title: "Precios e ingresos",
+    desc: "Configurá tarifas por hora para jugadores y clases. Ajustá el precio por reserva y llevá el control de ingresos.",
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3h7v7H3z" />
-        <path d="M14 3h7v7h-7z" />
-        <path d="M14 14h7v7h-7z" />
-        <path d="M3 14h7v7H3z" />
-      </svg>
-    ),
-    title: "Panel de estadísticas",
-    description:
-      "Visualizá la ocupación de cada cancha, los ingresos del día, la semana y el mes, y analizá el rendimiento del complejo con gráficos claros e intuitivos.",
+    icon: "📊",
+    title: "Estadísticas",
+    desc: "Visualizá la ocupación de cada cancha y los ingresos del día, semana y mes con gráficos claros.",
   },
 ];
 
+// ─── Landing page ────────────────────────────────────────────────────────────
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="landing">
-      {/* ── Navbar ── */}
-      <nav className="landing-nav">
-        <div className="landing-nav-inner">
-          <img src="/logo.png" alt="Devolea" className="landing-nav-logo" />
-          <button className="landing-btn-outline" onClick={() => navigate("/login")}>
+    <div className="lp">
+      {/* ── Navbar ─────────────────────────────────────────────────────── */}
+      <nav className="lp-nav">
+        <div className="lp-nav-inner">
+          <span className="lp-wordmark">Devolea</span>
+          <button className="lp-btn-outline" onClick={() => navigate("/login")}>
             Iniciar sesión
           </button>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="landing-hero">
-        <div className="landing-hero-inner">
-          <div className="landing-hero-badge">Software de gestión deportiva</div>
-          <h1 className="landing-hero-title">
-            Gestioná tus canchas y torneos<br />
-            <span className="landing-accent">más fácilmente</span>
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <section className="lp-hero">
+        {/* Animated padel balls */}
+        <PadelBall className="lp-ball lp-ball-1" />
+        <PadelBall className="lp-ball lp-ball-2" />
+        <PadelBall className="lp-ball lp-ball-3" />
+        <PadelBall className="lp-ball lp-ball-4" />
+
+        {/* Court line decorations */}
+        <div className="lp-court-lines" aria-hidden>
+          <div className="lp-court-line lp-court-line-h" />
+          <div className="lp-court-line lp-court-line-v" />
+          <div className="lp-court-box" />
+        </div>
+
+        <div className="lp-hero-content">
+          <h1 className="lp-hero-title">
+            Gestioná tus canchas<br />
+            <span className="lp-hero-accent">y torneos</span>{" "}
+            <span className="lp-hero-light">más fácilmente</span>
           </h1>
-          <p className="landing-hero-sub">
+          <p className="lp-hero-sub">
             Todo lo que necesitás para administrar tu complejo de pádel en un solo lugar.
-            Reservas, torneos, jugadores, profesores y estadísticas.
+            Reservas, torneos, jugadores y estadísticas.
           </p>
-          <div className="landing-hero-actions">
-            <button className="landing-btn-primary" onClick={() => navigate("/login")}>
+          <div className="lp-hero-cta">
+            <button className="lp-btn-primary" onClick={() => navigate("/login")}>
               Comenzar ahora
             </button>
             <button
-              className="landing-btn-ghost"
-              onClick={() => {
-                document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
-              }}
+              className="lp-btn-ghost"
+              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
             >
-              Ver funcionalidades
+              Ver funcionalidades ↓
             </button>
           </div>
         </div>
 
-        {/* Decorative background shapes */}
-        <div className="landing-hero-blob landing-hero-blob-1" />
-        <div className="landing-hero-blob landing-hero-blob-2" />
+        <div className="lp-hero-scroll-hint" aria-hidden>
+          <div className="lp-scroll-mouse">
+            <div className="lp-scroll-wheel" />
+          </div>
+        </div>
       </section>
 
-      {/* ── Features ── */}
-      <section className="landing-section landing-section-light" id="features">
-        <div className="landing-container">
-          <div className="landing-section-header">
-            <span className="landing-label">Funcionalidades</span>
-            <h2 className="landing-section-title">Todo lo que necesita tu complejo</h2>
-            <p className="landing-section-sub">
-              Diseñado especialmente para la gestión de canchas de pádel y tenis.
+      {/* ── Features ───────────────────────────────────────────────────── */}
+      <section className="lp-section lp-section-light" id="features">
+        <div className="lp-container">
+          <div className="lp-section-header">
+            <p className="lp-eyebrow">Funcionalidades</p>
+            <h2 className="lp-section-title">Todo lo que necesita tu complejo</h2>
+            <p className="lp-section-sub">
+              Diseñado específicamente para la gestión de canchas de pádel y tenis.
             </p>
           </div>
 
-          <div className="landing-features-grid">
-            {FEATURES.map((f) => (
-              <div className="landing-feature-card" key={f.title}>
-                <div className="landing-feature-icon">{f.icon}</div>
-                <h3 className="landing-feature-title">{f.title}</h3>
-                <p className="landing-feature-desc">{f.description}</p>
+          <div className="lp-grid">
+            {FEATURES.map((f, i) => (
+              <div className="lp-card" key={f.title} style={{ animationDelay: `${i * 80}ms` }}>
+                <span className="lp-card-emoji">{f.icon}</span>
+                <h3 className="lp-card-title">{f.title}</h3>
+                <p className="lp-card-desc">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Public info highlight ── */}
-      <section className="landing-section landing-section-dark">
-        <div className="landing-container landing-split">
-          <div className="landing-split-text">
-            <span className="landing-label landing-label-light">Acceso público</span>
-            <h2 className="landing-section-title landing-text-white">
+      {/* ── Public sharing highlight ────────────────────────────────────── */}
+      <section className="lp-section lp-section-dark">
+        <div className="lp-container lp-split">
+          <div className="lp-split-copy">
+            <p className="lp-eyebrow lp-eyebrow-light">Acceso público</p>
+            <h2 className="lp-section-title lp-white">
               Compartí la disponibilidad<br />con tus clientes
             </h2>
-            <p className="landing-section-sub landing-text-muted">
+            <p className="lp-section-sub lp-muted" style={{ textAlign: "left", margin: 0 }}>
               Activá el acceso público y tus clientes podrán consultar los horarios
-              disponibles de las canchas y los torneos en curso sin necesidad de registrarse.
+              disponibles y torneos en curso sin necesidad de registrarse.
               Compartí el link y listo.
             </p>
-            <ul className="landing-check-list">
-              <li>Horarios disponibles en tiempo real</li>
-              <li>Información de torneos y brackets</li>
-              <li>Acceso desde cualquier dispositivo</li>
-              <li>Sin necesidad de crear una cuenta</li>
+            <ul className="lp-checklist">
+              {[
+                "Horarios disponibles en tiempo real",
+                "Información de torneos y brackets",
+                "Acceso desde cualquier dispositivo",
+                "Sin necesidad de crear una cuenta",
+              ].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
-          <div className="landing-split-visual">
-            <div className="landing-phone-mockup">
-              <div className="landing-phone-screen">
-                <div className="landing-phone-header">
-                  <div className="landing-phone-dot" />
-                  <div className="landing-phone-bar" style={{ width: "50%" }} />
+
+          {/* Animated phone mockup */}
+          <div className="lp-mockup-wrap">
+            <div className="lp-mockup">
+              <div className="lp-mockup-notch" />
+              <div className="lp-mockup-screen">
+                {/* Screen header */}
+                <div className="lp-ms-header">
+                  <div className="lp-ms-dot" />
+                  <div className="lp-ms-bar" style={{ width: "45%", background: "#F5AD27" }} />
                 </div>
-                <div className="landing-phone-block landing-phone-block-accent" />
-                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                  <div className="landing-phone-block" style={{ flex: 1 }} />
-                  <div className="landing-phone-block landing-phone-block-green" style={{ flex: 1 }} />
-                </div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                  <div className="landing-phone-block landing-phone-block-green" style={{ flex: 1 }} />
-                  <div className="landing-phone-block" style={{ flex: 1 }} />
-                </div>
-                <div className="landing-phone-block" />
-                <div style={{ display: "flex", gap: 8 }}>
-                  <div className="landing-phone-block" style={{ flex: 2 }} />
-                  <div className="landing-phone-block landing-phone-block-accent" style={{ flex: 1 }} />
-                </div>
+                {/* Schedule rows */}
+                {[
+                  { label: "10:00 – 11:00", color: "lp-slot-free" },
+                  { label: "11:00 – 12:00", color: "lp-slot-busy" },
+                  { label: "12:00 – 13:00", color: "lp-slot-free" },
+                  { label: "13:00 – 14:00", color: "lp-slot-free" },
+                  { label: "14:00 – 15:00", color: "lp-slot-busy" },
+                  { label: "15:00 – 16:00", color: "lp-slot-free" },
+                ].map((s) => (
+                  <div className={`lp-slot ${s.color}`} key={s.label}>
+                    <span className="lp-slot-label">{s.label}</span>
+                    <span className="lp-slot-badge">
+                      {s.color === "lp-slot-free" ? "Disponible" : "Reservada"}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
+            {/* Floating ball on mockup */}
+            <PadelBall className="lp-mockup-ball" />
           </div>
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="landing-section landing-section-light">
-        <div className="landing-container landing-cta">
-          <h2 className="landing-section-title">Empezá a gestionar tu complejo hoy</h2>
-          <p className="landing-section-sub">
-            Configurá tu complejo en minutos y empezá a tomar reservas de forma organizada.
+      {/* ── CTA ────────────────────────────────────────────────────────── */}
+      <section className="lp-section lp-section-light lp-cta-section">
+        <div className="lp-container lp-cta">
+          <h2 className="lp-section-title">Empezá hoy mismo</h2>
+          <p className="lp-section-sub">
+            Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
           </p>
-          <button className="landing-btn-primary landing-btn-large" onClick={() => navigate("/login")}>
+          <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
             Acceder a Devolea
           </button>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="landing-footer">
-        <div className="landing-container landing-footer-inner">
-          <img src="/logo.png" alt="Devolea" className="landing-footer-logo" />
-          <p className="landing-footer-text">
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <footer className="lp-footer">
+        <div className="lp-container lp-footer-inner">
+          <span className="lp-wordmark lp-wordmark-sm lp-wordmark-muted">Devolea</span>
+          <p className="lp-footer-text">
             © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
           </p>
         </div>

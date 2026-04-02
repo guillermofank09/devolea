@@ -2,7 +2,8 @@
 html, body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  /* overflow:hidden is NOT set here — landing page needs to scroll freely.
+     The app layout uses .root-layout overflow:hidden to lock the viewport. */
 }
 
 body {
