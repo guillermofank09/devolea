@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import logoWhite from "../../assets/logo-white.png";
+import logo from "../../assets/logo.png";
 import "./Landing.css";
 
 // ─── Padel ball SVG ──────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export default function Landing() {
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="lp-nav">
         <div className="lp-nav-inner">
-          <img src={logoWhite} alt="Devolea" className="lp-nav-logo" />
+          <img src={logo} alt="Devolea" className="lp-nav-logo" />
           <button className="lp-btn-outline" onClick={() => navigate("/login")}>
             Iniciar sesión
           </button>
