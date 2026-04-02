@@ -29,6 +29,85 @@ function PadelBall({ className }: { className?: string }) {
   );
 }
 
+// ─── Padel net SVG ──────────────────────────────────────────────────────────
+function CourtNet() {
+  const W = 800;
+  const PL = 40;        // post left X
+  const PR = 760;       // post right X
+  const TOP = 20;       // top cable Y
+  const BOT = 90;       // bottom of net Y
+  const COLS = 36;
+  const ROWS = 8;
+  const nw = PR - PL;
+  const nh = BOT - TOP;
+
+  const vLines = Array.from({ length: COLS + 1 }, (_, i) => PL + (i / COLS) * nw);
+  const hLines = Array.from({ length: ROWS + 1 }, (_, i) => TOP + (i / ROWS) * nh);
+
+  return (
+    <svg
+      className="lp-footer-net"
+      viewBox={`0 0 ${W} 110`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      {/* Floor shadow */}
+      <ellipse cx={W / 2} cy={BOT + 14} rx={nw * 0.52} ry={5} fill="rgba(0,0,0,0.35)" />
+
+      {/* Post left */}
+      <rect x={PL - 4} y={TOP - 12} width={8} height={nh + 20} rx="3" fill="rgba(255,255,255,0.28)" />
+      <rect x={PL - 10} y={BOT + 8} width={20} height={5} rx="2" fill="rgba(255,255,255,0.18)" />
+
+      {/* Post right */}
+      <rect x={PR - 4} y={TOP - 12} width={8} height={nh + 20} rx="3" fill="rgba(255,255,255,0.28)" />
+      <rect x={PR - 10} y={BOT + 8} width={20} height={5} rx="2" fill="rgba(255,255,255,0.18)" />
+
+      {/* Top cable */}
+      <line x1={PL} y1={TOP} x2={PR} y2={TOP} stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Sway group — origin at top cable */}
+      <g className="lp-net-sway" style={{ transformOrigin: `${W / 2}px ${TOP}px` }}>
+        {/* Vertical strings */}
+        {vLines.map((x, i) => (
+          <line key={`v${i}`} x1={x} y1={TOP} x2={x} y2={BOT}
+            stroke="rgba(255,255,255,0.16)" strokeWidth="0.9" />
+        ))}
+
+        {/* Horizontal strings */}
+        {hLines.map((y, i) => (
+          <line key={`h${i}`} x1={PL} y1={y} x2={PR} y2={y}
+            stroke={i === 0 ? "rgba(255,255,255,0.0)" : "rgba(255,255,255,0.14)"}
+            strokeWidth="0.9" />
+        ))}
+
+        {/* White bottom band */}
+        <rect x={PL} y={BOT - 9} width={nw} height={9} fill="rgba(255,255,255,0.13)" />
+
+        {/* Center strap */}
+        <rect x={W / 2 - 3} y={TOP} width={6} height={nh} rx="2" fill="rgba(255,255,255,0.32)" />
+
+        {/* Shimmer overlay — moves across the net */}
+        <rect x={PL} y={TOP} width={nw} height={nh} fill="url(#shimmer)" />
+      </g>
+
+      <defs>
+        <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stopColor="transparent" />
+          <stop offset="45%"  stopColor="transparent" />
+          <stop offset="50%"  stopColor="rgba(255,255,255,0.06)" />
+          <stop offset="55%"  stopColor="transparent" />
+          <stop offset="100%" stopColor="transparent">
+            <animate attributeName="offset" values="100%;-10%" dur="4s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="45%" stopColor="transparent">
+            <animate attributeName="offset" values="90%;-20%" dur="4s" repeatCount="indefinite" />
+          </stop>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 // ─── Feature data ────────────────────────────────────────────────────────────
 const FEATURES = [
   {
@@ -214,6 +293,7 @@ export default function Landing() {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="lp-footer">
+        <CourtNet />
         <div className="lp-container lp-footer-inner">
           <p className="lp-footer-text">
             © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
