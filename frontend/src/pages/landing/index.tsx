@@ -8,7 +8,7 @@ import "./Landing.css";
 function PadelBall({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <circle cx="30" cy="30" r="29" fill="#c8e63a" />
+      <circle cx="30" cy="30" r="29" fill="#F5AD27" />
       <circle cx="30" cy="30" r="29" fill="url(#ballGrad)" />
       {/* Seam curves */}
       <path d="M8 20 Q30 14 52 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
@@ -17,8 +17,8 @@ function PadelBall({ className }: { className?: string }) {
       <circle cx="30" cy="30" r="29" fill="url(#fuzz)" />
       <defs>
         <radialGradient id="ballGrad" cx="35%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#d4f040" />
-          <stop offset="100%" stopColor="#a8cc20" />
+          <stop offset="0%" stopColor="#fcc44a" />
+          <stop offset="100%" stopColor="#e09800" />
         </radialGradient>
         <radialGradient id="fuzz" cx="50%" cy="50%" r="50%">
           <stop offset="70%" stopColor="transparent" />
