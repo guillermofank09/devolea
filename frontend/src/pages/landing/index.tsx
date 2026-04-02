@@ -278,30 +278,28 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA + Footer — unified dark section with net ──────────────── */}
-      <div className="lp-dark-bottom">
+      {/* ── CTA ────────────────────────────────────────────────────────── */}
+      <section className="lp-cta-section">
+        <div className="lp-container lp-cta">
+          <h2 className="lp-section-title">Empezá hoy mismo</h2>
+          <p className="lp-section-sub">
+            Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
+          </p>
+          <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
+            Acceder a Devolea
+          </button>
+        </div>
+      </section>
+
+      {/* ── Footer — dark with net, only copyright ─────────────────────── */}
+      <footer className="lp-footer">
         <CourtNet />
-
-        <section className="lp-cta-section">
-          <div className="lp-container lp-cta">
-            <h2 className="lp-section-title lp-white">Empezá hoy mismo</h2>
-            <p className="lp-section-sub lp-muted">
-              Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
-            </p>
-            <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
-              Acceder a Devolea
-            </button>
-          </div>
-        </section>
-
-        <footer className="lp-footer">
-          <div className="lp-container lp-footer-inner">
-            <p className="lp-footer-text">
-              © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
-            </p>
-          </div>
-        </footer>
-      </div>
+        <div className="lp-footer-inner">
+          <p className="lp-footer-text">
+            © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
