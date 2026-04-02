@@ -282,9 +282,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Footer — dark with net, only copyright ─────────────────────── */}
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="lp-footer">
-        <CourtNet />
         <div className="lp-footer-inner">
           <p className="lp-footer-text">
             © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
