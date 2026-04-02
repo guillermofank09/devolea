@@ -8,6 +8,7 @@ import {
 } from "typeorm";
 import { Court } from "./Court";
 import { Player } from "./Player";
+import { Profesor } from "./Profesor";
 
 export type BookingStatus = "CONFIRMED" | "CANCELLED";
 
@@ -20,9 +21,13 @@ export class Booking {
   @JoinColumn({ name: "courtId" })
   court!: Court;
 
-  @ManyToOne(() => Player, { onDelete: "CASCADE", eager: true })
+  @ManyToOne(() => Player, { nullable: true, onDelete: "SET NULL", eager: true })
   @JoinColumn({ name: "playerId" })
-  player!: Player;
+  player?: Player | null;
+
+  @ManyToOne(() => Profesor, { nullable: true, onDelete: "SET NULL", eager: true })
+  @JoinColumn({ name: "profesorId" })
+  profesor?: Profesor | null;
 
   @Column({ type: "timestamptz" })
   startTime!: Date;

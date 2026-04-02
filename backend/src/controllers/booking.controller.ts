@@ -8,15 +8,16 @@ function getService() {
 }
 
 export const createBooking = async (req: Request, res: Response) => {
-  const { courtId, playerId, startTime, endTime, isRecurring } = req.body;
-  if (!courtId || !playerId || !startTime || !endTime) {
+  const { courtId, playerId, profesorId, startTime, endTime, isRecurring } = req.body;
+  if (!courtId || (!playerId && !profesorId) || !startTime || !endTime) {
     res.status(400).json({ error: "Faltan campos requeridos" });
     return;
   }
   try {
     const result = await getService().create({
       courtId: Number(courtId),
-      playerId: Number(playerId),
+      playerId: playerId ? Number(playerId) : undefined,
+      profesorId: profesorId ? Number(profesorId) : undefined,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       isRecurring: Boolean(isRecurring),
@@ -25,6 +26,17 @@ export const createBooking = async (req: Request, res: Response) => {
   } catch (err: any) {
     const status = err.message.includes("ya está reservado") || err.message.includes("todos los horarios") ? 409 : 500;
     res.status(status).json({ error: err.message });
+  }
+};
+
+export const getBookingsByProfesor = async (req: Request, res: Response) => {
+  const profesorId = Number(req.params.profesorId);
+  if (isNaN(profesorId)) { res.status(400).json({ error: "profesorId inválido" }); return; }
+  try {
+    const bookings = await getService().getByProfesorId(profesorId);
+    res.json(bookings);
+  } catch {
+    res.status(500).json({ error: "Error al obtener reservas del profesor" });
   }
 };
 

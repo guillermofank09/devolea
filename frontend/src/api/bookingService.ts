@@ -9,6 +9,11 @@ export async function fetchBookingsByCourt(courtId: number): Promise<Booking[]> 
   return res.data;
 }
 
+export async function fetchBookingsByProfesor(profesorId: number): Promise<Booking[]> {
+  const res = await axios.get(`${API_URL}/bookings/profesor/${profesorId}`);
+  return res.data;
+}
+
 export async function createBooking(data: CreateBookingDto): Promise<Booking> {
   const res = await axios.post(`${API_URL}/bookings`, data);
   return res.data;

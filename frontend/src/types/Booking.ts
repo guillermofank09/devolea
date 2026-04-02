@@ -1,12 +1,14 @@
 import type { Court } from "./Court";
 import type { Player } from "./Player";
+import type { Profesor } from "./Profesor";
 
 export type BookingStatus = "CONFIRMED" | "CANCELLED";
 
 export interface Booking {
   id: number;
   court: Court;
-  player: Player;
+  player?: Player | null;
+  profesor?: Profesor | null;
   startTime: string;
   endTime: string;
   status: BookingStatus;
@@ -17,7 +19,8 @@ export interface Booking {
 
 export interface CreateBookingDto {
   courtId: number;
-  playerId: number;
+  playerId?: number;
+  profesorId?: number;
   startTime: string;
   endTime: string;
   isRecurring?: boolean;

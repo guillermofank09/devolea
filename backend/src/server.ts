@@ -8,6 +8,7 @@ import clubProfileRoutes from "./routes/clubProfile.routes";
 import appSettingsRoutes from "./routes/appSettings.routes";
 import authRoutes from "./routes/auth.routes";
 import statsRoutes from "./routes/stats.routes";
+import profesorRoutes from "./routes/profesor.routes";
 import { AppDataSource } from "./data-source";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api", clubProfileRoutes);
 app.use("/api", appSettingsRoutes);
 app.use("/api", authRoutes);
 app.use("/api", statsRoutes);
+app.use("/api", profesorRoutes);
 
 // Local development only — Vercel sets VERCEL=1 automatically.
 if (!process.env.VERCEL) {

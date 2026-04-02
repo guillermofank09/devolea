@@ -12,10 +12,11 @@ import Logout from './pages/logout';
 import Login from './pages/login';
 import Register from './pages/register';
 import Stats from './pages/stats';
+import Profesores from './pages/profesores';
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
-type NavKey = 'canchas' | 'jugadores' | 'torneos';
+type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
 
 function ProtectedApp() {
   const navigate = useNavigate();
@@ -25,12 +26,14 @@ function ProtectedApp() {
   const activeSection: NavKey =
     location.pathname.startsWith('/players') ? 'jugadores' :
     location.pathname.startsWith('/tournaments') ? 'torneos' :
+    location.pathname.startsWith('/profesores') ? 'profesores' :
     'canchas';
 
   const handleSelect = (key: NavKey) => {
     if (key === 'canchas') navigate('/');
     else if (key === 'jugadores') navigate('/players');
     else if (key === 'torneos') navigate('/tournaments');
+    else if (key === 'profesores') navigate('/profesores');
   };
 
   return (
@@ -54,6 +57,7 @@ function ProtectedApp() {
             <Route path="/tournaments/:id" element={<TournamentDetail />} />
             <Route path="/profile"  element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/profesores" element={<Profesores />} />
             <Route path="/stats"    element={<Stats />} />
             <Route path="/logout"   element={<Logout />} />
             <Route path="*" element={<Navigate to="/" replace />} />

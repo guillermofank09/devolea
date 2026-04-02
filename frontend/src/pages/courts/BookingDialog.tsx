@@ -14,6 +14,8 @@ import {
   FormControlLabel,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -21,10 +23,14 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import PersonIcon from "@mui/icons-material/Person";
+import SchoolIcon from "@mui/icons-material/School";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers } from "../../api/playerService";
+import { fetchProfesores } from "../../api/profesorService";
 import { createBooking } from "../../api/bookingService";
 import type { Player, PlayerCategory } from "../../types/Player";
+import type { Profesor } from "../../types/Profesor";
 import AddEditPlayer from "../players/AddEditPlayer";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
@@ -67,7 +73,9 @@ interface Props {
 }
 
 export default function BookingDialog({ open, onClose, slot, courtId, onBooked }: Props) {
+  const [bookingType, setBookingType] = useState<"player" | "profesor">("player");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedProfesor, setSelectedProfesor] = useState<Profesor | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
@@ -75,11 +83,19 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
 
   const queryClient = useQueryClient();
 
-  const { data: players = [], isFetching } = useQuery<Player[]>({
+  const { data: players = [], isFetching: fetchingPlayers } = useQuery<Player[]>({
     queryKey: ["playersData"],
     queryFn: () => fetchPlayers(),
-    enabled: open,
+    enabled: open && bookingType === "player",
   });
+
+  const { data: profesores = [], isFetching: fetchingProfesores } = useQuery<Profesor[]>({
+    queryKey: ["profesoresData"],
+    queryFn: () => fetchProfesores(),
+    enabled: open && bookingType === "profesor",
+  });
+
+  const isFetching = fetchingPlayers || fetchingProfesores;
 
   // Filter locally by what the user typed
   const filteredPlayers = useMemo(
@@ -119,18 +135,23 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
 
   const handleClose = () => {
     setSelectedPlayer(null);
+    setSelectedProfesor(null);
     setInputValue("");
     setIsRecurring(false);
     setBookingError(null);
+    setBookingType("player");
     onClose();
   };
 
   const handleSubmit = () => {
-    if (!selectedPlayer || !slot) return;
+    if (!slot) return;
+    if (bookingType === "player" && !selectedPlayer) return;
+    if (bookingType === "profesor" && !selectedProfesor) return;
     setBookingError(null);
     bookMutation.mutate({
       courtId,
-      playerId: selectedPlayer.id,
+      playerId: bookingType === "player" ? selectedPlayer!.id : undefined,
+      profesorId: bookingType === "profesor" ? selectedProfesor!.id : undefined,
       startTime: slot.start.toISOString(),
       endTime: slot.end.toISOString(),
       isRecurring,
@@ -149,6 +170,29 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
         <DialogTitle sx={{ pb: 1 }}>Reservar turno</DialogTitle>
 
         <DialogContent>
+          {/* Booking type toggle */}
+          <ToggleButtonGroup
+            value={bookingType}
+            exclusive
+            onChange={(_, val) => {
+              if (!val) return;
+              setBookingType(val);
+              setSelectedPlayer(null);
+              setSelectedProfesor(null);
+              setInputValue("");
+            }}
+            size="small"
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="player" sx={{ textTransform: "none", fontWeight: 600, gap: 0.75 }}>
+              <PersonIcon fontSize="small" /> Jugador
+            </ToggleButton>
+            <ToggleButton value="profesor" sx={{ textTransform: "none", fontWeight: 600, gap: 0.75 }}>
+              <SchoolIcon fontSize="small" /> Clase (Profesor)
+            </ToggleButton>
+          </ToggleButtonGroup>
+
           {/* Date/time summary */}
           {slot && (
             <Box
@@ -179,117 +223,154 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
           )}
 
           {/* Player autocomplete */}
-          <Autocomplete<Player | { id: typeof CREATE_OPTION_ID; name: string }>
-            options={options}
-            getOptionLabel={(opt) =>
-              opt.id === CREATE_OPTION_ID ? `Agregar "${opt.name}"` : (opt as Player).name
-            }
-            filterOptions={(x) => x} // filtering done manually above
-            value={selectedPlayer}
-            inputValue={inputValue}
-            onInputChange={(_, val) => setInputValue(val)}
-            onChange={(_, val) => {
-              if (!val) { setSelectedPlayer(null); return; }
-              if (val.id === CREATE_OPTION_ID) {
-                setCreatePlayerOpen(true);
-              } else {
-                setSelectedPlayer(val as Player);
-              }
-            }}
-            loading={isFetching}
-            noOptionsText="No se encontraron jugadores"
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Jugador"
-                placeholder="Buscar por nombre..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {isFetching && <CircularProgress size={16} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+          {bookingType === "player" && (
+            <>
+              <Autocomplete<Player | { id: typeof CREATE_OPTION_ID; name: string }>
+                options={options}
+                getOptionLabel={(opt) =>
+                  opt.id === CREATE_OPTION_ID ? `Agregar "${opt.name}"` : (opt as Player).name
+                }
+                filterOptions={(x) => x}
+                value={selectedPlayer}
+                inputValue={inputValue}
+                onInputChange={(_, val) => setInputValue(val)}
+                onChange={(_, val) => {
+                  if (!val) { setSelectedPlayer(null); return; }
+                  if (val.id === CREATE_OPTION_ID) {
+                    setCreatePlayerOpen(true);
+                  } else {
+                    setSelectedPlayer(val as Player);
+                  }
+                }}
+                loading={fetchingPlayers}
+                noOptionsText="No se encontraron jugadores"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Jugador"
+                    placeholder="Buscar por nombre..."
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {fetchingPlayers && <CircularProgress size={16} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, option) => {
+                  const { key, ...rest } = props as any;
+                  if (option.id === CREATE_OPTION_ID) {
+                    return (
+                      <li key="create" {...rest}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "primary.main", fontWeight: 600 }}>
+                          <PersonAddIcon fontSize="small" />
+                          <Typography variant="body2" fontWeight={600}>
+                            Agregar "{option.name}" como nuevo jugador
+                          </Typography>
+                        </Box>
+                      </li>
+                    );
+                  }
+                  const p = option as Player;
+                  return (
+                    <li key={p.id} {...rest}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: "0.75rem", fontWeight: 700, bgcolor: stringToColor(p.name), flexShrink: 0 }}>
+                          {getInitials(p.name)}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{p.city}</Typography>
+                        </Box>
+                        <Chip label={CATEGORY_LABEL[p.category]} color={CATEGORY_COLOR[p.category]} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
+                      </Box>
+                    </li>
+                  );
                 }}
               />
-            )}
-            renderOption={(props, option) => {
-              const { key, ...rest } = props as any;
-              if (option.id === CREATE_OPTION_ID) {
-                return (
-                  <li key="create" {...rest}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        color: "primary.main",
-                        fontWeight: 600,
-                      }}
-                    >
-                      <PersonAddIcon fontSize="small" />
-                      <Typography variant="body2" fontWeight={600}>
-                        Agregar "{option.name}" como nuevo jugador
-                      </Typography>
-                    </Box>
-                  </li>
-                );
-              }
-              const p = option as Player;
-              return (
-                <li key={p.id} {...rest}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
-                    <Avatar
-                      sx={{
-                        width: 32, height: 32, fontSize: "0.75rem",
-                        fontWeight: 700, bgcolor: stringToColor(p.name), flexShrink: 0,
-                      }}
-                    >
-                      {getInitials(p.name)}
+              {selectedPlayer && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar sx={{ bgcolor: stringToColor(selectedPlayer.name), width: 40, height: 40, fontWeight: 700 }}>
+                      {getInitials(selectedPlayer.name)}
                     </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {p.name}
-                      </Typography>
+                    <Box>
+                      <Typography variant="body2" fontWeight={700}>{selectedPlayer.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {p.city}
+                        {selectedPlayer.city} · Cat. {CATEGORY_LABEL[selectedPlayer.category]}
                       </Typography>
                     </Box>
-                    <Chip
-                      label={CATEGORY_LABEL[p.category]}
-                      color={CATEGORY_COLOR[p.category]}
-                      size="small"
-                      sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-                    />
                   </Box>
-                </li>
-              );
-            }}
-          />
+                </>
+              )}
+            </>
+          )}
 
-          {/* Selected player preview */}
-          {selectedPlayer && (
+          {/* Profesor autocomplete */}
+          {bookingType === "profesor" && (
             <>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: stringToColor(selectedPlayer.name),
-                    width: 40, height: 40, fontWeight: 700,
-                  }}
-                >
-                  {getInitials(selectedPlayer.name)}
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" fontWeight={700}>
-                    {selectedPlayer.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {selectedPlayer.city} · Cat. {CATEGORY_LABEL[selectedPlayer.category]}
-                  </Typography>
-                </Box>
-              </Box>
+              <Autocomplete<Profesor>
+                options={profesores}
+                getOptionLabel={(p) => p.name}
+                value={selectedProfesor}
+                inputValue={inputValue}
+                onInputChange={(_, val) => setInputValue(val)}
+                onChange={(_, val) => setSelectedProfesor(val)}
+                loading={fetchingProfesores}
+                noOptionsText="No se encontraron profesores"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Profesor"
+                    placeholder="Buscar por nombre..."
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {fetchingProfesores && <CircularProgress size={16} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, p) => {
+                  const { key, ...rest } = props as any;
+                  return (
+                    <li key={p.id} {...rest}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: "0.75rem", fontWeight: 700, bgcolor: stringToColor(p.name), flexShrink: 0 }}>
+                          {getInitials(p.name)}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
+                          {p.phone && <Typography variant="caption" color="text.secondary">{p.phone}</Typography>}
+                        </Box>
+                      </Box>
+                    </li>
+                  );
+                }}
+              />
+              {selectedProfesor && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar sx={{ bgcolor: stringToColor(selectedProfesor.name), width: 40, height: 40, fontWeight: 700 }}>
+                      {getInitials(selectedProfesor.name)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight={700}>{selectedProfesor.name}</Typography>
+                      {selectedProfesor.phone && (
+                        <Typography variant="caption" color="text.secondary">{selectedProfesor.phone}</Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </>
+              )}
             </>
           )}
 
@@ -361,7 +442,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={!selectedPlayer || bookMutation.isPending}
+            disabled={(bookingType === "player" ? !selectedPlayer : !selectedProfesor) || bookMutation.isPending}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
             {bookMutation.isPending ? <CircularProgress size={18} /> : "Confirmar reserva"}

@@ -3,7 +3,8 @@ import { Booking } from "../entities/Booking";
 
 export interface CreateBookingDto {
   courtId: number;
-  playerId: number;
+  playerId?: number;
+  profesorId?: number;
   startTime: Date;
   endTime: Date;
   isRecurring?: boolean;
@@ -40,7 +41,8 @@ export class BookingService {
       }
       const booking = this.repo.create({
         court: { id: dto.courtId } as any,
-        player: { id: dto.playerId } as any,
+        player: dto.playerId ? { id: dto.playerId } as any : null,
+        profesor: dto.profesorId ? { id: dto.profesorId } as any : null,
         startTime: dto.startTime,
         endTime: dto.endTime,
         status: "CONFIRMED",
@@ -63,7 +65,8 @@ export class BookingService {
 
       const booking = this.repo.create({
         court: { id: dto.courtId } as any,
-        player: { id: dto.playerId } as any,
+        player: dto.playerId ? { id: dto.playerId } as any : null,
+        profesor: dto.profesorId ? { id: dto.profesorId } as any : null,
         startTime: start,
         endTime: end,
         status: "CONFIRMED",
@@ -102,6 +105,13 @@ export class BookingService {
       { status: "CANCELLED" }
     );
     return result.affected ?? 0;
+  }
+
+  async getByProfesorId(profesorId: number): Promise<Booking[]> {
+    return await this.repo.find({
+      where: { profesor: { id: profesorId }, status: Not("CANCELLED") },
+      order: { startTime: "ASC" },
+    });
   }
 
   async delete(id: number): Promise<void> {

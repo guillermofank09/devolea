@@ -6,11 +6,12 @@ import {
   faThLarge,
   faUserFriends,
   faTrophy,
+  faChalkboardTeacher,
   faAngleLeft,
   faAngleRight,
 } from '@fortawesome/free-solid-svg-icons';
 
-type NavKey = 'canchas' | 'jugadores' | 'torneos';
+type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
 
 interface Props {
   initialActive?: NavKey;
@@ -21,9 +22,10 @@ interface Props {
 }
 
 const NAV_ITEMS: { key: NavKey; label: string; icon: IconProp }[] = [
-  { key: 'canchas',   label: 'Canchas',   icon: faThLarge     },
-  { key: 'jugadores', label: 'Jugadores', icon: faUserFriends },
-  { key: 'torneos',   label: 'Torneos',   icon: faTrophy      },
+  { key: 'canchas',    label: 'Canchas',    icon: faThLarge            },
+  { key: 'jugadores',  label: 'Jugadores',  icon: faUserFriends        },
+  { key: 'profesores', label: 'Profesores', icon: faChalkboardTeacher  },
+  { key: 'torneos',    label: 'Torneos',    icon: faTrophy             },
 ];
 
 const Sidebar: React.FC<Props> = ({

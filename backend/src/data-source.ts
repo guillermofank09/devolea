@@ -9,8 +9,9 @@ import { TournamentMatch } from "./entities/TournamentMatch";
 import { ClubProfile } from "./entities/ClubProfile";
 import { AppSettings } from "./entities/AppSettings";
 import { User } from "./entities/User";
+import { Profesor } from "./entities/Profesor";
 
-const entities = [Court, Player, Booking, Tournament, Pair, TournamentMatch, ClubProfile, AppSettings, User];
+const entities = [Court, Player, Booking, Tournament, Pair, TournamentMatch, ClubProfile, AppSettings, User, Profesor];
 
 // Production (Vercel): DATABASE_URL is a Neon connection string (requires SSL).
 // Development (Docker): individual DB_* env vars.
