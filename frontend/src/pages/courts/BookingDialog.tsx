@@ -95,8 +95,6 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
     enabled: open && bookingType === "profesor",
   });
 
-  const isFetching = fetchingPlayers || fetchingProfesores;
-
   // Filter locally by what the user typed
   const filteredPlayers = useMemo(
     () =>
