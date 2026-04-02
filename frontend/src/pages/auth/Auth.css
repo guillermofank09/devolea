@@ -1,0 +1,148 @@
+/* ─── Auth pages (Login / Register) ────────────────────────────────────────── */
+.auth-root {
+  min-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: stretch;
+  background: #0a0a0a;
+}
+
+/* ── Left panel — branding (hidden on mobile) ────────────────────────────── */
+.auth-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 52px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Court lines decoration */
+.auth-side::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 110%, rgba(245, 173, 39, 0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 90% 10%,  rgba(245, 173, 39, 0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.auth-side-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  pointer-events: none;
+}
+
+.auth-side-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-side-logo {
+  height: 40px;
+  display: block;
+  /* white version on dark bg */
+  filter: brightness(10);
+  opacity: 0.9;
+}
+
+.auth-side-heading {
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #ffffff;
+  letter-spacing: -1px;
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+}
+
+.auth-side-heading span {
+  color: #F5AD27;
+}
+
+.auth-side-sub {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 340px;
+}
+
+.auth-side-footer {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Right panel — form ──────────────────────────────────────────────────── */
+.auth-form-panel {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 52px;
+  box-sizing: border-box;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form-logo {
+  height: 40px;
+  display: block;
+  margin-bottom: 36px;
+}
+
+.auth-form-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #111111;
+  margin: 0 0 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.auth-form-sub {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 32px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .auth-side {
+    display: none;
+  }
+
+  .auth-form-panel {
+    max-width: 100%;
+    padding: 40px 28px;
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .auth-form-logo {
+    margin-bottom: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-form-panel {
+    padding: 36px 20px;
+    padding-bottom: max(36px, env(safe-area-inset-bottom));
+    padding-top: 52px;
+  }
+}
