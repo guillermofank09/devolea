@@ -3,6 +3,8 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   CircularProgress,
   Divider,
   IconButton,
@@ -15,28 +17,6 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo.png";
-import logoWhite from "../../assets/logo-white.png";
-import "../auth/Auth.css";
-
-// Court lines SVG (same style as landing footer net)
-function CourtLines() {
-  return (
-    <svg className="auth-side-lines" viewBox="0 0 500 700" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      {/* Outer court */}
-      <rect x="40" y="60" width="420" height="580" fill="none" stroke="white" strokeWidth="1.5" />
-      {/* Service boxes */}
-      <line x1="40" y1="350" x2="460" y2="350" stroke="white" strokeWidth="1" />
-      <line x1="250" y1="60" x2="250" y2="640" stroke="white" strokeWidth="1" />
-      {/* Net */}
-      <line x1="40" y1="350" x2="460" y2="350" stroke="white" strokeWidth="3" />
-      {/* Net mesh */}
-      {Array.from({ length: 18 }, (_, i) => (
-        <line key={i} x1={60 + i * 23} y1="344" x2={60 + i * 23} y2="356"
-          stroke="white" strokeWidth="0.8" />
-      ))}
-    </svg>
-  );
-}
 
 export default function Login() {
   const { login } = useAuth();
@@ -56,39 +36,44 @@ export default function Login() {
       await login(email, password);
       navigate("/");
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Email o contraseña incorrectos.");
+      setError(err?.response?.data?.message ?? "Error al iniciar sesión. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="auth-root">
-      {/* ── Left branding panel ── */}
-      <aside className="auth-side">
-        <CourtLines />
-        <div className="auth-side-content">
-          <img src={logoWhite} alt="Devolea" className="auth-side-logo" />
-          <h1 className="auth-side-heading">
-            Gestioná tus canchas<br />
-            <span>más fácilmente</span>
-          </h1>
-          <p className="auth-side-sub">
-            Reservas, torneos, jugadores y estadísticas. Todo lo que necesitás para tu complejo de pádel.
-          </p>
-        </div>
-        <p className="auth-side-footer">
-          © {new Date().getFullYear()} Devolea
-        </p>
-      </aside>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "#f5f6fa",
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Card
+        elevation={0}
+        sx={{
+          width: "100%",
+          maxWidth: 480,
+          border: "1.5px solid",
+          borderColor: "divider",
+          borderRadius: 3,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+            <img src={logo} alt="Devolea" style={{ height: 48 }} />
+          </Box>
 
-      {/* ── Right form panel ── */}
-      <div className="auth-form-panel">
-        <div className="auth-form-inner">
-          <img src={logo} alt="Devolea" className="auth-form-logo" />
-
-          <h2 className="auth-form-title">Iniciar sesión</h2>
-          <p className="auth-form-sub">Ingresá con tu cuenta para continuar</p>
+          <Typography variant="h5" fontWeight={800} textAlign="center" mb={0.75} letterSpacing="-0.5px">
+            Iniciar sesión
+          </Typography>
+          <Typography variant="body2" color="text.secondary" textAlign="center" mb={4}>
+            Ingresá con tu cuenta para continuar
+          </Typography>
 
           {error && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
@@ -96,11 +81,7 @@ export default function Login() {
             </Alert>
           )}
 
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
-          >
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <TextField
               label="Email"
               type="email"
@@ -143,7 +124,7 @@ export default function Login() {
             </Button>
           </Box>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3.5 }} />
 
           <Typography variant="body2" textAlign="center" color="text.secondary">
             ¿No tenés cuenta?{" "}
@@ -158,8 +139,8 @@ export default function Login() {
               Registrarse
             </Typography>
           </Typography>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
