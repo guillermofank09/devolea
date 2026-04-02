@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import Landing from './pages/landing';
 import Header from './components/common/header';
 import Sidebar from './components/sidebar';
 import Courts from './pages/courts';
@@ -71,14 +72,22 @@ function ProtectedApp() {
 function App() {
   const { isAuthenticated } = useAuth();
 
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/"         element={<Landing />} />
+        <Route path="/login"    element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*"         element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
-      <Route path="/login"    element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
-      <Route
-        path="/*"
-        element={isAuthenticated ? <ProtectedApp /> : <Navigate to="/login" replace />}
-      />
+      <Route path="/login"    element={<Navigate to="/" replace />} />
+      <Route path="/register" element={<Navigate to="/" replace />} />
+      <Route path="/*"        element={<ProtectedApp />} />
     </Routes>
   );
 }
