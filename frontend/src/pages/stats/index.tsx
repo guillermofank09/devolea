@@ -183,13 +183,15 @@ function OccupancyChart({
   // Assign palette colors to each court
   const slices = data.map((d, i) => ({ ...d, color: PALETTE[i % PALETTE.length] }));
 
+  type DonutSlice = (typeof slices)[number] & { startAngle: number; endAngle: number };
+
   // Build donut slices only when there are bookings
-  let donutSlices: typeof slices & { startAngle: number; endAngle: number }[] = [];
+  let donutSlices: DonutSlice[] = [];
   if (hasBookings) {
     let cursor = 0;
     donutSlices = slices.map((s) => {
       const sweep = (s.share / 100) * 360;
-      const slice = { ...s, startAngle: cursor, endAngle: cursor + sweep };
+      const slice: DonutSlice = { ...s, startAngle: cursor, endAngle: cursor + sweep };
       cursor += sweep;
       return slice;
     });
