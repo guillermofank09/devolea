@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 /* ─── Landing page — base ───────────────────────────────────────────────────── */
 .lp {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -310,7 +312,6 @@
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.7;
   margin: 0 auto 44px;
-  max-width: 540px;
 }
 
 .lp-hero-cta {
@@ -410,7 +411,6 @@
   font-size: 16px;
   color: #64748b;
   line-height: 1.72;
-  max-width: 520px;
   margin: 0 auto;
 }
 
