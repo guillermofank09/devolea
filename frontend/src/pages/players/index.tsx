@@ -17,7 +17,7 @@ import { fetchPlayers, deletePlayer } from "../../api/playerService";
 import type { Player } from "../../types/Player";
 import PlayerTable from "./PlayerTable";
 import AddEditPlayer from "./AddEditPlayer";
-import DeleteConfirmation from "../courts/DeleteCourt";
+import DeleteDialog from "../../components/common/DeleteDialog";
 import PageHeader from "../../components/common/PageHeader";
 
 export default function Players() {
@@ -140,10 +140,13 @@ export default function Players() {
         player={selectedPlayer}
       />
 
-      <DeleteConfirmation
+      <DeleteDialog
         open={!!deleteTarget}
+        title="Eliminar jugador"
+        description={`¿Estás seguro de que querés eliminar a ${deleteTarget?.name ?? "este jugador"}? Esta acción no se puede deshacer.`}
+        loading={deleteMutation.isPending}
         onClose={() => setDeleteTarget(null)}
-        onDelete={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
     </Box>
   );
