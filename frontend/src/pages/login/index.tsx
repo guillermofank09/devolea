@@ -3,8 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   CircularProgress,
   IconButton,
   InputAdornment,
@@ -49,82 +47,83 @@ export default function Login() {
         alignItems: "center",
         justifyContent: "center",
         bgcolor: "#f5f6fa",
-        p: { xs: 2, sm: 3 },
+        p: 2,
       }}
     >
-      <Card
-        elevation={0}
+      <Box
         sx={{
           width: "100%",
-          maxWidth: 480,
+          maxWidth: 420,
+          bgcolor: "background.paper",
           border: "1.5px solid",
           borderColor: "divider",
           borderRadius: 3,
+          boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
+          px: { xs: 3, sm: 5 },
+          py: { xs: 4, sm: 5 },
         }}
       >
-        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-            <img src={logo} alt="Devolea" style={{ height: 48 }} />
-          </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+          <img src={logo} alt="Devolea" style={{ height: 44 }} />
+        </Box>
 
-          <Typography variant="h5" fontWeight={800} textAlign="center" mb={0.75} letterSpacing="-0.5px">
-            Iniciar sesión
-          </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign="center" mb={4}>
-            Ingresá con tu usuario y contraseña para continuar
-          </Typography>
+        <Typography variant="h5" fontWeight={800} textAlign="center" mb={0.75} letterSpacing="-0.5px">
+          Iniciar sesión
+        </Typography>
+        <Typography variant="body2" color="text.secondary" textAlign="center" mb={4}>
+          Ingresá con tu usuario y contraseña para continuar
+        </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <TextField
-              label="Usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-              autoComplete="username"
-              fullWidth
-            />
-            <TextField
-              label="Contraseña"
-              type={showPass ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              fullWidth
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
-                        {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <TextField
+            label="Usuario"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            autoFocus
+            autoComplete="username"
+            fullWidth
+          />
+          <TextField
+            label="Contraseña"
+            type={showPass ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            fullWidth
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
+                      {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
 
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading}
-              fullWidth
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, mt: 0.5, py: 1.5 }}
-              startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
-            >
-              {loading ? "Ingresando…" : "Ingresar"}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={loading}
+            fullWidth
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, py: 1.5 }}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
+          >
+            {loading ? "Ingresando…" : "Ingresar"}
+          </Button>
+        </Box>
+      </Box>
     </Box>
   );
 }
