@@ -14,12 +14,14 @@ function getService() {
 }
 
 export const createTournament = async (req: Request, res: Response) => {
-  try { res.status(201).json(await getService().create(req.body)); }
+  const userId = req.authUser!.sub;
+  try { res.status(201).json(await getService().create(req.body, userId)); }
   catch (e: any) { res.status(500).json({ error: e.message }); }
 };
 
-export const getTournaments = async (_: Request, res: Response) => {
-  try { res.json(await getService().getAll()); }
+export const getTournaments = async (req: Request, res: Response) => {
+  const userId = req.authUser!.sub;
+  try { res.json(await getService().getAll(userId)); }
   catch (e: any) { res.status(500).json({ error: e.message }); }
 };
 
@@ -56,16 +58,16 @@ export const removePair = async (req: Request, res: Response) => {
 };
 
 export const generateMatches = async (req: Request, res: Response) => {
-  const { startTime } = req.body;
+  const { startTime, courtId, matchDuration } = req.body;
   if (!startTime) return res.status(400).json({ error: "startTime requerido" });
-  try { res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime))); }
+  try { res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), courtId ?? null, matchDuration ?? 90)); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
 export const nextRound = async (req: Request, res: Response) => {
-  const { startTime } = req.body;
+  const { startTime, matchDuration } = req.body;
   if (!startTime) return res.status(400).json({ error: "startTime requerido" });
-  try { res.json(await getService().nextRound(Number(req.params.id), new Date(startTime))); }
+  try { res.json(await getService().nextRound(Number(req.params.id), new Date(startTime), matchDuration ?? 90)); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 

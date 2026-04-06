@@ -14,6 +14,8 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlayer, updatePlayer } from "../../api/playerService";
@@ -96,6 +98,8 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
   const [cityLoading, setCityLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isEditing = !!player;
 
@@ -168,7 +172,8 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      fullScreen={fullScreen}
+      PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}
     >
       <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
         {isEditing ? "Editar Jugador" : "Agregar Jugador"}
@@ -311,9 +316,10 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
           <Button
             onClick={onClose}
+            fullWidth={fullScreen}
             sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}
           >
             Cancelar
@@ -322,6 +328,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
             variant="contained"
             type="submit"
             disabled={!isValid || mutation.isPending}
+            fullWidth={fullScreen}
             startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
           >

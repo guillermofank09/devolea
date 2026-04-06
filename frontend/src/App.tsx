@@ -14,15 +14,37 @@ import Login from './pages/login';
 import Register from './pages/register';
 import Stats from './pages/stats';
 import Profesores from './pages/profesores';
+import AdminUsers from './pages/admin/users';
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
 type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
 
+function SuperAdminApp() {
+  const { user } = useAuth();
+  if (user?.role !== "superadmin") return <Navigate to="/" replace />;
+  return (
+    <div className="root-layout">
+      <Header onMenuClick={() => {}} />
+      <div className="body-area">
+        <main className="page-main">
+          <Routes>
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="*" element={<Navigate to="/admin/users" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (user?.role === "superadmin") return <SuperAdminApp />;
 
   const activeSection: NavKey =
     location.pathname.startsWith('/players') ? 'jugadores' :
@@ -78,7 +100,7 @@ function App() {
         <Route path="/"         element={<Landing />} />
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="*"         element={<Navigate to="/" replace />} />
+        <Route path="*"         element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }

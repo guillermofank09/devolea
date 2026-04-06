@@ -13,6 +13,7 @@ export const createBooking = async (req: Request, res: Response) => {
     res.status(400).json({ error: "Faltan campos requeridos" });
     return;
   }
+  const userId = req.authUser!.sub;
   try {
     const result = await getService().create({
       courtId: Number(courtId),
@@ -22,7 +23,7 @@ export const createBooking = async (req: Request, res: Response) => {
       endTime: new Date(endTime),
       isRecurring: Boolean(isRecurring),
       price: price != null ? Number(price) : undefined,
-    });
+    }, userId);
     res.status(201).json(result);
   } catch (err: any) {
     const status = err.message.includes("ya está reservado") || err.message.includes("todos los horarios") ? 409 : 500;

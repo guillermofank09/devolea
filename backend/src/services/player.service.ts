@@ -13,16 +13,15 @@ export interface CreatePlayerDto {
 export class PlayerService {
   constructor(private repo: Repository<Player>) {}
 
-  async create(dto: CreatePlayerDto): Promise<Player> {
-    const player = this.repo.create(dto);
+  async create(dto: CreatePlayerDto, userId: number): Promise<Player> {
+    const player = this.repo.create({ ...dto, userId });
     return await this.repo.save(player);
   }
 
-  async getAll(search?: string): Promise<Player[]> {
-    return await this.repo.find({
-      where: search ? { name: Like(`%${search}%`) } : {},
-      order: { name: "ASC" },
-    });
+  async getAll(userId: number, search?: string): Promise<Player[]> {
+    const where: any = { userId };
+    if (search) where.name = Like(`%${search}%`);
+    return await this.repo.find({ where, order: { name: "ASC" } });
   }
 
   async getById(id: number): Promise<Player | null> {

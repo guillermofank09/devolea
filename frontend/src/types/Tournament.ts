@@ -33,6 +33,7 @@ export interface TournamentMatch {
   id: number;
   pair1?: Pair | null;
   pair2?: Pair | null;
+  court?: { id: number; name: string } | null;
   scheduledAt?: string | null;
   round: number;
   matchNumber: number;

@@ -17,6 +17,9 @@ export class Court {
   @Column({ default: "TECHADA" })
   type?: CourtType;
 
+  @Column({ nullable: true })
+  userId?: number;
+
   @CreateDateColumn()
   createdAt?: Date;
 }

@@ -9,16 +9,15 @@ export interface CreateProfesorDto {
 export class ProfesorService {
   constructor(private repo: Repository<Profesor>) {}
 
-  async create(dto: CreateProfesorDto): Promise<Profesor> {
-    const profesor = this.repo.create(dto);
+  async create(dto: CreateProfesorDto, userId: number): Promise<Profesor> {
+    const profesor = this.repo.create({ ...dto, userId });
     return await this.repo.save(profesor);
   }
 
-  async getAll(search?: string): Promise<Profesor[]> {
-    return await this.repo.find({
-      where: search ? { name: Like(`%${search}%`) } : {},
-      order: { name: "ASC" },
-    });
+  async getAll(userId: number, search?: string): Promise<Profesor[]> {
+    const where: any = { userId };
+    if (search) where.name = Like(`%${search}%`);
+    return await this.repo.find({ where, order: { name: "ASC" } });
   }
 
   async getById(id: number): Promise<Profesor | null> {

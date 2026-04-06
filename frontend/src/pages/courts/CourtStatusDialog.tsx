@@ -10,6 +10,8 @@ import {
   FormControlLabel,
   Switch,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import BlockIcon from "@mui/icons-material/Block";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,6 +34,8 @@ interface Props {
 }
 
 export default function CourtStatusDialog({ court, open, onClose }: Props) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isManual = court.status === "NOT AVAILABLE";
   const cfg = STATUS_CONFIG[court.status];
@@ -49,7 +53,7 @@ export default function CourtStatusDialog({ court, open, onClose }: Props) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
       <DialogTitle>Estado de {court.name}</DialogTitle>
       <DialogContent>
         {/* Current status */}
@@ -111,8 +115,8 @@ export default function CourtStatusDialog({ court, open, onClose }: Props) {
           </Typography>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} sx={{ textTransform: "none" }}>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={onClose} fullWidth={fullScreen} sx={{ textTransform: "none" }}>
           Cerrar
         </Button>
       </DialogActions>

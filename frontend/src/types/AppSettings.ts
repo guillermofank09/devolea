@@ -3,4 +3,6 @@ export interface AppSettings {
   hourlyRate: number;
   classHourlyRate: number;
   shareSchedules: boolean;
+  tournamentMatchDuration: number;
+  tournamentSetsCount: number;
 }

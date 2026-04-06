@@ -10,13 +10,13 @@ export class TournamentService {
     private mRepo: Repository<TournamentMatch>
   ) {}
 
-  async create(dto: { name: string; category: string; startDate: string; endDate: string }): Promise<Tournament> {
-    const entity = this.tRepo.create(dto as any) as unknown as Tournament;
+  async create(dto: { name: string; category: string; startDate: string; endDate: string }, userId: number): Promise<Tournament> {
+    const entity = this.tRepo.create({ ...dto, userId } as any) as unknown as Tournament;
     return await this.tRepo.save(entity);
   }
 
-  async getAll(): Promise<Tournament[]> {
-    return await this.tRepo.find({ order: { createdAt: "DESC" } });
+  async getAll(userId: number): Promise<Tournament[]> {
+    return await this.tRepo.find({ where: { userId }, order: { createdAt: "DESC" } });
   }
 
   async getById(id: number) {
@@ -69,7 +69,7 @@ export class TournamentService {
     await this.pRepo.delete(pairId);
   }
 
-  async generateMatches(tournamentId: number, startTime: Date): Promise<TournamentMatch[]> {
+  async generateMatches(tournamentId: number, startTime: Date, courtId?: number | null, matchDuration = 90): Promise<TournamentMatch[]> {
     const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
     if (matchCount > 0) throw new Error("Los cruces ya fueron generados");
 
@@ -79,17 +79,18 @@ export class TournamentService {
     const format: TournamentFormat = pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
+    const court = courtId ? { id: courtId } as any : null;
     const toCreate: Partial<TournamentMatch>[] = [];
     const t = { id: tournamentId };
     let time = new Date(startTime);
-    const add90 = () => { time = new Date(time.getTime() + 90 * 60 * 1000); };
+    const addDuration = () => { time = new Date(time.getTime() + matchDuration * 60 * 1000); };
 
     if (format === "ROUND_ROBIN") {
       let matchNum = 1;
       for (let i = 0; i < pairs.length; i++) {
         for (let j = i + 1; j < pairs.length; j++) {
-          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], scheduledAt: new Date(time), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          add90();
+          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court, scheduledAt: new Date(time), round: 1, matchNumber: matchNum++, status: "PENDING" });
+          addDuration();
         }
       }
     } else {
@@ -98,11 +99,11 @@ export class TournamentService {
       let matchNum = 1;
       for (let i = 0; i < shuffled.length; i += 2) {
         if (i + 1 < shuffled.length) {
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], scheduledAt: new Date(time), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          add90();
+          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court, scheduledAt: new Date(time), round: 1, matchNumber: matchNum++, status: "PENDING" });
+          addDuration();
         } else {
           // Bye
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
+          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
         }
       }
     }
@@ -110,7 +111,7 @@ export class TournamentService {
     return await this.mRepo.save(toCreate.map(m => this.mRepo.create(m)));
   }
 
-  async nextRound(tournamentId: number, startTime: Date): Promise<TournamentMatch[]> {
+  async nextRound(tournamentId: number, startTime: Date, matchDuration = 90): Promise<TournamentMatch[]> {
     const matches = await this.mRepo.find({
       where: { tournament: { id: tournamentId } },
       order: { round: "DESC", matchNumber: "ASC" },
@@ -130,14 +131,14 @@ export class TournamentService {
     if (winners.length < 2) throw new Error("No hay suficientes ganadores para generar la siguiente ronda");
 
     let time = new Date(startTime);
-    const add90 = () => { time = new Date(time.getTime() + 90 * 60 * 1000); };
+    const addDuration = () => { time = new Date(time.getTime() + matchDuration * 60 * 1000); };
     const toCreate: Partial<TournamentMatch>[] = [];
     let matchNum = 1;
 
     for (let i = 0; i < winners.length; i += 2) {
       if (i + 1 < winners.length) {
         toCreate.push({ tournament: { id: tournamentId } as any, pair1: winners[i], pair2: winners[i + 1], scheduledAt: new Date(time), round: maxRound + 1, matchNumber: matchNum++, status: "PENDING" });
-        add90();
+        addDuration();
       } else {
         toCreate.push({ tournament: { id: tournamentId } as any, pair1: winners[i], pair2: null, scheduledAt: null, round: maxRound + 1, matchNumber: matchNum++, status: "BYE", winnerId: winners[i].id });
       }
@@ -146,7 +147,7 @@ export class TournamentService {
     return await this.mRepo.save(toCreate.map(m => this.mRepo.create(m)));
   }
 
-  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; winnerId?: number | null; result?: string; status?: string }): Promise<TournamentMatch | null> {
+  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null }): Promise<TournamentMatch | null> {
     const update: any = {};
     if (dto.scheduledAt !== undefined) update.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
     if (dto.pair1Id !== undefined) update.pair1 = dto.pair1Id ? { id: dto.pair1Id } : null;
@@ -154,6 +155,7 @@ export class TournamentService {
     if (dto.winnerId !== undefined) update.winnerId = dto.winnerId;
     if (dto.result !== undefined) update.result = dto.result;
     if (dto.status !== undefined) update.status = dto.status;
+    if (dto.courtId !== undefined) update.court = dto.courtId ? { id: dto.courtId } : null;
     await this.mRepo.save({ id: matchId, ...update });
     return await this.mRepo.findOneBy({ id: matchId });
   }

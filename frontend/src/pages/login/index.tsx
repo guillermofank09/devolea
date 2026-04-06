@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
   IconButton,
   InputAdornment,
   TextField,
@@ -22,7 +21,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail]       = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
@@ -33,7 +32,7 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(username, password);
       navigate("/");
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Error al iniciar sesión. Intentá de nuevo.");
@@ -72,7 +71,7 @@ export default function Login() {
             Iniciar sesión
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign="center" mb={4}>
-            Ingresá con tu cuenta para continuar
+            Ingresá con tu usuario y contraseña para continuar
           </Typography>
 
           {error && (
@@ -83,12 +82,12 @@ export default function Login() {
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
+              autoComplete="username"
               fullWidth
             />
             <TextField
@@ -97,6 +96,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               fullWidth
               slotProps={{
                 input: {
@@ -123,22 +123,6 @@ export default function Login() {
               {loading ? "Ingresando…" : "Ingresar"}
             </Button>
           </Box>
-
-          <Divider sx={{ my: 3.5 }} />
-
-          <Typography variant="body2" textAlign="center" color="text.secondary">
-            ¿No tenés cuenta?{" "}
-            <Typography
-              component="span"
-              variant="body2"
-              color="primary"
-              fontWeight={700}
-              sx={{ cursor: "pointer" }}
-              onClick={() => navigate("/register")}
-            >
-              Registrarse
-            </Typography>
-          </Typography>
         </CardContent>
       </Card>
     </Box>

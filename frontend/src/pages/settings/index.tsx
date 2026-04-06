@@ -11,11 +11,14 @@ import {
   Snackbar,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, saveSettings } from "../../api/settingsService";
 import type { AppSettings } from "../../types/AppSettings";
@@ -67,6 +70,8 @@ export default function Settings() {
   const [hourlyRate, setHourlyRate] = useState<string>("");
   const [classHourlyRate, setClassHourlyRate] = useState<string>("");
   const [shareSchedules, setShareSchedules] = useState<boolean>(false);
+  const [tournamentMatchDuration, setTournamentMatchDuration] = useState<string>("60");
+  const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
   const [snack, setSnack] = useState(false);
 
   useEffect(() => {
@@ -76,6 +81,8 @@ export default function Settings() {
     setHourlyRate(rate > 0 ? String(rate) : "");
     setClassHourlyRate(classRate > 0 ? String(classRate) : "");
     setShareSchedules(data.shareSchedules ?? false);
+    setTournamentMatchDuration(String(data.tournamentMatchDuration ?? 60));
+    setTournamentSetsCount(data.tournamentSetsCount ?? 3);
   }, [data]);
 
   function handleSave() {
@@ -83,6 +90,8 @@ export default function Settings() {
       hourlyRate: Number(hourlyRate) || 0,
       classHourlyRate: Number(classHourlyRate) || 0,
       shareSchedules,
+      tournamentMatchDuration: Number(tournamentMatchDuration) || 60,
+      tournamentSetsCount,
     });
   }
 
@@ -178,6 +187,57 @@ export default function Settings() {
             <Typography variant="body2" color="text.secondary">
               Permite que los clientes vean los turnos disponibles de las canchas.
             </Typography>
+          </Box>
+        </Box>
+      </Section>
+
+      {/* ── Torneos ── */}
+      <Section icon={<EmojiEventsOutlinedIcon />} title="Torneos">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+              Duración de partidos
+            </Typography>
+            <TextField
+              type="text"
+              inputMode="numeric"
+              size="small"
+              value={tournamentMatchDuration}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === "" || /^\d+$/.test(v)) setTournamentMatchDuration(v);
+              }}
+              placeholder="60"
+              slotProps={{
+                input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
+              }}
+              helperText="Tiempo por partido de torneo"
+              sx={{ width: 200 }}
+            />
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+              Cantidad de sets
+            </Typography>
+            <ToggleButtonGroup
+              value={tournamentSetsCount}
+              exclusive
+              onChange={(_, val) => { if (val !== null) setTournamentSetsCount(val); }}
+              size="small"
+              sx={{
+                "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 2 },
+                "& .MuiToggleButton-root.Mui-selected": {
+                  bgcolor: "#F5AD27",
+                  color: "#111",
+                  "&:hover": { bgcolor: "#e09b18" },
+                },
+              }}
+            >
+              <ToggleButton value={1}>Mejor de 1</ToggleButton>
+              <ToggleButton value={3}>Mejor de 3</ToggleButton>
+              <ToggleButton value={5}>Mejor de 5</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
         </Box>
       </Section>

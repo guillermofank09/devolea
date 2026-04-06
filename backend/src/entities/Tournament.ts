@@ -13,5 +13,6 @@ export class Tournament {
   @Column({ type: "date" }) endDate!: string;
   @Column({ default: "DRAFT" }) status!: TournamentStatus;
   @Column({ type: "varchar", nullable: true }) format?: TournamentFormat;
+  @Column({ nullable: true }) userId?: number;
   @CreateDateColumn() createdAt!: Date;
 }

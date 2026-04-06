@@ -35,7 +35,7 @@ export class BookingService {
     return !!overlap;
   }
 
-  async create(dto: CreateBookingDto): Promise<Booking | Booking[]> {
+  async create(dto: CreateBookingDto, userId: number): Promise<Booking | Booking[]> {
     if (!dto.isRecurring) {
       if (await this.hasOverlap(dto.courtId, dto.startTime, dto.endTime)) {
         throw new Error("El horario ya está reservado");
@@ -50,11 +50,11 @@ export class BookingService {
         status: "CONFIRMED",
         isRecurring: false,
         recurringGroupId: null,
+        userId,
       });
       return await this.repo.save(booking);
     }
 
-    // Recurring: create up to 52 weeks, skip weeks with conflicts
     const groupId = generateGroupId();
     const WEEKS = 52;
     const created: Booking[] = [];
@@ -62,9 +62,7 @@ export class BookingService {
     for (let w = 0; w < WEEKS; w++) {
       const start = addWeeks(dto.startTime, w);
       const end   = addWeeks(dto.endTime,   w);
-
       if (await this.hasOverlap(dto.courtId, start, end)) continue;
-
       const booking = this.repo.create({
         court: { id: dto.courtId } as any,
         player: dto.playerId ? { id: dto.playerId } as any : null,
@@ -75,6 +73,7 @@ export class BookingService {
         status: "CONFIRMED",
         isRecurring: true,
         recurringGroupId: groupId,
+        userId,
       });
       created.push(await this.repo.save(booking));
     }
@@ -93,8 +92,11 @@ export class BookingService {
     });
   }
 
-  async getAll(): Promise<Booking[]> {
-    return await this.repo.find({ order: { startTime: "ASC" } });
+  async getByProfesorId(profesorId: number): Promise<Booking[]> {
+    return await this.repo.find({
+      where: { profesor: { id: profesorId }, status: Not("CANCELLED") },
+      order: { startTime: "ASC" },
+    });
   }
 
   async cancel(id: number): Promise<Booking | null> {
@@ -108,13 +110,6 @@ export class BookingService {
       { status: "CANCELLED" }
     );
     return result.affected ?? 0;
-  }
-
-  async getByProfesorId(profesorId: number): Promise<Booking[]> {
-    return await this.repo.find({
-      where: { profesor: { id: profesorId }, status: Not("CANCELLED") },
-      order: { startTime: "ASC" },
-    });
   }
 
   async delete(id: number): Promise<void> {

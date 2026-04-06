@@ -33,6 +33,9 @@ export class Player {
   @Column({ type: "varchar", nullable: true })
   phone?: string;
 
+  @Column({ nullable: true })
+  userId?: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

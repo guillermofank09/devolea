@@ -8,11 +8,13 @@ function getService() {
 }
 
 export async function getSettings(req: Request, res: Response) {
-  const settings = await getService().get();
+  const userId = req.authUser!.sub;
+  const settings = await getService().get(userId);
   res.json(settings);
 }
 
 export async function saveSettings(req: Request, res: Response) {
-  const settings = await getService().save(req.body);
+  const userId = req.authUser!.sub;
+  const settings = await getService().save(req.body, userId);
   res.json(settings);
 }

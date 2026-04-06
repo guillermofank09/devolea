@@ -7,38 +7,87 @@ function getService() {
   return new AuthService(AppDataSource.getRepository(User));
 }
 
-export async function register(req: Request, res: Response) {
-  const { email, name, password } = req.body;
-  if (!email || !name || !password) {
-    res.status(400).json({ message: "Todos los campos son requeridos." });
+export async function login(req: Request, res: Response) {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    res.status(400).json({ message: "Usuario y contraseña son requeridos." });
     return;
   }
   try {
-    const result = await getService().register(email, name, password);
-    res.status(201).json(result);
+    const result = await getService().login(username, password);
+    res.json(result);
   } catch (err: any) {
-    if (err.message === "EMAIL_TAKEN") {
-      res.status(409).json({ message: "El email ya está registrado." });
+    if (err.message === "INVALID_CREDENTIALS") {
+      res.status(401).json({ message: "Usuario o contraseña incorrectos." });
     } else {
-      res.status(500).json({ message: "Error al registrar el usuario." });
+      res.status(500).json({ message: "Error al iniciar sesión." });
     }
   }
 }
 
-export async function login(req: Request, res: Response) {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    res.status(400).json({ message: "Email y contraseña son requeridos." });
+export async function createUser(req: Request, res: Response) {
+  const { username, name, password } = req.body;
+  if (!username || !name || !password) {
+    res.status(400).json({ message: "Todos los campos son requeridos." });
     return;
   }
   try {
-    const result = await getService().login(email, password);
-    res.json(result);
+    const result = await getService().createUser(username, name, password);
+    res.status(201).json(result);
   } catch (err: any) {
-    if (err.message === "INVALID_CREDENTIALS") {
-      res.status(401).json({ message: "Email o contraseña incorrectos." });
+    if (err.message === "USERNAME_TAKEN") {
+      res.status(409).json({ message: "El nombre de usuario ya está en uso." });
     } else {
-      res.status(500).json({ message: "Error al iniciar sesión." });
+      res.status(500).json({ message: "Error al crear el usuario." });
+    }
+  }
+}
+
+export async function getUsers(_req: Request, res: Response) {
+  try {
+    res.json(await getService().getUsers());
+  } catch {
+    res.status(500).json({ message: "Error al obtener los usuarios." });
+  }
+}
+
+export async function updateUser(req: Request, res: Response) {
+  const { name, password } = req.body;
+  try {
+    const user = await getService().updateUser(Number(req.params.id), { name, password });
+    res.json(user);
+  } catch (err: any) {
+    if (err.message === "NOT_FOUND") {
+      res.status(404).json({ message: "Usuario no encontrado." });
+    } else {
+      res.status(500).json({ message: "Error al actualizar el usuario." });
+    }
+  }
+}
+
+export async function deleteUser(req: Request, res: Response) {
+  try {
+    await getService().deleteUser(Number(req.params.id));
+    res.json({ message: "Usuario eliminado." });
+  } catch {
+    res.status(500).json({ message: "Error al eliminar el usuario." });
+  }
+}
+
+export async function initSuperAdmin(req: Request, res: Response) {
+  const { username, name, password } = req.body;
+  if (!username || !name || !password) {
+    res.status(400).json({ message: "Todos los campos son requeridos." });
+    return;
+  }
+  try {
+    const user = await getService().initSuperAdmin(username, name, password);
+    res.status(201).json(user);
+  } catch (err: any) {
+    if (err.message === "ALREADY_INITIALIZED") {
+      res.status(409).json({ message: "Ya existe al menos un usuario registrado." });
+    } else {
+      res.status(500).json({ message: "Error al inicializar." });
     }
   }
 }

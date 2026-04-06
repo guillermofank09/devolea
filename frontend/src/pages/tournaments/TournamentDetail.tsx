@@ -12,16 +12,17 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
   FormLabel,
   IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
-  OutlinedInput,
+  TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
@@ -34,7 +35,7 @@ import PageHeader from "../../components/common/PageHeader";
 import AddPairDialog from "./AddPairDialog";
 import GenerateMatchesDialog from "./GenerateMatchesDialog";
 import EditMatchDialog from "./EditMatchDialog";
-import DeleteConfirmation from "../courts/DeleteCourt";
+import DeleteDialog from "../../components/common/DeleteDialog";
 import BracketView from "./BracketView";
 
 const STATUS_LABEL: Record<TournamentStatus, string> = {
@@ -92,15 +93,20 @@ function NextRoundDialog({
   onClose: () => void;
   tournamentId: number;
 }) {
-  const [startTime, setStartTime] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [startTimeVal, setStartTimeVal] = useState("");
+  const startTime = startDate && startTimeVal ? `${startDate}T${startTimeVal}` : "";
   const [error, setError] = useState<string | null>(null);
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: () => triggerNextRound(tournamentId, new Date(startTime).toISOString()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
-      setStartTime("");
+      setStartDate("");
+      setStartTimeVal("");
       setError(null);
       onClose();
     },
@@ -110,37 +116,48 @@ function NextRoundDialog({
   });
 
   const handleClose = () => {
-    setStartTime("");
+    setStartDate("");
+    setStartTimeVal("");
     setError(null);
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
       <DialogTitle>Siguiente ronda</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
-          <FormControl fullWidth>
-            <FormLabel htmlFor="next-round-time">Fecha y hora de inicio</FormLabel>
-            <OutlinedInput
-              id="next-round-time"
-              type="datetime-local"
-              value={startTime}
-              onChange={e => {
-                setStartTime(e.target.value);
-                setError(null);
-              }}
-            />
-          </FormControl>
+          <Box>
+            <FormLabel sx={{ display: "block", mb: 0.75, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" }}>
+              Fecha y hora de inicio
+            </FormLabel>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                size="small"
+                type="date"
+                fullWidth
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setError(null); }}
+              />
+              <TextField
+                size="small"
+                type="time"
+                value={startTimeVal}
+                onChange={e => { setStartTimeVal(e.target.value); setError(null); }}
+                sx={{ width: 130 }}
+              />
+            </Box>
+          </Box>
           {error && <Typography variant="body2" color="error">{error}</Typography>}
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} sx={{ textTransform: "none" }}>Cancelar</Button>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+        <Button onClick={handleClose} fullWidth={fullScreen} sx={{ textTransform: "none" }}>Cancelar</Button>
         <Button
           variant="contained"
           disabled={!startTime || mutation.isPending}
           onClick={() => mutation.mutate()}
+          fullWidth={fullScreen}
           sx={{ textTransform: "none", fontWeight: 600 }}
         >
           {mutation.isPending ? <CircularProgress size={18} /> : "Generar ronda"}
@@ -382,10 +399,13 @@ export default function TournamentDetail() {
         />
       )}
 
-      <DeleteConfirmation
+      <DeleteDialog
         open={!!deletePairTarget}
+        title="Eliminar pareja"
+        description="¿Estás seguro de que querés eliminar esta pareja del torneo? Esta acción no se puede deshacer."
+        loading={removePairMutation.isPending}
         onClose={() => setDeletePairTarget(null)}
-        onDelete={() => deletePairTarget && removePairMutation.mutate(deletePairTarget.id)}
+        onConfirm={() => deletePairTarget && removePairMutation.mutate(deletePairTarget.id)}
       />
     </Box>
   );
@@ -417,6 +437,11 @@ function MatchCard({ match, onEdit }: { match: TournamentMatch; onEdit: () => vo
           <Typography variant="caption" color="text.secondary">
             {formatScheduledAt(match.scheduledAt)}
           </Typography>
+          {match.court && (
+            <Typography variant="caption" color="text.secondary">
+              · {match.court.name}
+            </Typography>
+          )}
           {match.result && (
             <Typography variant="caption" fontWeight={700} color="text.primary">
               · {match.result}

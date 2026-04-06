@@ -1,18 +1,13 @@
 import { Router } from "express";
-import {
-  createProfesor,
-  getProfesores,
-  getProfesorById,
-  updateProfesor,
-  deleteProfesor,
-} from "../controllers/profesor.controller";
+import { createProfesor, getProfesores, getProfesorById, updateProfesor, deleteProfesor } from "../controllers/profesor.controller";
+import { requireAuth } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.post("/profesores",      createProfesor);
-router.get("/profesores",       getProfesores);
-router.get("/profesores/:id",   getProfesorById);
-router.put("/profesores/:id",   updateProfesor);
-router.delete("/profesores/:id", deleteProfesor);
+router.post("/profesores", requireAuth, createProfesor);
+router.get("/profesores", requireAuth, getProfesores);
+router.get("/profesores/:id", requireAuth, getProfesorById);
+router.put("/profesores/:id", requireAuth, updateProfesor);
+router.delete("/profesores/:id", requireAuth, deleteProfesor);
 
 export default router;

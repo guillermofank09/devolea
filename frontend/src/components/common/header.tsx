@@ -17,6 +17,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "../../context/AuthContext";
 
@@ -26,8 +27,9 @@ interface Props {
 
 const Header = ({ onMenuClick }: Props) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+  const isSuperAdmin = user?.role === "superadmin";
   const open = Boolean(anchor);
 
   const initials = user?.name
@@ -119,36 +121,47 @@ const Header = ({ onMenuClick }: Props) => {
           {user && (
             <Box sx={{ px: 2, pt: 1.25, pb: 1 }}>
               <Typography variant="body2" fontWeight={700} noWrap>{user.name}</Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>{user.email}</Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>@{user.username}</Typography>
             </Box>
           )}
           {user && <Divider sx={{ mb: 0.5 }} />}
 
-          <MenuItem onClick={() => go("/profile")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <PersonOutlineIcon fontSize="small" />
-            </ListItemIcon>
-            <Typography variant="body2" fontWeight={500}>Gestión de Perfil</Typography>
-          </MenuItem>
+          {isSuperAdmin ? (
+            <MenuItem onClick={() => go("/admin/users")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <PeopleOutlineIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2" fontWeight={500}>Gestión de usuarios</Typography>
+            </MenuItem>
+          ) : (
+            <>
+              <MenuItem onClick={() => go("/profile")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <PersonOutlineIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2" fontWeight={500}>Gestión de Perfil</Typography>
+              </MenuItem>
 
-          <MenuItem onClick={() => go("/settings")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <SettingsOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <Typography variant="body2" fontWeight={500}>Ajustes</Typography>
-          </MenuItem>
+              <MenuItem onClick={() => go("/settings")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <SettingsOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2" fontWeight={500}>Ajustes</Typography>
+              </MenuItem>
 
-          <MenuItem onClick={() => go("/stats")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <BarChartOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <Typography variant="body2" fontWeight={500}>Estadísticas</Typography>
-          </MenuItem>
+              <MenuItem onClick={() => go("/stats")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <BarChartOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2" fontWeight={500}>Estadísticas</Typography>
+              </MenuItem>
+            </>
+          )}
 
           <Divider sx={{ my: 0.5 }} />
 
           <MenuItem
-            onClick={() => go("/logout")}
+            onClick={() => { handleClose(); logout(); navigate("/login", { replace: true }); }}
             sx={{ py: 1.25, px: 2, gap: 0.5, color: "error.main" }}
           >
             <ListItemIcon sx={{ minWidth: 36 }}>

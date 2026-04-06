@@ -25,11 +25,11 @@ export const addPair = (tournamentId: number, player1Id: number, player2Id: numb
 export const removePair = (tournamentId: number, pairId: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${tournamentId}/pairs/${pairId}`).then(() => undefined);
 
-export const generateMatches = (tournamentId: number, startTime: string): Promise<TournamentMatch[]> =>
-  axios.post(`${BASE}/tournaments/${tournamentId}/generate`, { startTime }).then(r => r.data);
+export const generateMatches = (tournamentId: number, startTime: string, courtId?: number | null, matchDuration?: number): Promise<TournamentMatch[]> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/generate`, { startTime, courtId, matchDuration }).then(r => r.data);
 
-export const triggerNextRound = (tournamentId: number, startTime: string): Promise<TournamentMatch[]> =>
-  axios.post(`${BASE}/tournaments/${tournamentId}/next-round`, { startTime }).then(r => r.data);
+export const triggerNextRound = (tournamentId: number, startTime: string, matchDuration?: number): Promise<TournamentMatch[]> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/next-round`, { startTime, matchDuration }).then(r => r.data);
 
 export const updateMatch = (matchId: number, data: {
   scheduledAt?: string | null;
@@ -38,5 +38,6 @@ export const updateMatch = (matchId: number, data: {
   winnerId?: number | null;
   result?: string;
   status?: string;
+  courtId?: number | null;
 }): Promise<TournamentMatch> =>
   axios.put(`${BASE}/tournaments/matches/${matchId}`, data).then(r => r.data);

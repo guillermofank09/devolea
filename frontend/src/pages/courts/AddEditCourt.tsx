@@ -12,6 +12,8 @@ import {
   Select,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +35,8 @@ const AddEditCourt = ({
   const [name, setName] = useState(`Cancha ${courtNumber}`);
   const [type, setCourtType] = useState<CourtType>("TECHADA");
   const [open, setOpen] = useState(isEditing);
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
   const handleClickOpen = () => setOpen(true);
@@ -74,7 +78,8 @@ const AddEditCourt = ({
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        fullScreen={fullScreen}
+        PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
           {isEditing ? "Editar Cancha" : "Agregar Cancha"}
@@ -119,9 +124,10 @@ const AddEditCourt = ({
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
             <Button
               onClick={handleClose}
+              fullWidth={fullScreen}
               sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}
             >
               Cancelar
@@ -130,6 +136,7 @@ const AddEditCourt = ({
               variant="contained"
               type="submit"
               disabled={mutation.isPending || !name.trim()}
+              fullWidth={fullScreen}
               startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
               sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
             >

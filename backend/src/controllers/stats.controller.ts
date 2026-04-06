@@ -15,7 +15,8 @@ function getService() {
   );
 }
 
-export async function getRevenue(_req: Request, res: Response) {
-  const stats = await getService().getRevenue();
+export async function getRevenue(req: Request, res: Response) {
+  const userId = req.authUser!.sub;
+  const stats = await getService().getRevenue(userId);
   res.json(stats);
 }

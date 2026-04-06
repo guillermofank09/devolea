@@ -19,6 +19,8 @@ import {
   ToggleButtonGroup,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -76,6 +78,8 @@ interface Props {
 }
 
 export default function BookingDialog({ open, onClose, slot, courtId, onBooked }: Props) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [bookingType, setBookingType] = useState<"player" | "profesor">("player");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedProfesor, setSelectedProfesor] = useState<Profesor | null>(null);
@@ -185,7 +189,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
         <DialogTitle sx={{ pb: 1 }}>Reservar turno</DialogTitle>
 
         <DialogContent>
@@ -477,14 +481,15 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
           )}
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose} sx={{ textTransform: "none" }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+          <Button onClick={handleClose} fullWidth={fullScreen} sx={{ textTransform: "none" }}>
             Cancelar
           </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
             disabled={(bookingType === "player" ? !selectedPlayer : !selectedProfesor) || bookMutation.isPending}
+            fullWidth={fullScreen}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
             {bookMutation.isPending ? <CircularProgress size={18} /> : "Confirmar reserva"}

@@ -6,6 +6,16 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext';
+import axios from 'axios';
+
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('devolea_token');
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const queryClient = new QueryClient()
 

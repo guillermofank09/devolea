@@ -12,6 +12,8 @@ import {
   DialogTitle,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -170,6 +172,8 @@ export default function AddPairDialog({ open, onClose, tournamentId, existingPai
   const [creatingForSlot, setCreatingForSlot] = useState<1 | 2>(1);
   const [_createPlayerName, setCreatePlayerName] = useState("");
 
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
   const { data: players = [], isFetching } = useQuery<Player[]>({
@@ -217,7 +221,7 @@ export default function AddPairDialog({ open, onClose, tournamentId, existingPai
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
         <DialogTitle>Agregar pareja</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 0.5 }}>
@@ -246,14 +250,15 @@ export default function AddPairDialog({ open, onClose, tournamentId, existingPai
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} sx={{ textTransform: "none" }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+          <Button onClick={handleClose} fullWidth={fullScreen} sx={{ textTransform: "none" }}>
             Cancelar
           </Button>
           <Button
             variant="contained"
             disabled={!isValid || mutation.isPending}
             onClick={() => mutation.mutate()}
+            fullWidth={fullScreen}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
             {mutation.isPending ? <CircularProgress size={18} /> : "Agregar pareja"}

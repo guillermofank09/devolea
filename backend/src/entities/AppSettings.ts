@@ -13,4 +13,13 @@ export class AppSettings {
 
   @Column({ default: false })
   shareSchedules!: boolean;
+
+  @Column({ type: "int", default: 60 })
+  tournamentMatchDuration!: number;
+
+  @Column({ type: "int", default: 3 })
+  tournamentSetsCount!: number;
+
+  @Column({ nullable: true })
+  userId?: number;
 }

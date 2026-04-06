@@ -1,13 +1,12 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
-import { apiLogin, apiRegister } from "../api/authService";
+import { apiLogin } from "../api/authService";
 import type { AuthUser } from "../api/authService";
 
 interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, name: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -40,13 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await apiLogin(email, password);
-    persist(res.token, res.user);
-  }, [persist]);
-
-  const register = useCallback(async (email: string, name: string, password: string) => {
-    const res = await apiRegister(email, name, password);
+  const login = useCallback(async (username: string, password: string) => {
+    const res = await apiLogin(username, password);
     persist(res.token, res.user);
   }, [persist]);
 
@@ -58,9 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, login, register, logout, isAuthenticated: !!token }}
-    >
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

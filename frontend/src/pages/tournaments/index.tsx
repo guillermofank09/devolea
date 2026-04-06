@@ -23,7 +23,7 @@ import { fetchTournaments, deleteTournament } from "../../api/tournamentService"
 import type { Tournament, TournamentCategory, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
-import DeleteConfirmation from "../courts/DeleteCourt";
+import DeleteDialog from "../../components/common/DeleteDialog";
 
 const CATEGORY_LABEL: Record<TournamentCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
@@ -201,10 +201,13 @@ export default function Tournaments() {
 
       <AddEditTournament open={addOpen} onClose={() => setAddOpen(false)} />
       <AddEditTournament open={!!editTarget} onClose={() => setEditTarget(null)} tournament={editTarget} />
-      <DeleteConfirmation
+      <DeleteDialog
         open={!!deleteTarget}
+        title="Eliminar torneo"
+        description={`¿Estás seguro de que querés eliminar el torneo "${deleteTarget?.name ?? ""}"? Esta acción no se puede deshacer.`}
+        loading={deleteMutation.isPending}
         onClose={() => setDeleteTarget(null)}
-        onDelete={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
     </Box>
   );

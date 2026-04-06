@@ -6,13 +6,16 @@ export class User {
   id!: number;
 
   @Column({ unique: true })
-  email!: string;
+  username!: string;
 
   @Column()
   name!: string;
 
   @Column()
   password!: string;
+
+  @Column({ default: "user" })
+  role!: "superadmin" | "user";
 
   @CreateDateColumn()
   createdAt!: Date;

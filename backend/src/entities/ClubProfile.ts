@@ -22,4 +22,7 @@ export class ClubProfile {
 
   @Column({ type: "text", nullable: true })
   businessHoursJson!: string;
+
+  @Column({ nullable: true })
+  userId?: number;
 }

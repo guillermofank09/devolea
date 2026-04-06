@@ -8,11 +8,13 @@ function getService() {
 }
 
 export async function getProfile(req: Request, res: Response) {
-  const profile = await getService().get();
+  const userId = req.authUser!.sub;
+  const profile = await getService().get(userId);
   res.json(profile);
 }
 
 export async function saveProfile(req: Request, res: Response) {
-  const profile = await getService().save(req.body);
+  const userId = req.authUser!.sub;
+  const profile = await getService().save(req.body, userId);
   res.json(profile);
 }

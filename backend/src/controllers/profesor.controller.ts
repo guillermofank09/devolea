@@ -10,8 +10,9 @@ function getService() {
 export const createProfesor = async (req: Request, res: Response) => {
   const { name, phone } = req.body;
   if (!name) { res.status(400).json({ error: "El nombre es requerido" }); return; }
+  const userId = req.authUser!.sub;
   try {
-    const profesor = await getService().create({ name, phone });
+    const profesor = await getService().create({ name, phone }, userId);
     res.status(201).json(profesor);
   } catch {
     res.status(500).json({ error: "Error al crear el profesor" });
@@ -19,8 +20,9 @@ export const createProfesor = async (req: Request, res: Response) => {
 };
 
 export const getProfesores = async (req: Request, res: Response) => {
+  const userId = req.authUser!.sub;
   try {
-    const profesores = await getService().getAll(req.query.search as string);
+    const profesores = await getService().getAll(userId, req.query.search as string);
     res.json(profesores);
   } catch {
     res.status(500).json({ error: "Error al obtener profesores" });

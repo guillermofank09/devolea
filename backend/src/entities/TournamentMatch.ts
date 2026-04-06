@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
 import { Tournament } from "./Tournament";
 import { Pair } from "./Pair";
+import { Court } from "./Court";
 
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
 
@@ -13,6 +14,8 @@ export class TournamentMatch {
   @JoinColumn({ name: "pair1Id" }) pair1?: Pair | null;
   @ManyToOne(() => Pair, { nullable: true, eager: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "pair2Id" }) pair2?: Pair | null;
+  @ManyToOne(() => Court, { nullable: true, eager: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "courtId" }) court?: Court | null;
   @Column({ type: "timestamptz", nullable: true }) scheduledAt?: Date | null;
   @Column() round!: number;
   @Column() matchNumber!: number;

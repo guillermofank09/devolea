@@ -47,6 +47,9 @@ export class Booking {
   @Column({ type: "varchar", nullable: true })
   recurringGroupId!: string | null;
 
+  @Column({ nullable: true })
+  userId?: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

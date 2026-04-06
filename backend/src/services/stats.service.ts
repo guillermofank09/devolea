@@ -101,12 +101,12 @@ export class StatsService {
     private courtRepo: Repository<Court>
   ) {}
 
-  async getRevenue(): Promise<RevenueStats> {
+  async getRevenue(userId: number): Promise<RevenueStats> {
     const [bookings, settings, profile, allCourts] = await Promise.all([
-      this.bookingRepo.find({ where: { status: "CONFIRMED" } }),
-      this.settingsRepo.findOneBy({ id: 1 }),
-      this.profileRepo.findOneBy({ id: 1 }),
-      this.courtRepo.find(),
+      this.bookingRepo.find({ where: { userId, status: "CONFIRMED" } }),
+      this.settingsRepo.findOneBy({ userId }),
+      this.profileRepo.findOneBy({ userId }),
+      this.courtRepo.find({ where: { userId } }),
     ]);
 
     const hourlyRate = Number(settings?.hourlyRate ?? 0);
