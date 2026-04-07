@@ -23,7 +23,7 @@ const spanishMessages = {
   showMore: (total: number) => `+${total} más`,
 };
 
-const DAY_LETTERS = ["D", "L", "M", "X", "J", "V", "S"];
+const DAY_LETTERS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
