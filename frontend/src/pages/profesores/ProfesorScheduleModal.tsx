@@ -200,14 +200,15 @@ export default function ProfesorScheduleModal({ profesor, open, onClose }: Props
                 )}
               </DialogContent>
 
-              <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, flexWrap: "wrap", gap: 1 }}>
-                <Button onClick={() => setSelectedBooking(null)} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>
+              <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, gap: 1, flexDirection: isMobile ? "column" : "row" }}>
+                <Button onClick={() => setSelectedBooking(null)} fullWidth={isMobile} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>
                   Cerrar
                 </Button>
                 {selectedBooking.isRecurring && selectedBooking.recurringGroupId && (
                   <Button
                     variant="outlined"
                     color="error"
+                    fullWidth={isMobile}
                     disabled={cancelGroupMutation.isPending || cancelMutation.isPending}
                     onClick={() => cancelGroupMutation.mutate(selectedBooking.recurringGroupId!)}
                     startIcon={cancelGroupMutation.isPending ? <CircularProgress size={14} color="inherit" /> : <RepeatIcon sx={{ fontSize: 15 }} />}
@@ -219,6 +220,7 @@ export default function ProfesorScheduleModal({ profesor, open, onClose }: Props
                 <Button
                   variant="contained"
                   color="error"
+                  fullWidth={isMobile}
                   disabled={cancelMutation.isPending || cancelGroupMutation.isPending}
                   onClick={() => cancelMutation.mutate(selectedBooking.id)}
                   startIcon={cancelMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}

@@ -317,11 +317,12 @@ const CourtView = ({
                 )}
               </DialogContent>
 
-              <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, flexWrap: "wrap", gap: 1 }}>
+              <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, gap: 1, flexDirection: isMobile ? "column" : "row" }}>
                 {selectedBooking.isRecurring && selectedBooking.recurringGroupId && (
                   <Button
                     variant="outlined"
                     color="error"
+                    fullWidth={isMobile}
                     disabled={cancelGroupMutation.isPending || cancelMutation.isPending}
                     onClick={() => cancelGroupMutation.mutate(selectedBooking.recurringGroupId!)}
                     startIcon={
@@ -338,6 +339,7 @@ const CourtView = ({
                 <Button
                   variant="contained"
                   color="error"
+                  fullWidth={isMobile}
                   disabled={cancelMutation.isPending || cancelGroupMutation.isPending}
                   onClick={() => cancelMutation.mutate(selectedBooking.id)}
                   startIcon={cancelMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
