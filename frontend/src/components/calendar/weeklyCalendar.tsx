@@ -124,21 +124,23 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
         </div>
       )}
 
-      {/* Row 2: Hoy + view switcher */}
-      <div className="cal-toolbar__controls">
-        <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
-        <div className="cal-toolbar__views">
-          {views.map((v) => (
-            <button
-              key={v}
-              className={`cal-btn cal-btn--view ${view === v ? "cal-btn--active" : ""}`}
-              onClick={() => onView(v)}
-            >
-              {viewLabels[v] ?? v}
-            </button>
-          ))}
+      {/* Row 2: Hoy + view switcher — hidden on mobile */}
+      {!isMobile && (
+        <div className="cal-toolbar__controls">
+          <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
+          <div className="cal-toolbar__views">
+            {views.map((v) => (
+              <button
+                key={v}
+                className={`cal-btn cal-btn--view ${view === v ? "cal-btn--active" : ""}`}
+                onClick={() => onView(v)}
+              >
+                {viewLabels[v] ?? v}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
