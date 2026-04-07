@@ -20,6 +20,7 @@ const src = Buffer.from(largest.buffer);
 
 await sharp(src).resize(512, 512).png().toFile(join(root, "public", "pwa-512x512.png"));
 await sharp(src).resize(192, 192).png().toFile(join(root, "public", "pwa-192x192.png"));
+await sharp(src).resize(180, 180).png().toFile(join(root, "public", "apple-touch-icon.png"));
 
 console.log(
   `✓ PWA icons generated from favicon.ico (source: ${largest.width}×${largest.height})`
