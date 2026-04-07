@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  FormLabel,
   IconButton,
   InputAdornment,
   TextField,
@@ -80,38 +81,48 @@ export default function Login() {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <TextField
-            label="Usuario"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoFocus
-            autoComplete="username"
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <TextField
-            label="Contraseña"
-            type={showPass ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            fullWidth
-            slotProps={{
-              inputLabel: { shrink: true },
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
-                      {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Box>
+            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>
+              Usuario
+            </FormLabel>
+            <TextField
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              autoFocus
+              autoComplete="username"
+              fullWidth
+              size="small"
+              placeholder="Tu nombre de usuario"
+            />
+          </Box>
+          <Box>
+            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>
+              Contraseña
+            </FormLabel>
+            <TextField
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              fullWidth
+              size="small"
+              placeholder="Tu contraseña"
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
+                        {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
 
           <Button
             type="submit"
