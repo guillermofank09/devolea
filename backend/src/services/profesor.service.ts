@@ -4,6 +4,7 @@ import { Profesor } from "../entities/Profesor";
 export interface CreateProfesorDto {
   name: string;
   phone?: string;
+  hourlyRate?: number;
 }
 
 export class ProfesorService {

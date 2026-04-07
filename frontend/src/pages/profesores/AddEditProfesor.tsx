@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   FormLabel,
+  InputAdornment,
   TextField,
   Typography,
   useMediaQuery,
@@ -31,6 +32,7 @@ interface Props {
 
 export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
+  const [hourlyRateStr, setHourlyRateStr] = useState("");
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -40,15 +42,22 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   useEffect(() => {
     if (profesor) {
       setForm({ name: profesor.name, phone: profesor.phone ?? "" });
+      setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
     } else {
       setForm(EMPTY);
+      setHourlyRateStr("");
     }
     setError(null);
   }, [profesor, open]);
 
   const mutation = useMutation({
-    mutationFn: (data: ProfesorFormData) =>
-      isEditing ? updateProfesor(profesor!.id, data) : createProfesor(data),
+    mutationFn: (data: ProfesorFormData) => {
+      const payload = {
+        ...data,
+        hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
+      };
+      return isEditing ? updateProfesor(profesor!.id, payload) : createProfesor(payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profesoresData"] });
       onClose();
@@ -98,6 +107,28 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               value={form.phone}
               onChange={(val) => setForm(p => ({ ...p, phone: val }))}
             />
+
+            <Box>
+              <FormLabel sx={labelSx}>Precio por hora</FormLabel>
+              <TextField
+                fullWidth
+                size="small"
+                type="text"
+                inputMode="decimal"
+                value={hourlyRateStr}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === "" || /^\d*\.?\d*$/.test(v))
+                    setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
+                }}
+                placeholder="0"
+                slotProps={{
+                  input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                }}
+                helperText="Tarifa propia del profesor. Si se deja vacío se usa el precio general de clases."
+                sx={fieldSx}
+              />
+            </Box>
 
             {error && (
               <Typography variant="body2" color="error">{error}</Typography>

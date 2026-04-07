@@ -11,6 +11,9 @@ export class Profesor {
   @Column({ type: "varchar", nullable: true })
   phone?: string;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  hourlyRate?: number;
+
   @Column({ nullable: true })
   userId?: number;
 

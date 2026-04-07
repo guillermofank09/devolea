@@ -2,6 +2,7 @@ export interface Profesor {
   id: number;
   name: string;
   phone?: string;
+  hourlyRate?: number;
   createdAt: string;
 }
 

@@ -53,7 +53,8 @@ function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
                 {p.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {p.phone || "Sin teléfono"}
+                {p.phone ? `+${p.phone}` : "Sin teléfono"}
+                {p.hourlyRate != null && ` · $${p.hourlyRate}/h`}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", flexShrink: 0 }}>
@@ -98,6 +99,7 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
           <TableRow sx={{ "& th": { fontWeight: 700, backgroundColor: "#f5f5f5" } }}>
             <TableCell>Profesor</TableCell>
             <TableCell>Teléfono</TableCell>
+            <TableCell>Tarifa/hora</TableCell>
             <TableCell align="right">Acciones</TableCell>
           </TableRow>
         </TableHead>
@@ -115,6 +117,11 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
               <TableCell>
                 <Typography variant="body2" color={p.phone ? "text.primary" : "text.disabled"}>
                   {p.phone ? `+${p.phone}` : "—"}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="body2" color={p.hourlyRate != null ? "text.primary" : "text.disabled"}>
+                  {p.hourlyRate != null ? `$${p.hourlyRate}` : "—"}
                 </Typography>
               </TableCell>
               <TableCell align="right">

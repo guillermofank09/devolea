@@ -97,14 +97,22 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
     staleTime: 30_000,
   });
 
-  // Auto-fill price when slot or booking type changes
+  // Auto-fill price when slot, booking type or selected profesor changes
   useEffect(() => {
     if (!slot || !settings) { setPrice(""); return; }
     const hrs = (slot.end.getTime() - slot.start.getTime()) / 3_600_000;
-    const rate = bookingType === "profesor" ? Number(settings.classHourlyRate) : Number(settings.hourlyRate);
+    let rate: number;
+    if (bookingType === "profesor") {
+      // Use profesor's own rate if set, otherwise fall back to global class rate
+      rate = selectedProfesor?.hourlyRate != null
+        ? Number(selectedProfesor.hourlyRate)
+        : Number(settings.classHourlyRate);
+    } else {
+      rate = Number(settings.hourlyRate);
+    }
     const computed = hrs * rate;
     setPrice(computed > 0 ? String(computed) : "");
-  }, [slot, bookingType, settings]);
+  }, [slot, bookingType, settings, selectedProfesor]);
 
   const { data: players = [], isFetching: fetchingPlayers } = useQuery<Player[]>({
     queryKey: ["playersData"],
