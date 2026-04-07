@@ -224,11 +224,11 @@
 
 .cal-event__avatar {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.25);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -238,22 +238,22 @@
 }
 
 .cal-event--compact .cal-event__avatar {
-  width: 18px;
-  height: 18px;
-  font-size: 8px;
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
   margin-top: 0;
 }
 
 .cal-event__body {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
   overflow: hidden;
 }
 
 .cal-event__name {
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -263,7 +263,7 @@
 }
 
 .cal-event__time {
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 500;
   opacity: 0.85;
   white-space: nowrap;
@@ -271,7 +271,7 @@
 }
 
 .cal-event__repeat {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.8;
   flex-shrink: 0;
   margin-left: auto;
@@ -454,23 +454,23 @@
     min-height: 48px;
   }
 
-  /* Compact event blocks */
+  /* Event blocks on mobile */
   .cal-event {
-    padding: 2px 5px;
-    gap: 4px;
+    padding: 3px 6px;
+    gap: 5px;
   }
 
   .cal-event__name {
-    font-size: 10.5px;
+    font-size: 12px;
   }
 
   .cal-event__time {
-    font-size: 9.5px;
+    font-size: 11px;
   }
 
   .cal-event__avatar {
-    width: 18px;
-    height: 18px;
-    font-size: 8px;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
   }
 }
