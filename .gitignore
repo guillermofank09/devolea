@@ -8,6 +8,10 @@ build/
 */dist/
 */build/
 
+# Generated PWA icons (created at build time by scripts/generate-pwa-icons.mjs)
+frontend/public/pwa-192x192.png
+frontend/public/pwa-512x512.png
+
 # Environment files
 .env
 .env.local

@@ -7,13 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icon.svg"],
+      includeAssets: ["favicon.ico"],
       manifest: {
         name: "Devolea · Gestión de Pádel",
         short_name: "Devolea",
         description: "Software de Gestión de Canchas de Padel y Torneos",
         theme_color: "#F5AD27",
-        background_color: "#111111",
+        background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
@@ -21,15 +21,21 @@ export default defineConfig({
         lang: "es",
         icons: [
           {
-            src: "icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
             purpose: "any",
           },
           {
-            src: "icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
             purpose: "maskable",
           },
         ],
