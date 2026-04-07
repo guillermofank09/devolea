@@ -1,5 +1,5 @@
 import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/material.css";
+import "react-phone-input-2/lib/style.css";
 import { Box, FormLabel } from "@mui/material";
 
 interface Props {
@@ -13,6 +13,9 @@ interface Props {
  * Defaults to Argentina (+54). Stores the full E.164-style digits (no "+").
  */
 export default function PhoneField({ value, onChange, label = "Teléfono (opcional)" }: Props) {
+  // Strip any leading "+" so the library always receives plain digits
+  const normalizedValue = value.replace(/^\+/, "");
+
   return (
     <Box>
       <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>
@@ -21,22 +24,29 @@ export default function PhoneField({ value, onChange, label = "Teléfono (opcion
       <PhoneInput
         country="ar"
         preferredCountries={["ar", "uy", "br", "cl", "py", "bo"]}
-        value={value}
-        onChange={onChange}
+        value={normalizedValue}
+        onChange={(val) => onChange(val.replace(/^\+/, ""))}
         inputStyle={{
           width: "100%",
           height: "40px",
           fontSize: "0.875rem",
-          borderRadius: "4px",
-          borderColor: "rgba(0,0,0,0.23)",
           fontFamily: "inherit",
+          borderRadius: "0 4px 4px 0",
+          border: "1px solid rgba(0,0,0,0.23)",
+          borderLeft: "none",
+          outline: "none",
+          boxShadow: "none",
         }}
         buttonStyle={{
-          borderColor: "rgba(0,0,0,0.23)",
+          border: "1px solid rgba(0,0,0,0.23)",
+          borderRight: "none",
           borderRadius: "4px 0 0 4px",
           background: "#fff",
         }}
-        containerStyle={{ width: "100%" }}
+        containerStyle={{
+          width: "100%",
+          border: "none",
+        }}
         enableSearch
         searchPlaceholder="Buscar país..."
         searchNotFound="No se encontró"
