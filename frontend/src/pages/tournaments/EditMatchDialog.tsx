@@ -386,15 +386,18 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
                 exclusive
                 onChange={(_, val) => setWinnerId(val)}
                 size="small"
+                orientation="vertical"
                 fullWidth
                 sx={{
-                  height: 40,
                   "& .MuiToggleButton-root": {
                     textTransform: "none",
                     fontWeight: 600,
                     fontSize: "0.875rem",
                     borderColor: "divider",
                     color: "text.secondary",
+                    justifyContent: "flex-start",
+                    px: 2,
+                    py: 1.25,
                   },
                   "& .MuiToggleButton-root.Mui-selected": {
                     bgcolor: "#F5AD27",
