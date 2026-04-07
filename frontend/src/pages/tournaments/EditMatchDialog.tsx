@@ -230,7 +230,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
         Editar partido #{match.matchNumber} — Ronda {match.round}
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 1 }}>
+      <DialogContent sx={{ pt: 1, overflowY: "auto" }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
           <Box>

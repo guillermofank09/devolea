@@ -238,9 +238,9 @@ export default function TournamentDetail() {
         }
       />
 
-      <Box sx={{ display: "flex", gap: 4, flexDirection: { xs: "column", md: "row" }, alignItems: "flex-start" }}>
+      <Box sx={{ display: "flex", gap: 3, flexDirection: { xs: "column", md: "row" }, alignItems: "flex-start" }}>
         {/* Parejas */}
-        <Box sx={{ flex: "0 0 320px", minWidth: 0 }}>
+        <Box sx={{ width: { xs: "100%", md: 300 }, flexShrink: 0, minWidth: 0 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
             <Typography variant="h6" fontWeight={700}>
               Parejas ({data.pairs.length})
@@ -419,9 +419,6 @@ function MatchCard({ match, onEdit }: { match: TournamentMatch; onEdit: () => vo
   return (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
         p: 1.5,
         border: "1px solid",
         borderColor: "divider",
@@ -429,37 +426,43 @@ function MatchCard({ match, onEdit }: { match: TournamentMatch; onEdit: () => vo
         backgroundColor: match.status === "COMPLETED" ? "grey.50" : "background.paper",
       }}
     >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={600} noWrap>
-          {pairLabel(match.pair1)} <span style={{ color: "#aaa" }}>vs</span> {pairLabel(match.pair2)}
+      {/* Row 1: names + status + edit */}
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+        <Typography variant="body2" fontWeight={600} sx={{ flex: 1, minWidth: 0, wordBreak: "break-word", lineHeight: 1.4 }}>
+          {pairLabel(match.pair1)}{" "}
+          <span style={{ color: "#aaa", fontWeight: 400 }}>vs</span>{" "}
+          {pairLabel(match.pair2)}
         </Typography>
-        <Box sx={{ display: "flex", gap: 1, mt: 0.5, flexWrap: "wrap", alignItems: "center" }}>
-          <Typography variant="caption" color="text.secondary">
-            {formatScheduledAt(match.scheduledAt)}
-          </Typography>
-          {match.court && (
-            <Typography variant="caption" color="text.secondary">
-              · {match.court.name}
-            </Typography>
-          )}
-          {match.result && (
-            <Typography variant="caption" fontWeight={700} color="text.primary">
-              · {match.result}
-            </Typography>
-          )}
-          {winnerPair && (
-            <Typography variant="caption" color="success.main" fontWeight={700}>
-              · Ganador: {pairLabel(winnerPair)}
-            </Typography>
-          )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, mt: "1px" }}>
+          <MatchStatusChip status={match.status} />
+          <Tooltip title="Editar partido">
+            <IconButton size="small" onClick={onEdit} sx={{ ml: 0.5 }}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
-      <MatchStatusChip status={match.status} />
-      <Tooltip title="Editar partido">
-        <IconButton size="small" onClick={onEdit}>
-          <EditIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {/* Row 2: schedule + court + result + winner */}
+      <Box sx={{ display: "flex", gap: 1, mt: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+        <Typography variant="caption" color="text.secondary">
+          {formatScheduledAt(match.scheduledAt)}
+        </Typography>
+        {match.court && (
+          <Typography variant="caption" color="text.secondary">
+            · {match.court.name}
+          </Typography>
+        )}
+        {match.result && (
+          <Typography variant="caption" fontWeight={700} color="text.primary">
+            · {match.result}
+          </Typography>
+        )}
+        {winnerPair && (
+          <Typography variant="caption" color="success.main" fontWeight={700}>
+            · Ganador: {pairLabel(winnerPair)}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 }

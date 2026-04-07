@@ -130,9 +130,9 @@ export default function BracketView({ matches, onEditMatch }: Props) {
   }
 
   return (
-    <Box sx={{ overflowX: "auto", overflowY: "visible", pb: 2 }}>
+    <Box sx={{ overflowX: "auto", overflowY: "visible", pb: 2, WebkitOverflowScrolling: "touch", maxWidth: "100%" }}>
       {/* Round column headers */}
-      <Box sx={{ display: "flex", mb: 2 }}>
+      <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
         {rounds.map((round, rIdx) => (
           <Box
             key={round}
