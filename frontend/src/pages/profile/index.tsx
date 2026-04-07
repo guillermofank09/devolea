@@ -27,6 +27,7 @@ import { fetchProfile, saveProfile } from "../../api/profileService";
 import type { ClubProfile, DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PageHeader from "../../components/common/PageHeader";
+import PageLoader from "../../components/common/PageLoader";
 
 // ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
 interface NominatimPlace {
@@ -146,9 +147,7 @@ export default function Profile() {
     mutation.mutate({ clubName, logoBase64, address, latitude: lat, longitude: lng, businessHours: hours });
   }
 
-  if (isPending) {
-    return <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>;
-  }
+  if (isPending) return <PageLoader />;
 
   if (isError) {
     return (

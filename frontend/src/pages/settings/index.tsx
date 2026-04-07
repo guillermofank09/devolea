@@ -23,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, saveSettings } from "../../api/settingsService";
 import type { AppSettings } from "../../types/AppSettings";
 import PageHeader from "../../components/common/PageHeader";
+import PageLoader from "../../components/common/PageLoader";
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({
@@ -104,9 +105,7 @@ export default function Settings() {
     };
   }
 
-  if (isPending) {
-    return <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>;
-  }
+  if (isPending) return <PageLoader />;
 
   if (isError) {
     return (

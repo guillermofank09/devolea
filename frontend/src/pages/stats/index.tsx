@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  CircularProgress,
   Divider,
   Tab,
   Tabs,
@@ -21,6 +20,7 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRevenue } from "../../api/statsService";
+import PageLoader from "../../components/common/PageLoader";
 import type { RevenueEntry, CourtOccupancy, OccupancySummary } from "../../api/statsService";
 import PageHeader from "../../components/common/PageHeader";
 
@@ -385,13 +385,7 @@ export default function Stats() {
     retry: 1,
   });
 
-  if (isPending) {
-    return (
-      <Box display="flex" justifyContent="center" py={8}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (isPending) return <PageLoader />;
 
   if (isError || !data) {
     return (

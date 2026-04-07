@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   InputAdornment,
   OutlinedInput,
   Typography,
@@ -14,6 +13,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfesores, deleteProfesor } from "../../api/profesorService";
+import PageLoader from "../../components/common/PageLoader";
 import type { Profesor } from "../../types/Profesor";
 import ProfesorTable from "./ProfesorTable";
 import AddEditProfesor from "./AddEditProfesor";
@@ -98,7 +98,7 @@ export default function Profesores() {
         </Box>
       )}
 
-      {isPending && <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>}
+      {isPending && <PageLoader />}
       {error && <Alert severity="error">{String(error)}</Alert>}
       {data && (
         <>

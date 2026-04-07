@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   InputAdornment,
   OutlinedInput,
   Typography,
@@ -19,6 +18,7 @@ import PlayerTable from "./PlayerTable";
 import AddEditPlayer from "./AddEditPlayer";
 import DeleteDialog from "../../components/common/DeleteDialog";
 import PageHeader from "../../components/common/PageHeader";
+import PageLoader from "../../components/common/PageLoader";
 
 export default function Players() {
   const [search, setSearch] = useState("");
@@ -113,11 +113,7 @@ export default function Players() {
         </Box>
       )}
 
-      {isPending && (
-        <Box display="flex" justifyContent="center" py={6}>
-          <CircularProgress />
-        </Box>
-      )}
+      {isPending && <PageLoader />}
       {error && <Alert severity="error">{String(error)}</Alert>}
       {data && (
         <>

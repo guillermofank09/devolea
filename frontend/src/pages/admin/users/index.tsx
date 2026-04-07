@@ -32,6 +32,7 @@ import type { AdminUser } from "../../../api/authService";
 import { useAuth } from "../../../context/AuthContext";
 import PageHeader from "../../../components/common/PageHeader";
 import DeleteDialog from "../../../components/common/DeleteDialog";
+import PageLoader from "../../../components/common/PageLoader";
 
 // ─── Create user dialog ───────────────────────────────────────────────────────
 function CreateUserDialog({
@@ -170,9 +171,7 @@ export default function AdminUsers() {
     },
   });
 
-  if (isPending) {
-    return <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>;
-  }
+  if (isPending) return <PageLoader />;
 
   if (isError) {
     return (

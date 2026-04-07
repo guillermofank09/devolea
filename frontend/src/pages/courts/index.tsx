@@ -6,7 +6,8 @@ import AddEditCourt from "./AddEditCourt";
 import PageHeader from "../../components/common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCourts } from "../../api/courtService";
-import { Alert, Box, CircularProgress, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Alert, Box, Typography, useMediaQuery, useTheme } from "@mui/material";
+import PageLoader from "../../components/common/PageLoader";
 
 export default function Courts() {
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
@@ -32,7 +33,7 @@ export default function Courts() {
   const hasData = data && data.length > 0;
 
   const renderContent = () => {
-    if (isPending) return <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>;
+    if (isPending) return <PageLoader />;
     if (error) return <Alert severity="error">{String(error)}</Alert>;
     if (!data || data.length === 0) {
       return (

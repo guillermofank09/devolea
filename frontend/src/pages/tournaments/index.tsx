@@ -7,7 +7,6 @@ import {
   CardActions,
   CardContent,
   Chip,
-  CircularProgress,
   Grid,
   IconButton,
   Tooltip,
@@ -20,6 +19,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournaments, deleteTournament } from "../../api/tournamentService";
+import PageLoader from "../../components/common/PageLoader";
 import type { Tournament, TournamentCategory, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
@@ -94,11 +94,7 @@ export default function Tournaments() {
         action={addButton}
       />
 
-      {isPending && (
-        <Box display="flex" justifyContent="center" py={6}>
-          <CircularProgress />
-        </Box>
-      )}
+      {isPending && <PageLoader />}
       {error && <Alert severity="error">{String(error)}</Alert>}
 
       {data && data.length === 0 && (
