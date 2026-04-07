@@ -52,4 +52,8 @@
   .header-menu-btn {
     display: flex;
   }
+
+  .header-logo {
+    height: 28px;
+  }
 }
