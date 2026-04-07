@@ -318,13 +318,6 @@ const CourtView = ({
               </DialogContent>
 
               <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, flexWrap: "wrap", gap: 1 }}>
-                <Button
-                  onClick={() => setSelectedBooking(null)}
-                  sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}
-                >
-                  Cerrar
-                </Button>
-
                 {selectedBooking.isRecurring && selectedBooking.recurringGroupId && (
                   <Button
                     variant="outlined"

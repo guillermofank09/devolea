@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Calendar, Views } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { localizer } from "./calendarConfig";
@@ -22,13 +23,16 @@ const spanishMessages = {
   showMore: (total: number) => `+${total} más`,
 };
 
+const DAY_LETTERS = ["D", "L", "M", "X", "J", "V", "S"];
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
 // ── Custom event block ────────────────────────────────────────────────────────
@@ -42,7 +46,7 @@ function EventBlock({ event }: EventProps) {
   const start = event.start.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
   const end   = event.end.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
   const durationH = (event.end.getTime() - event.start.getTime()) / 3_600_000;
-  const compact = durationH < 1;
+  const compact = durationH < 0.75;
 
   return (
     <div className={`cal-event ${compact ? "cal-event--compact" : ""}`}>
@@ -63,14 +67,17 @@ function EventBlock({ event }: EventProps) {
 // ── Custom toolbar ─────────────────────────────────────────────────────────────
 
 interface ToolbarProps {
+  date: Date;
   label: string;
-  onNavigate: (action: "TODAY" | "PREV" | "NEXT") => void;
+  onNavigate: (action: "TODAY" | "PREV" | "NEXT" | "DATE", newDate?: Date) => void;
   onView: (view: string) => void;
   view: string;
   views: string[];
 }
 
-function CustomToolbar({ label, onNavigate, onView, view, views }: ToolbarProps) {
+function CustomToolbar({ date, label, onNavigate, onView, view, views }: ToolbarProps) {
+  const isMobile = useMediaQuery("(max-width:600px)");
+
   const viewLabels: Record<string, string> = {
     day: "Día",
     week: "Semana",
@@ -78,16 +85,46 @@ function CustomToolbar({ label, onNavigate, onView, view, views }: ToolbarProps)
     agenda: "Agenda",
   };
 
+  const today = new Date();
+
+  // 7-day strip centred on the currently viewed date
+  const strip = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - 3 + i);
+    return d;
+  });
+
   return (
     <div className="cal-toolbar">
-      {/* Row 1 (mobile) / left group (desktop): arrows + date label */}
+      {/* Row 1: ‹ [label] › */}
       <div className="cal-toolbar__nav">
         <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("PREV")}>‹</button>
         <span className="cal-toolbar__label">{label}</span>
         <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("NEXT")}>›</button>
       </div>
 
-      {/* Row 2 (mobile) / right group (desktop): today + view switcher */}
+      {/* Mobile: 7-day quick-access strip */}
+      {isMobile && (
+        <div className="cal-day-strip">
+          {strip.map((d, i) => {
+            const isToday = isSameDay(d, today);
+            const isActive = isSameDay(d, date);
+            return (
+              <button
+                key={i}
+                className={`cal-day-chip ${isToday ? "cal-day-chip--today" : ""} ${isActive ? "cal-day-chip--active" : ""}`}
+                onClick={() => onNavigate("DATE", d)}
+              >
+                <span className="cal-day-chip__letter">{DAY_LETTERS[d.getDay()]}</span>
+                <span className="cal-day-chip__num">{d.getDate()}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Row 2: Hoy + view switcher */}
       <div className="cal-toolbar__controls">
         <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
         <div className="cal-toolbar__views">
@@ -110,6 +147,7 @@ function CustomToolbar({ label, onNavigate, onView, view, views }: ToolbarProps)
 
 export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: Props) {
   const isMobile = useMediaQuery("(max-width:600px)");
+  const [date, setDate] = useState(new Date());
 
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {
@@ -127,6 +165,8 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: 
         localizer={localizer}
         culture="es"
         events={events}
+        date={date}
+        onNavigate={(newDate) => setDate(newDate)}
         defaultView={isMobile ? Views.DAY : Views.WEEK}
         views={isMobile ? [Views.DAY, Views.WEEK] : [Views.DAY, Views.WEEK, Views.MONTH]}
         messages={spanishMessages}
@@ -150,4 +190,3 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: 
     </div>
   );
 }
-
