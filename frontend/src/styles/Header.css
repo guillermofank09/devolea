@@ -1,17 +1,22 @@
 /* ─── Header — full width, white, top of page ──────────────────────────────── */
 .header {
   flex-shrink: 0;
-  height: 60px;
+  /* Expand to cover the iOS status bar area */
+  padding-top: env(safe-area-inset-top, 0px);
   background: #ffffff;
   border-bottom: 1px solid #e8e8e8;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   display: flex;
-  align-items: center;
-  padding: 0 20px;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 0;
   z-index: 50;
 }
 
 .header-inner {
+  height: 60px;
   display: flex;
   align-items: center;
   gap: 12px;

@@ -74,6 +74,11 @@ h2 {
 .addCourtContainer { display: flex; justify-content: flex-end; margin-bottom: 2em; }
 .calendarContainer { padding: 24px; }
 
+/* ─── iOS safe area for full-screen MUI dialogs ────────────────────────────── */
+.MuiDialog-paper.MuiDialog-paperFullScreen {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* ─── MUI global overrides ─────────────────────────────────────────────────── */
 .MuiButton-textPrimary                   { color: black !important; }
 .MuiButton-contained:not(.Mui-disabled)  { background-color: black !important; }
