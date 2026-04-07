@@ -198,7 +198,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
             </Box>
 
             {/* Ciudad + Fecha */}
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
                 <FormLabel sx={labelSx}>Ciudad</FormLabel>
                 <Autocomplete

@@ -144,7 +144,7 @@ function NextRoundDialog({
                 type="time"
                 value={startTimeVal}
                 onChange={e => { setStartTimeVal(e.target.value); setError(null); }}
-                sx={{ width: 130 }}
+                sx={{ minWidth: 110, flexShrink: 0 }}
               />
             </Box>
           </Box>

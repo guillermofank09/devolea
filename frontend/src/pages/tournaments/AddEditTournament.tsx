@@ -143,7 +143,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
               </Select>
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
                 <FormLabel sx={labelSx}>Fecha de inicio</FormLabel>
                 <TextField

@@ -142,7 +142,7 @@ export default function Settings() {
                 formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
               }}
               helperText="Se aplica a reservas de jugadores"
-              sx={{ width: 200 }}
+              sx={{ width: { xs: "100%", sm: 200 } }}
             />
           </Box>
           <Box>
@@ -162,7 +162,7 @@ export default function Settings() {
                 formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
               }}
               helperText="Se aplica cuando se reserva una clase con profesor"
-              sx={{ width: 200 }}
+              sx={{ width: { xs: "100%", sm: 200 } }}
             />
           </Box>
         </Box>
@@ -212,7 +212,7 @@ export default function Settings() {
                 formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
               }}
               helperText="Tiempo por partido de torneo"
-              sx={{ width: 200 }}
+              sx={{ width: { xs: "100%", sm: 200 } }}
             />
           </Box>
           <Box>

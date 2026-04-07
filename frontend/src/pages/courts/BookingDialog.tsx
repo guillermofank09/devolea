@@ -272,6 +272,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
                     {...params}
                     label="Jugador"
                     placeholder="Buscar por nombre..."
+                    size="small"
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (
@@ -350,6 +351,7 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
                     {...params}
                     label="Profesor"
                     placeholder="Buscar por nombre..."
+                    size="small"
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (

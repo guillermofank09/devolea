@@ -8,7 +8,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   FormLabel,
   MenuItem,
   OutlinedInput,
@@ -165,10 +164,11 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
             </Typography>
           </Box>
 
-          <FormControl fullWidth>
-            <FormLabel htmlFor="generate-date">Fecha</FormLabel>
+          <Box>
+            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Fecha</FormLabel>
             <OutlinedInput
-              id="generate-date"
+              fullWidth
+              size="small"
               type="date"
               value={date}
               onChange={e => {
@@ -176,26 +176,29 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
                 setStartTime("");
                 setError(null);
               }}
+              sx={{ fontSize: "0.875rem" }}
             />
-          </FormControl>
+          </Box>
 
-          <FormControl fullWidth>
-            <FormLabel htmlFor="generate-court">Cancha</FormLabel>
+          <Box>
+            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Cancha</FormLabel>
             <Select
-              id="generate-court"
+              fullWidth
+              size="small"
               value={courtId}
               onChange={e => {
                 setCourtId(e.target.value as number | "");
                 setStartTime("");
               }}
               displayEmpty
+              sx={{ fontSize: "0.875rem" }}
             >
               <MenuItem value=""><em>Sin cancha asignada</em></MenuItem>
               {courts.map(c => (
                 <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
               ))}
             </Select>
-          </FormControl>
+          </Box>
 
           {date && slots.length > 0 && (
             <FormControl>

@@ -265,7 +265,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
                 type="time"
                 value={scheduleTime}
                 onChange={e => setScheduleTime(e.target.value)}
-                sx={{ ...fieldSx, width: 130 }}
+                sx={{ ...fieldSx, minWidth: 110, flexShrink: 0 }}
               />
             </Box>
           </Box>
@@ -333,11 +333,11 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
             {currentPair1 && currentPair2 && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
                 <Typography variant="caption" sx={{ minWidth: 44 }} />
-                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ width: 60, textAlign: "center", fontSize: "0.7rem" }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
                   {pairInitials(currentPair1)}
                 </Typography>
                 <Box sx={{ width: 12 }} />
-                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ width: 60, textAlign: "center", fontSize: "0.7rem" }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
                   {pairInitials(currentPair2)}
                 </Typography>
               </Box>
@@ -358,7 +358,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
                     }}
                     placeholder="0"
                     inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                    sx={{ width: 60 }}
+                    sx={{ width: 56, flexShrink: 0 }}
                   />
                   <Typography variant="body2" color="text.secondary">—</Typography>
                   <TextField
@@ -371,7 +371,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
                     }}
                     placeholder="0"
                     inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                    sx={{ width: 60 }}
+                    sx={{ width: 56, flexShrink: 0 }}
                   />
                 </Box>
               ))}

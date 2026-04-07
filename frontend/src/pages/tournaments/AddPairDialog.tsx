@@ -114,6 +114,7 @@ function PlayerSelector({
           {...params}
           label={label}
           placeholder="Buscar por nombre..."
+          size="small"
           InputProps={{
             ...params.InputProps,
             endAdornment: (

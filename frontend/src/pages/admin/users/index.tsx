@@ -33,6 +33,7 @@ import { useAuth } from "../../../context/AuthContext";
 import PageHeader from "../../../components/common/PageHeader";
 import DeleteDialog from "../../../components/common/DeleteDialog";
 import PageLoader from "../../../components/common/PageLoader";
+import FormLabel from "@mui/material/FormLabel";
 
 // ─── Create user dialog ───────────────────────────────────────────────────────
 function CreateUserDialog({
@@ -84,46 +85,39 @@ function CreateUserDialog({
     >
       <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Crear usuario</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 0.5 }}>
-          <TextField
-            label="Nombre de usuario"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoFocus
-            fullWidth
-            size="small"
-            autoComplete="off"
-          />
-          <TextField
-            label="Nombre completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-            size="small"
-          />
-          <TextField
-            label="Contraseña"
-            type={showPass ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-            size="small"
-            autoComplete="new-password"
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
-                      {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
+          {([
+            { label: "Nombre de usuario", value: username, setter: setUsername, autoFocus: true, autoComplete: "off" },
+            { label: "Nombre completo",   value: name,     setter: setName,     autoFocus: false, autoComplete: "off" },
+          ] as const).map(({ label, value, setter, autoFocus, autoComplete }) => (
+            <Box key={label}>
+              <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>{label}</FormLabel>
+              <TextField value={value} onChange={(e) => setter(e.target.value)} required autoFocus={autoFocus} fullWidth size="small" autoComplete={autoComplete} />
+            </Box>
+          ))}
+          <Box>
+            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Contraseña</FormLabel>
+            <TextField
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              fullWidth
+              size="small"
+              autoComplete="new-password"
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowPass((v) => !v)} edge="end">
+                        {showPass ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
           {error && <Typography variant="body2" color="error">{error}</Typography>}
         </Box>
       </DialogContent>
