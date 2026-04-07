@@ -89,6 +89,7 @@ export default function Login() {
             autoFocus
             autoComplete="username"
             fullWidth
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label="Contraseña"
@@ -99,6 +100,7 @@ export default function Login() {
             autoComplete="current-password"
             fullWidth
             slotProps={{
+              inputLabel: { shrink: true },
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
