@@ -5,20 +5,15 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import icojs from "icojs";
+import { parseICO } from "icojs/node";
 import sharp from "sharp";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const icoPath = join(root, "public", "favicon.ico");
 
 const icoBuffer = readFileSync(icoPath);
-// icojs expects an ArrayBuffer
-const ab = icoBuffer.buffer.slice(
-  icoBuffer.byteOffset,
-  icoBuffer.byteOffset + icoBuffer.byteLength
-);
+const images = await parseICO(icoBuffer, "image/png");
 
-const images = await icojs.parse(ab, "image/png");
 // Pick the largest available icon as source
 const largest = images.sort((a, b) => b.width - a.width)[0];
 const src = Buffer.from(largest.buffer);
