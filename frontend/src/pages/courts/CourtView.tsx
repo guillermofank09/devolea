@@ -201,8 +201,10 @@ const CourtView = ({
           const end   = new Date(selectedBooking.endTime);
           const durationH = (end.getTime() - start.getTime()) / 3_600_000;
           const isProfesorBooking = !!selectedBooking.profesor && !selectedBooking.player;
-          const displayName = selectedBooking.player?.name ?? selectedBooking.profesor?.name ?? "Clase";
-          const color = stringToColor(displayName);
+          const displayName = isProfesorBooking
+            ? `Clase · ${selectedBooking.profesor!.name}`
+            : (selectedBooking.player?.name ?? "Reserva");
+          const color = stringToColor(isProfesorBooking ? selectedBooking.profesor!.name : displayName);
           return (
             <>
               {/* Colored top banner */}
@@ -228,7 +230,7 @@ const CourtView = ({
                     flexShrink: 0,
                   }}
                 >
-                  {getInitials(displayName)}
+                  {getInitials(isProfesorBooking ? selectedBooking.profesor!.name : displayName)}
                 </Avatar>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography fontWeight={800} color="#fff" noWrap>
@@ -236,8 +238,8 @@ const CourtView = ({
                   </Typography>
                   <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
                     {isProfesorBooking
-                      ? `Clase · ${selectedBooking.profesor?.phone ?? "Profesor"}`
-                      : `${selectedBooking.player?.city ?? ""} · Cat. ${selectedBooking.player?.category ?? ""}`}
+                      ? (selectedBooking.profesor?.phone ? `+${selectedBooking.profesor.phone}` : "")
+                      : `${selectedBooking.player?.city ?? ""} · ${selectedBooking.player?.category ?? ""}`}
                   </Typography>
                 </Box>
                 <IconButton
