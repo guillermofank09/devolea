@@ -386,7 +386,7 @@ export default function Stats() {
     retry: 1,
   });
 
-  const { data: profesorData } = useQuery({
+  const { data: profesorData, isPending: profesorPending, isError: profesorError } = useQuery({
     queryKey: ["stats", "profesores"],
     queryFn: fetchProfesorStats,
     staleTime: 60_000,
@@ -503,7 +503,7 @@ export default function Stats() {
       </Card>
 
       {/* Profesor billing card */}
-      {profesorData && <ProfesorBillingCard data={profesorData} />}
+      <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
     </Box>
   );
 }

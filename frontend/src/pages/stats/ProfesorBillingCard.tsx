@@ -1,9 +1,11 @@
 import { useState } from "react";
 import {
+  Alert,
   Box,
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   InputAdornment,
   TextField,
   Tooltip,
@@ -35,9 +37,11 @@ function stringToColor(str: string) {
 
 interface Props {
   data: ProfesorBillingEntry[];
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
-export default function ProfesorBillingCard({ data }: Props) {
+export default function ProfesorBillingCard({ data, isLoading, isError }: Props) {
   const [search, setSearch] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -58,11 +62,27 @@ export default function ProfesorBillingCard({ data }: Props) {
           <Typography variant="subtitle1" fontWeight={700}>
             Facturación por Profesor
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: "auto" }}>
-            Este mes · total {fmt(totalMonthly)}
-          </Typography>
+          {!isLoading && !isError && (
+            <Typography variant="caption" color="text.secondary" sx={{ ml: "auto" }}>
+              Este mes · total {fmt(totalMonthly)}
+            </Typography>
+          )}
         </Box>
 
+        {isLoading && (
+          <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+            <CircularProgress size={28} />
+          </Box>
+        )}
+
+        {isError && (
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            No se pudieron cargar los datos de profesores.
+          </Alert>
+        )}
+
+        {!isLoading && !isError && (
+          <>
         {/* Search */}
         <TextField
           size="small"
@@ -234,6 +254,8 @@ export default function ProfesorBillingCard({ data }: Props) {
                 ))}
               </tbody>
             </Box>
+          </>
+        )}
           </>
         )}
       </CardContent>
