@@ -226,7 +226,7 @@ export default function ProfesorScheduleModal({ profesor, open, onClose }: Props
                   startIcon={cancelMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
                   sx={{ textTransform: "none", borderRadius: 2, fontWeight: 700 }}
                 >
-                  {cancelMutation.isPending ? "Cancelando…" : selectedBooking.isRecurring ? "Solo esta fecha" : "Cancelar clase"}
+                  {cancelMutation.isPending ? "Cancelando…" : selectedBooking.isRecurring ? "Solo esta clase" : "Cancelar esta clase"}
                 </Button>
               </DialogActions>
             </>

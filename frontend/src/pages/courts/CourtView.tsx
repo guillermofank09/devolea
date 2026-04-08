@@ -348,8 +348,8 @@ const CourtView = ({
                   {cancelMutation.isPending
                     ? "Cancelando…"
                     : selectedBooking.isRecurring
-                    ? "Solo esta fecha"
-                    : "Cancelar reserva"}
+                    ? selectedBooking.profesor ? "Solo esta clase" : "Solo esta fecha"
+                    : selectedBooking.profesor ? "Cancelar esta clase" : "Cancelar reserva"}
                 </Button>
               </DialogActions>
             </>
