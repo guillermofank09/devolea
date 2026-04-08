@@ -79,18 +79,6 @@ h2 {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* ─── PhoneField (react-phone-input-2) ────────────────────────────────────── */
-.react-tel-input:hover .flag-dropdown,
-.react-tel-input:hover .form-control {
-  border-color: rgba(0, 0, 0, 0.87) !important;
-}
-.react-tel-input:focus-within .flag-dropdown,
-.react-tel-input:focus-within .form-control {
-  border-color: rgba(0, 0, 0, 0.87) !important;
-}
-.react-tel-input .form-control:focus {
-  box-shadow: none !important;
-}
 
 /* ─── MUI global overrides ─────────────────────────────────────────────────── */
 .MuiButton-textPrimary                   { color: black !important; }
