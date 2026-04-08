@@ -96,6 +96,17 @@ h2 {
 .MuiButton-textPrimary                   { color: black !important; }
 .MuiButton-contained:not(.Mui-disabled)  { background-color: black !important; }
 .MuiButton-contained.Mui-disabled        { background-color: #d0d0d0 !important; color: white !important; cursor: not-allowed; }
+
+/* White/secondary buttons: visible border so they look like buttons */
+.MuiButton-text:not(.Mui-disabled) {
+  border: 1px solid rgba(0, 0, 0, 0.23) !important;
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+.MuiButton-text:not(.Mui-disabled):hover {
+  border-color: rgba(0, 0, 0, 0.87) !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
 .Mui-focused                             { color: black !important; }
 .MuiOutlinedInput-root                   { border-radius: 16px !important; }
 .MuiFormLabel-root                       { margin-bottom: 8px; font-weight: bold !important; }
