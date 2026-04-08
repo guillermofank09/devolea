@@ -46,3 +46,21 @@ export async function fetchRevenue(): Promise<RevenueStats> {
   const { data } = await axios.get<RevenueStats>(`${API}/stats/revenue`);
   return data;
 }
+
+export interface ProfesorBillingEntry {
+  profesorId: number;
+  name: string;
+  ownRate: number | null;
+  effectiveRate: number;
+  monthlyClasses: number;
+  monthlyHours: number;
+  monthlyRevenue: number;
+  allTimeClasses: number;
+  allTimeHours: number;
+  allTimeRevenue: number;
+}
+
+export async function fetchProfesorStats(): Promise<ProfesorBillingEntry[]> {
+  const { data } = await axios.get<ProfesorBillingEntry[]>(`${API}/stats/profesores`);
+  return data;
+}

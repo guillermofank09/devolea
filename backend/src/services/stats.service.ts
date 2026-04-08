@@ -3,6 +3,7 @@ import { Booking } from "../entities/Booking";
 import { AppSettings } from "../entities/AppSettings";
 import { ClubProfile } from "../entities/ClubProfile";
 import { Court } from "../entities/Court";
+import { Profesor } from "../entities/Profesor";
 
 export interface RevenueEntry {
   label: string;
@@ -91,6 +92,21 @@ function availableHoursForDay(date: Date, schedule: DaySchedule[]): number {
   return Math.max(parseHHMM(entry.closeTime) - parseHHMM(entry.openTime), 0);
 }
 
+// ── Profesor billing ──────────────────────────────────────────────────────────
+
+export interface ProfesorBillingEntry {
+  profesorId: number;
+  name: string;
+  ownRate: number | null;
+  effectiveRate: number;
+  monthlyClasses: number;
+  monthlyHours: number;
+  monthlyRevenue: number;
+  allTimeClasses: number;
+  allTimeHours: number;
+  allTimeRevenue: number;
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export class StatsService {
@@ -98,7 +114,8 @@ export class StatsService {
     private bookingRepo: Repository<Booking>,
     private settingsRepo: Repository<AppSettings>,
     private profileRepo: Repository<ClubProfile>,
-    private courtRepo: Repository<Court>
+    private courtRepo: Repository<Court>,
+    private profesorRepo: Repository<Profesor>
   ) {}
 
   async getRevenue(userId: number): Promise<RevenueStats> {
@@ -260,5 +277,52 @@ export class StatsService {
         periodDays: 1,
       },
     };
+  }
+
+  async getProfesorStats(userId: number): Promise<ProfesorBillingEntry[]> {
+    const [profesores, bookings, settings] = await Promise.all([
+      this.profesorRepo.find({ where: { userId } }),
+      this.bookingRepo.find({ where: { userId, status: "CONFIRMED" } }),
+      this.settingsRepo.findOneBy({ userId }),
+    ]);
+
+    const classHourlyRate = Number(settings?.classHourlyRate ?? 0);
+    const now = new Date();
+    const currentMonthKey = isoMonth(now);
+
+    // Only bookings linked to a profesor
+    const profesorBookings = bookings.filter((b) => b.profesor != null);
+
+    return profesores
+      .map((p) => {
+        const ownRate = p.hourlyRate != null ? Number(p.hourlyRate) : null;
+        const effectiveRate = ownRate ?? classHourlyRate;
+        const pBookings = profesorBookings.filter((b) => b.profesor!.id === p.id);
+
+        let monthlyClasses = 0, monthlyHours = 0, monthlyRevenue = 0;
+        let allTimeClasses = 0, allTimeHours = 0, allTimeRevenue = 0;
+
+        for (const b of pBookings) {
+          const start = new Date(b.startTime);
+          const end   = new Date(b.endTime);
+          const hrs   = durationHours(start, end);
+          if (hrs <= 0) continue;
+
+          const revenue = b.price != null ? Number(b.price) : hrs * effectiveRate;
+
+          allTimeClasses++;
+          allTimeHours   += hrs;
+          allTimeRevenue += revenue;
+
+          if (isoMonth(start) === currentMonthKey) {
+            monthlyClasses++;
+            monthlyHours   += hrs;
+            monthlyRevenue += revenue;
+          }
+        }
+
+        return { profesorId: p.id, name: p.name, ownRate, effectiveRate, monthlyClasses, monthlyHours, monthlyRevenue, allTimeClasses, allTimeHours, allTimeRevenue };
+      })
+      .sort((a, b) => b.monthlyRevenue - a.monthlyRevenue);
   }
 }

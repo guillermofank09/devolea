@@ -18,8 +18,9 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
+import ProfesorBillingCard from "./ProfesorBillingCard";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRevenue } from "../../api/statsService";
+import { fetchRevenue, fetchProfesorStats } from "../../api/statsService";
 import PageLoader from "../../components/common/PageLoader";
 import type { RevenueEntry, CourtOccupancy, OccupancySummary } from "../../api/statsService";
 import PageHeader from "../../components/common/PageHeader";
@@ -385,6 +386,13 @@ export default function Stats() {
     retry: 1,
   });
 
+  const { data: profesorData } = useQuery({
+    queryKey: ["stats", "profesores"],
+    queryFn: fetchProfesorStats,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   if (isPending) return <PageLoader />;
 
   if (isError || !data) {
@@ -493,6 +501,9 @@ export default function Stats() {
           <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
         </CardContent>
       </Card>
+
+      {/* Profesor billing card */}
+      {profesorData && <ProfesorBillingCard data={profesorData} />}
     </Box>
   );
 }
