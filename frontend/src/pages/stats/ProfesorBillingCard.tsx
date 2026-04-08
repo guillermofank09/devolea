@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   InputAdornment,
   TextField,
   Tooltip,
@@ -16,6 +15,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import SchoolIcon from "@mui/icons-material/School";
 import type { ProfesorBillingEntry } from "../../api/statsService";
+import PageLoader from "../../components/common/PageLoader";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -69,11 +69,7 @@ export default function ProfesorBillingCard({ data, isLoading, isError }: Props)
           )}
         </Box>
 
-        {isLoading && (
-          <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
-            <CircularProgress size={28} />
-          </Box>
-        )}
+        {isLoading && <PageLoader />}
 
         {isError && (
           <Alert severity="error" sx={{ borderRadius: 2 }}>
