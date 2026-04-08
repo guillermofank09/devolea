@@ -68,7 +68,7 @@ const Header = ({ onMenuClick }: Props) => {
 
         {/* User avatar button */}
         <Tooltip title="Mi cuenta">
-          <IconButton onClick={handleOpen} size="small" sx={{ p: 0.5 }}>
+          <IconButton onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
             <Avatar
               sx={{
                 width: 34,

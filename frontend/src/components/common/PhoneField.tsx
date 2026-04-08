@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, FormLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { FORM_LABEL_SX } from "../../styles/formStyles";
 
 const COUNTRIES = [
   { dial: "54",  flag: "🇦🇷", name: "Argentina" },
@@ -30,9 +31,10 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  disabled?: boolean;
 }
 
-export default function PhoneField({ value, onChange, label = "Teléfono (opcional)" }: Props) {
+export default function PhoneField({ value, onChange, label = "Teléfono (opcional)", disabled }: Props) {
   const [dial, setDial] = useState(() => parsePhone(value).dial);
   const [local, setLocal] = useState(() => parsePhone(value).local);
 
@@ -58,15 +60,14 @@ export default function PhoneField({ value, onChange, label = "Teléfono (opcion
 
   return (
     <Box>
-      <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>
-        {label}
-      </FormLabel>
+      <FormLabel sx={FORM_LABEL_SX}>{label}</FormLabel>
       <Box sx={{ display: "flex", gap: 1 }}>
         <Select
           value={dial}
           onChange={(e) => handleDial(e.target.value)}
           size="small"
           renderValue={() => `${selected.flag} +${dial}`}
+          disabled={disabled}
           sx={{ flexShrink: 0, height: 40, fontSize: "0.875rem" }}
           MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
         >
@@ -86,6 +87,7 @@ export default function PhoneField({ value, onChange, label = "Teléfono (opcion
           onChange={(e) => handleLocal(e.target.value)}
           placeholder="Ej: 1112345678"
           inputProps={{ inputMode: "tel" }}
+          disabled={disabled}
           sx={{ "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } }}
         />
       </Box>

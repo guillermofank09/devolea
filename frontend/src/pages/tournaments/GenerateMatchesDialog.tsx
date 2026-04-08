@@ -25,6 +25,7 @@ import { fetchProfile } from "../../api/profileService";
 import { fetchSettings } from "../../api/settingsService";
 import type { DaySchedule } from "../../types/ClubProfile";
 import type { Booking } from "../../types/Booking";
+import { FORM_LABEL_SX } from "../../styles/formStyles";
 
 const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -166,7 +167,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           </Box>
 
           <Box>
-            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Fecha</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Fecha</FormLabel>
             <OutlinedInput
               fullWidth
               size="small"
@@ -182,7 +183,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           </Box>
 
           <Box>
-            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Cancha</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Cancha</FormLabel>
             <Select
               fullWidth
               size="small"

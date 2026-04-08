@@ -37,26 +37,17 @@ import type { Player, PlayerCategory } from "../../types/Player";
 import type { Profesor } from "../../types/Profesor";
 import type { AppSettings } from "../../types/AppSettings";
 import AddEditPlayer from "../players/AddEditPlayer";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
-  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma",
+  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "S/C",
 };
 
 const CATEGORY_COLOR: Record<PlayerCategory, "error" | "warning" | "success" | "info" | "primary" | "secondary" | "default"> = {
   PRIMERA: "error", SEGUNDA: "warning", TERCERA: "success", CUARTA: "info",
-  QUINTA: "primary", SEXTA: "secondary", SEPTIMA: "default",
+  QUINTA: "primary", SEXTA: "secondary", SEPTIMA: "default", SIN_CATEGORIA: "default",
 };
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
-
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-}
 
 const formatDate = (d: Date) =>
   d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -483,6 +474,28 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
               />
             </Box>
           </Box>
+
+          {isRecurring && (
+            <Box
+              sx={{
+                mt: 1.5,
+                px: 1.5,
+                py: 1,
+                borderRadius: 1.5,
+                bgcolor: "warning.50",
+                border: "1px solid",
+                borderColor: "warning.200",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 1,
+              }}
+            >
+              <InfoOutlinedIcon sx={{ fontSize: 15, color: "warning.main", mt: 0.15, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" lineHeight={1.5}>
+                Se crearán <strong>hasta 52 reservas</strong> (1 año). Las semanas con conflictos de horario se omiten automáticamente.
+              </Typography>
+            </Box>
+          )}
 
           {bookingError && (
             <Typography variant="body2" color="error" mt={2}>

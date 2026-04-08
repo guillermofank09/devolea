@@ -21,6 +21,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlayer, updatePlayer } from "../../api/playerService";
 import type { Player, PlayerCategory, PlayerFormData, PlayerSex } from "../../types/Player";
 import PhoneField from "../../components/common/PhoneField";
+import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 // ── Nominatim city search ─────────────────────────────────────────────────────
 
@@ -64,18 +65,19 @@ async function searchCities(query: string): Promise<CityOption[]> {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES: { value: PlayerCategory; label: string }[] = [
-  { value: "PRIMERA", label: "1ra" },
-  { value: "SEGUNDA", label: "2da" },
-  { value: "TERCERA", label: "3ra" },
-  { value: "CUARTA",  label: "4ta" },
-  { value: "QUINTA",  label: "5ta" },
-  { value: "SEXTA",   label: "6ta" },
-  { value: "SEPTIMA", label: "7ma" },
+  { value: "SIN_CATEGORIA", label: "Sin Categoría" },
+  { value: "PRIMERA",       label: "1ra" },
+  { value: "SEGUNDA",       label: "2da" },
+  { value: "TERCERA",       label: "3ra" },
+  { value: "CUARTA",        label: "4ta" },
+  { value: "QUINTA",        label: "5ta" },
+  { value: "SEXTA",         label: "6ta" },
+  { value: "SEPTIMA",       label: "7ma" },
 ];
 
 const EMPTY: PlayerFormData = {
   name: "",
-  category: "CUARTA",
+  category: "SIN_CATEGORIA",
   city: "",
   sex: "MASCULINO",
   birthDate: "",
@@ -161,10 +163,6 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
 
   const isValid = form.name.trim() && form.city.trim() && form.birthDate;
 
-  // Shared sx for all field labels
-  const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
-  // Shared sx for all text fields / selects (small + consistent height)
-  const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
 
   return (
     <Dialog
@@ -185,7 +183,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
 
             {/* Nombre */}
             <Box>
-              <FormLabel sx={labelSx}>Nombre completo</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Nombre completo</FormLabel>
               <TextField
                 fullWidth
                 size="small"
@@ -193,14 +191,15 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="Ej: Juan Pérez"
                 autoFocus
-                sx={fieldSx}
+                disabled={mutation.isPending}
+                sx={FORM_INPUT_SX}
               />
             </Box>
 
             {/* Ciudad + Fecha */}
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
-                <FormLabel sx={labelSx}>Ciudad</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Ciudad</FormLabel>
                 <Autocomplete
                   freeSolo
                   options={cityOptions}
@@ -216,12 +215,13 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                   loading={cityLoading}
                   noOptionsText="Sin resultados"
                   filterOptions={(x) => x}
+                  disabled={mutation.isPending}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       size="small"
                       placeholder="Ej: Buenos Aires"
-                      sx={fieldSx}
+                      sx={FORM_INPUT_SX}
                       slotProps={{
                         input: {
                           ...params.InputProps,
@@ -239,7 +239,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
               </Box>
 
               <Box>
-                <FormLabel sx={labelSx}>Fecha de nacimiento</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
                 <TextField
                   fullWidth
                   size="small"
@@ -247,8 +247,9 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                   value={form.birthDate}
                   onChange={(e) => set("birthDate", e.target.value)}
                   inputProps={{ max: new Date().toISOString().split("T")[0] }}
+                  disabled={mutation.isPending}
                   sx={{
-                    ...fieldSx,
+                    ...FORM_INPUT_SX,
                     "& input[type='date']::-webkit-calendar-picker-indicator": {
                       opacity: 0.5,
                       cursor: "pointer",
@@ -263,16 +264,18 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
             <PhoneField
               value={form.phone}
               onChange={(val) => set("phone", val)}
+              disabled={mutation.isPending}
             />
 
             {/* Categoría */}
             <Box>
-              <FormLabel sx={labelSx}>Categoría</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
               <Select
                 fullWidth
                 size="small"
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
+                disabled={mutation.isPending}
                 sx={{ height: 40, fontSize: "0.875rem" }}
               >
                 {CATEGORIES.map((c) => (
@@ -283,7 +286,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
 
             {/* Sexo */}
             <Box>
-              <FormLabel sx={labelSx}>Sexo</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
               <ToggleButtonGroup
                 value={form.sex}
                 exclusive

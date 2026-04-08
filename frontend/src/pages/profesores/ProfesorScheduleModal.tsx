@@ -21,15 +21,10 @@ import RepeatIcon from "@mui/icons-material/Repeat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBookingsByProfesor, cancelBooking, cancelBookingGroup } from "../../api/bookingService";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
+import { stringToColor } from "../../utils/uiUtils";
 import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
 import type { Profesor } from "../../types/Profesor";
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
 
 const formatTime = (d: Date) =>
   d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });

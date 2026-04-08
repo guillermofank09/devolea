@@ -21,38 +21,54 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import type { Player, PlayerCategory } from "../../types/Player";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
+import EmptyState from "../../components/common/EmptyState";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
-  PRIMERA: "1ra",
-  SEGUNDA: "2da",
-  TERCERA: "3ra",
-  CUARTA: "4ta",
-  QUINTA: "5ta",
-  SEXTA: "6ta",
-  SEPTIMA: "7ma",
+  PRIMERA:       "1ra",
+  SEGUNDA:       "2da",
+  TERCERA:       "3ra",
+  CUARTA:        "4ta",
+  QUINTA:        "5ta",
+  SEXTA:         "6ta",
+  SEPTIMA:       "7ma",
+  SIN_CATEGORIA: "S/C",
+};
+
+const CATEGORY_FULL: Record<PlayerCategory, string> = {
+  PRIMERA:       "1ra Categoría",
+  SEGUNDA:       "2da Categoría",
+  TERCERA:       "3ra Categoría",
+  CUARTA:        "4ta Categoría",
+  QUINTA:        "5ta Categoría",
+  SEXTA:         "6ta Categoría",
+  SEPTIMA:       "7ma Categoría",
+  SIN_CATEGORIA: "Sin Categoría",
 };
 
 const CATEGORY_ORDER: Record<PlayerCategory, number> = {
-  PRIMERA: 1,
-  SEGUNDA: 2,
-  TERCERA: 3,
-  CUARTA: 4,
-  QUINTA: 5,
-  SEXTA: 6,
-  SEPTIMA: 7,
+  PRIMERA:       1,
+  SEGUNDA:       2,
+  TERCERA:       3,
+  CUARTA:        4,
+  QUINTA:        5,
+  SEXTA:         6,
+  SEPTIMA:       7,
+  SIN_CATEGORIA: 8,
 };
 
 const CATEGORY_COLOR: Record<
   PlayerCategory,
   "error" | "warning" | "success" | "info" | "default" | "primary" | "secondary"
 > = {
-  PRIMERA: "error",
-  SEGUNDA: "warning",
-  TERCERA: "success",
-  CUARTA: "info",
-  QUINTA: "primary",
-  SEXTA: "secondary",
-  SEPTIMA: "default",
+  PRIMERA:       "error",
+  SEGUNDA:       "warning",
+  TERCERA:       "success",
+  CUARTA:        "info",
+  QUINTA:        "primary",
+  SEXTA:         "secondary",
+  SEPTIMA:       "default",
+  SIN_CATEGORIA: "default",
 };
 
 function getAge(birthDate: string): number {
@@ -62,16 +78,6 @@ function getAge(birthDate: string): number {
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age;
-}
-
-function getInitials(name: string): string {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-}
-
-function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
 }
 
 type SortKey = "name" | "category" | "city" | "sex" | "age";
@@ -128,12 +134,14 @@ function MobileList({ players, onEdit, onDelete }: Props) {
                 <Typography variant="body2" fontWeight={700} noWrap sx={{ maxWidth: "55vw" }}>
                   {player.name}
                 </Typography>
-                <Chip
-                  label={CATEGORY_LABEL[player.category]}
-                  color={CATEGORY_COLOR[player.category]}
-                  size="small"
-                  sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }}
-                />
+                <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
+                  <Chip
+                    label={CATEGORY_LABEL[player.category]}
+                    color={CATEGORY_COLOR[player.category]}
+                    size="small"
+                    sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }}
+                  />
+                </Tooltip>
               </Box>
               <Typography variant="caption" color="text.secondary">
                 {player.city} · {player.sex === "MASCULINO" ? "M" : "F"} · {getAge(player.birthDate)} años
@@ -177,11 +185,7 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
   const sorted = sortPlayers(players, sortKey, sortDir);
 
   if (players.length === 0) {
-    return (
-      <Box textAlign="center" py={8}>
-        <Typography color="text.secondary">No hay jugadores registrados.</Typography>
-      </Box>
-    );
+    return <EmptyState message="No hay jugadores registrados." />;
   }
 
   if (isMobile) {
@@ -270,12 +274,14 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
               </TableCell>
 
               <TableCell>
-                <Chip
-                  label={CATEGORY_LABEL[player.category]}
-                  color={CATEGORY_COLOR[player.category]}
-                  size="small"
-                  sx={{ fontWeight: 700, minWidth: 42 }}
-                />
+                <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
+                  <Chip
+                    label={CATEGORY_LABEL[player.category]}
+                    color={CATEGORY_COLOR[player.category]}
+                    size="small"
+                    sx={{ fontWeight: 700, minWidth: 42 }}
+                  />
+                </Tooltip>
               </TableCell>
 
               <TableCell>

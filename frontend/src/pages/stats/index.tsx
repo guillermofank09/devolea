@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   Divider,
+  Grid,
   Tab,
   Tabs,
   Tooltip,
@@ -349,7 +350,7 @@ function SummaryCard({
   return (
     <Card
       elevation={0}
-      sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, flex: 1, minWidth: 140 }}
+      sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, height: "100%" }}
     >
       <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: color ?? "#F5AD27" }}>
@@ -411,12 +412,20 @@ export default function Stats() {
       <PageHeader title="Estadísticas" subtitle="Facturación y ocupación de canchas" />
 
       {/* Summary cards */}
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-        <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"            value={data.totals.day} />
-        <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana"     value={data.totals.week} />
-        <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"        value={data.totals.month} />
-        <SummaryCard icon={<AllInclusiveIcon sx={{ fontSize: 18 }} />} label="Total histórico" value={data.totals.allTime} color="text.secondary" />
-      </Box>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"            value={data.totals.day} />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana"     value={data.totals.week} />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"        value={data.totals.month} />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <SummaryCard icon={<AllInclusiveIcon sx={{ fontSize: 18 }} />} label="Total histórico" value={data.totals.allTime} color="text.secondary" />
+        </Grid>
+      </Grid>
 
       {/* Revenue chart card */}
       <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, mb: 3 }}>

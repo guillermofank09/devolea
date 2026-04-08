@@ -8,7 +8,8 @@ export type PlayerCategory =
   | "CUARTA"
   | "QUINTA"
   | "SEXTA"
-  | "SEPTIMA";
+  | "SEPTIMA"
+  | "SIN_CATEGORIA";
 
 @Entity()
 export class Player {

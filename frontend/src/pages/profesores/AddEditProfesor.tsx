@@ -18,9 +18,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createProfesor, updateProfesor } from "../../api/profesorService";
 import type { Profesor, ProfesorFormData } from "../../types/Profesor";
 import PhoneField from "../../components/common/PhoneField";
-
-const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
-const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
+import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 const EMPTY: ProfesorFormData = { name: "", phone: "" };
 
@@ -91,7 +89,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
             <Box>
-              <FormLabel sx={labelSx}>Nombre</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
               <TextField
                 fullWidth
                 size="small"
@@ -99,17 +97,19 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="Ej: Juan Pérez"
                 autoFocus
-                sx={fieldSx}
+                disabled={mutation.isPending}
+                sx={FORM_INPUT_SX}
               />
             </Box>
 
             <PhoneField
               value={form.phone}
               onChange={(val) => setForm(p => ({ ...p, phone: val }))}
+              disabled={mutation.isPending}
             />
 
             <Box>
-              <FormLabel sx={labelSx}>Precio por hora</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
               <TextField
                 fullWidth
                 size="small"
@@ -122,11 +122,12 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                     setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
                 }}
                 placeholder="0"
+                disabled={mutation.isPending}
                 slotProps={{
                   input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
                 }}
                 helperText="Tarifa propia del profesor. Si se deja vacío se usa el precio general de clases."
-                sx={fieldSx}
+                sx={FORM_INPUT_SX}
               />
             </Box>
 

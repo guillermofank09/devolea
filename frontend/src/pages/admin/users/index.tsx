@@ -34,6 +34,7 @@ import PageHeader from "../../../components/common/PageHeader";
 import DeleteDialog from "../../../components/common/DeleteDialog";
 import PageLoader from "../../../components/common/PageLoader";
 import FormLabel from "@mui/material/FormLabel";
+import { FORM_LABEL_SX } from "../../../styles/formStyles";
 
 // ─── Create user dialog ───────────────────────────────────────────────────────
 function CreateUserDialog({
@@ -91,12 +92,12 @@ function CreateUserDialog({
             { label: "Nombre completo",   value: name,     setter: setName,     autoFocus: false, autoComplete: "off" },
           ] as const).map(({ label, value, setter, autoFocus, autoComplete }) => (
             <Box key={label}>
-              <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>{label}</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>{label}</FormLabel>
               <TextField value={value} onChange={(e) => setter(e.target.value)} required autoFocus={autoFocus} fullWidth size="small" autoComplete={autoComplete} />
             </Box>
           ))}
           <Box>
-            <FormLabel sx={{ mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary", display: "block" }}>Contraseña</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Contraseña</FormLabel>
             <TextField
               type={showPass ? "text" : "password"}
               value={password}

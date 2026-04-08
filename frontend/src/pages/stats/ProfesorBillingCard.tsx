@@ -16,6 +16,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import SchoolIcon from "@mui/icons-material/School";
 import type { ProfesorBillingEntry } from "../../api/statsService";
 import PageLoader from "../../components/common/PageLoader";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("es-AR", {
@@ -23,16 +24,6 @@ function fmt(n: number) {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(n);
-}
-
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-}
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
 }
 
 interface Props {

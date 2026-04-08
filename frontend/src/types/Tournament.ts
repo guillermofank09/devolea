@@ -2,7 +2,7 @@ import type { Player } from "./Player";
 
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
-export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA";
+export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
 
 export interface Tournament {

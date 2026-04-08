@@ -22,26 +22,17 @@ import { addPair } from "../../api/tournamentService";
 import type { Player, PlayerCategory } from "../../types/Player";
 import type { Pair } from "../../types/Tournament";
 import AddEditPlayer from "../players/AddEditPlayer";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
-  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma",
+  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "S/C",
 };
 
 const CATEGORY_COLOR: Record<PlayerCategory, "error" | "warning" | "success" | "info" | "primary" | "secondary" | "default"> = {
   PRIMERA: "error", SEGUNDA: "warning", TERCERA: "success", CUARTA: "info",
-  QUINTA: "primary", SEXTA: "secondary", SEPTIMA: "default",
+  QUINTA: "primary", SEXTA: "secondary", SEPTIMA: "default", SIN_CATEGORIA: "default",
 };
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
-
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
-}
 
 const CREATE_OPTION_ID = -1;
 

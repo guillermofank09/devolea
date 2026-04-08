@@ -26,6 +26,7 @@ import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
 import type { Court } from "../../types/Court";
 import BookingDialog from "./BookingDialog";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 const STATUS_LABEL: Record<Court["status"], string> = {
   AVAILABLE:       "Disponible",
@@ -43,16 +44,6 @@ const TYPE_LABEL: Record<Court["type"], string> = {
   TECHADA: "Techada",
   DESCUBIERTA: "Descubierta",
 };
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
-
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-}
 
 const formatTime = (d: Date) =>
   d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });

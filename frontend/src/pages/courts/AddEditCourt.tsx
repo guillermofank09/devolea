@@ -19,9 +19,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCourt } from "../../api/courtService";
 import type { Court, CourtType, CreateCourt } from "../../types/Court";
-
-const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
-const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
+import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 const AddEditCourt = ({
   isEditing = false,
@@ -90,7 +88,7 @@ const AddEditCourt = ({
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
               <Box>
-                <FormLabel sx={labelSx}>Nombre</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
                 <TextField
                   fullWidth
                   size="small"
@@ -98,17 +96,19 @@ const AddEditCourt = ({
                   onChange={e => setName(e.target.value)}
                   placeholder="Ej: Cancha 1"
                   autoFocus
-                  sx={fieldSx}
+                  disabled={mutation.isPending}
+                  sx={FORM_INPUT_SX}
                 />
               </Box>
 
               <Box>
-                <FormLabel sx={labelSx}>Tipo</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Tipo</FormLabel>
                 <Select
                   fullWidth
                   size="small"
                   value={type}
                   onChange={e => setCourtType(e.target.value as CourtType)}
+                  disabled={mutation.isPending}
                   sx={{ height: 40, fontSize: "0.875rem" }}
                 >
                   <MenuItem value="TECHADA">Techada · Iluminada</MenuItem>

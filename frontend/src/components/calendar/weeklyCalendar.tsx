@@ -5,6 +5,7 @@ import { localizer } from "./calendarConfig";
 import "../../styles/Calendar.css";
 import type { CalendarEvent } from "../../types/Event";
 import { useMediaQuery } from "@mui/material";
+import { getInitials } from "../../utils/uiUtils";
 
 interface Props {
   events: CalendarEvent[];
@@ -29,10 +30,6 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
-}
-
-function getInitials(name: string) {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
 // ── Custom event block ────────────────────────────────────────────────────────

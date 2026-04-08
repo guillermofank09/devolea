@@ -6,7 +6,8 @@ export type PlayerCategory =
   | "CUARTA"
   | "QUINTA"
   | "SEXTA"
-  | "SEPTIMA";
+  | "SEPTIMA"
+  | "SIN_CATEGORIA";
 
 export interface Player {
   id: number;

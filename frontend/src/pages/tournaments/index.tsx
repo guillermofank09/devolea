@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournaments, deleteTournament } from "../../api/tournamentService";
 import PageLoader from "../../components/common/PageLoader";
+import EmptyState from "../../components/common/EmptyState";
 import type { Tournament, TournamentCategory, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
@@ -27,7 +28,7 @@ import DeleteDialog from "../../components/common/DeleteDialog";
 
 const CATEGORY_LABEL: Record<TournamentCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
-  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma",
+  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "S/C",
 };
 
 const STATUS_LABEL: Record<TournamentStatus, string> = {
@@ -98,19 +99,19 @@ export default function Tournaments() {
       {error && <Alert severity="error">{String(error)}</Alert>}
 
       {data && data.length === 0 && (
-        <Box mt={6} textAlign="center">
-          <Typography variant="body1" pb={3} color="text.secondary">
-            Todavía no hay torneos registrados. Agregá el primero.
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setAddOpen(true)}
-            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
-          >
-            Agregar torneo
-          </Button>
-        </Box>
+        <EmptyState
+          message="Todavía no hay torneos registrados. Agregá el primero."
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAddOpen(true)}
+              sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+            >
+              Agregar torneo
+            </Button>
+          }
+        />
       )}
 
       {data && data.length > 0 && (

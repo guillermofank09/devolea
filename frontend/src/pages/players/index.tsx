@@ -3,6 +3,8 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
+  Fab,
   InputAdornment,
   OutlinedInput,
   Typography,
@@ -11,6 +13,8 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers, deletePlayer } from "../../api/playerService";
 import type { Player } from "../../types/Player";
@@ -18,7 +22,7 @@ import PlayerTable from "./PlayerTable";
 import AddEditPlayer from "./AddEditPlayer";
 import DeleteDialog from "../../components/common/DeleteDialog";
 import PageHeader from "../../components/common/PageHeader";
-import PageLoader from "../../components/common/PageLoader";
+import TableSkeleton from "../../components/common/TableSkeleton";
 
 export default function Players() {
   const [search, setSearch] = useState("");
@@ -30,9 +34,10 @@ export default function Players() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
-  const { isPending, error, data } = useQuery<Player[]>({
+  const { isPending, isFetching, error, data } = useQuery<Player[]>({
     queryKey: ["playersData", search],
     queryFn: () => fetchPlayers(search || undefined),
+    placeholderData: (prev) => prev,
   });
 
   const deleteMutation = useMutation({
@@ -66,6 +71,15 @@ export default function Players() {
             <SearchIcon fontSize="small" />
           </InputAdornment>
         }
+        endAdornment={
+          search ? (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null
+        }
         sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 220 }}
       />
       <Button
@@ -87,9 +101,9 @@ export default function Players() {
         action={isMobile ? undefined : desktopAction}
       />
 
-      {/* Mobile: search + button below the title, full width */}
+      {/* Mobile: search full width */}
       {isMobile && (
-        <Box sx={{ display: "flex", gap: 1, mb: 2.5, mt: -2 }}>
+        <Box sx={{ mb: 2.5, mt: -2 }}>
           <OutlinedInput
             size="small"
             fullWidth
@@ -101,26 +115,49 @@ export default function Players() {
                 <SearchIcon fontSize="small" />
               </InputAdornment>
             }
-            sx={{ borderRadius: 2, backgroundColor: "white", flex: 1 }}
+            endAdornment={
+              search ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }
+            sx={{ borderRadius: 2, backgroundColor: "white" }}
           />
-          <Button
-            variant="contained"
-            onClick={() => setAddEditOpen(true)}
-            sx={{ borderRadius: 2, minWidth: 44, px: 1.5, flexShrink: 0 }}
-          >
-            <AddIcon />
-          </Button>
         </Box>
       )}
 
-      {isPending && <PageLoader />}
+      {/* Mobile FAB */}
+      {isMobile && (
+        <Fab
+          color="default"
+          aria-label="Agregar jugador"
+          onClick={() => setAddEditOpen(true)}
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            bgcolor: "#111",
+            color: "#fff",
+            "&:hover": { bgcolor: "#333" },
+            zIndex: 1200,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
+
+      {isPending && <TableSkeleton rows={7} columns={5} />}
       {error && <Alert severity="error">{String(error)}</Alert>}
       {data && (
         <>
-          <Box sx={{ mb: 1 }}>
+          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2" color="text.secondary">
               {data.length} {data.length === 1 ? "jugador" : "jugadores"}
             </Typography>
+            {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
           </Box>
           <PlayerTable
             players={data}

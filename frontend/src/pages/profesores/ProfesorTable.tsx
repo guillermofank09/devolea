@@ -19,16 +19,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import type { Profesor } from "../../types/Profesor";
-
-function getInitials(name: string): string {
-  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
-}
-
-function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
+import { getInitials, stringToColor } from "../../utils/uiUtils";
+import EmptyState from "../../components/common/EmptyState";
 
 interface Props {
   profesores: Profesor[];
@@ -81,11 +73,7 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (profesores.length === 0) {
-    return (
-      <Box textAlign="center" py={8}>
-        <Typography color="text.secondary">No hay profesores registrados.</Typography>
-      </Box>
-    );
+    return <EmptyState message="No hay profesores registrados." />;
   }
 
   if (isMobile) {

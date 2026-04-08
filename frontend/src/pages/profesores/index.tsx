@@ -3,6 +3,8 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
+  Fab,
   InputAdornment,
   OutlinedInput,
   Typography,
@@ -11,9 +13,11 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfesores, deleteProfesor } from "../../api/profesorService";
-import PageLoader from "../../components/common/PageLoader";
+import TableSkeleton from "../../components/common/TableSkeleton";
 import type { Profesor } from "../../types/Profesor";
 import ProfesorTable from "./ProfesorTable";
 import AddEditProfesor from "./AddEditProfesor";
@@ -32,9 +36,10 @@ export default function Profesores() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
-  const { isPending, error, data } = useQuery<Profesor[]>({
+  const { isPending, isFetching, error, data } = useQuery<Profesor[]>({
     queryKey: ["profesoresData", search],
     queryFn: () => fetchProfesores(search || undefined),
+    placeholderData: (prev) => prev,
   });
 
   const deleteMutation = useMutation({
@@ -56,6 +61,15 @@ export default function Profesores() {
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Buscar profesor..."
         startAdornment={<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}
+        endAdornment={
+          search ? (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null
+        }
         sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 220 }}
       />
       <Button
@@ -78,7 +92,7 @@ export default function Profesores() {
       />
 
       {isMobile && (
-        <Box sx={{ display: "flex", gap: 1, mb: 2.5, mt: -2 }}>
+        <Box sx={{ mb: 2.5, mt: -2 }}>
           <OutlinedInput
             size="small"
             fullWidth
@@ -86,26 +100,48 @@ export default function Profesores() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar profesor..."
             startAdornment={<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}
-            sx={{ borderRadius: 2, backgroundColor: "white", flex: 1 }}
+            endAdornment={
+              search ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }
+            sx={{ borderRadius: 2, backgroundColor: "white" }}
           />
-          <Button
-            variant="contained"
-            onClick={() => setAddEditOpen(true)}
-            sx={{ borderRadius: 2, minWidth: 44, px: 1.5, flexShrink: 0 }}
-          >
-            <AddIcon />
-          </Button>
         </Box>
       )}
 
-      {isPending && <PageLoader />}
+      {/* Mobile FAB */}
+      {isMobile && (
+        <Fab
+          aria-label="Agregar profesor"
+          onClick={() => setAddEditOpen(true)}
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            bgcolor: "#111",
+            color: "#fff",
+            "&:hover": { bgcolor: "#333" },
+            zIndex: 1200,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
+
+      {isPending && <TableSkeleton rows={5} columns={4} />}
       {error && <Alert severity="error">{String(error)}</Alert>}
       {data && (
         <>
-          <Box sx={{ mb: 1 }}>
+          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2" color="text.secondary">
               {data.length} {data.length === 1 ? "profesor" : "profesores"}
             </Typography>
+            {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
           </Box>
           <ProfesorTable
             profesores={data}

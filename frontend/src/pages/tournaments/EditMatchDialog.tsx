@@ -27,9 +27,7 @@ import { fetchSettings } from "../../api/settingsService";
 import type { Pair, TournamentMatch } from "../../types/Tournament";
 import type { DaySchedule } from "../../types/ClubProfile";
 import type { Booking } from "../../types/Booking";
-
-const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
-const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
+import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 interface SetScore { p1: string; p2: string; }
 
@@ -234,7 +232,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
           <Box>
-            <FormLabel sx={labelSx}>Cancha</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Cancha</FormLabel>
             <Select
               fullWidth
               size="small"
@@ -251,28 +249,28 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
           </Box>
 
           <Box>
-            <FormLabel sx={labelSx}>Fecha y hora</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Fecha y hora</FormLabel>
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField
                 size="small"
                 type="date"
                 value={scheduleDate}
                 onChange={e => setScheduleDate(e.target.value)}
-                sx={{ ...fieldSx, flex: 1 }}
+                sx={{ ...FORM_INPUT_SX, flex: 1 }}
               />
               <TextField
                 size="small"
                 type="time"
                 value={scheduleTime}
                 onChange={e => setScheduleTime(e.target.value)}
-                sx={{ ...fieldSx, minWidth: 110, flexShrink: 0 }}
+                sx={{ ...FORM_INPUT_SX, minWidth: 110, flexShrink: 0 }}
               />
             </Box>
           </Box>
 
           {slots.length > 0 && (
             <Box>
-              <FormLabel sx={{ ...labelSx, display: "block", mb: 1 }}>
+              <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>
                 Turnos disponibles
                 <Typography component="span" variant="caption" color="text.secondary" ml={1}>
                   (deshabilitado = ocupado)
@@ -295,7 +293,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
           )}
 
           <Box>
-            <FormLabel sx={labelSx}>Pareja 1</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Pareja 1</FormLabel>
             <Select
               fullWidth
               size="small"
@@ -312,7 +310,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
           </Box>
 
           <Box>
-            <FormLabel sx={labelSx}>Pareja 2</FormLabel>
+            <FormLabel sx={FORM_LABEL_SX}>Pareja 2</FormLabel>
             <Select
               fullWidth
               size="small"
@@ -329,7 +327,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
           </Box>
 
           <Box>
-            <FormLabel sx={{ ...labelSx, display: "block", mb: 1 }}>Resultado por set</FormLabel>
+            <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Resultado por set</FormLabel>
             {currentPair1 && currentPair2 && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
                 <Typography variant="caption" sx={{ minWidth: 44 }} />
@@ -380,7 +378,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
 
           {showWinner && (
             <Box>
-              <FormLabel sx={{ ...labelSx, display: "block", mb: 1 }}>Ganador</FormLabel>
+              <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Ganador</FormLabel>
               <ToggleButtonGroup
                 value={winnerId}
                 exclusive

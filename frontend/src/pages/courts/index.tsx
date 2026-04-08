@@ -6,8 +6,9 @@ import AddEditCourt from "./AddEditCourt";
 import PageHeader from "../../components/common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCourts } from "../../api/courtService";
-import { Alert, Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import PageLoader from "../../components/common/PageLoader";
+import { Alert, Box, useMediaQuery, useTheme } from "@mui/material";
+import EmptyState from "../../components/common/EmptyState";
+import CardGridSkeleton from "../../components/common/CardGridSkeleton";
 
 export default function Courts() {
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
@@ -33,16 +34,14 @@ export default function Courts() {
   const hasData = data && data.length > 0;
 
   const renderContent = () => {
-    if (isPending) return <PageLoader />;
+    if (isPending) return <CardGridSkeleton cards={8} />;
     if (error) return <Alert severity="error">{String(error)}</Alert>;
     if (!data || data.length === 0) {
       return (
-        <Box mt={6} textAlign="center">
-          <Typography variant="body1" pb={3} color="text.secondary">
-            Todavía no hay canchas registradas. Agregá la primera.
-          </Typography>
-          <AddEditCourt />
-        </Box>
+        <EmptyState
+          message="Todavía no hay canchas registradas. Agregá la primera."
+          action={<AddEditCourt />}
+        />
       );
     }
     return <CourtList onSelect={handleSelectCourt} courts={data} />;

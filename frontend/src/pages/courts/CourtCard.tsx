@@ -63,7 +63,7 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
       <Card
         elevation={0}
         sx={{
-          borderRadius: 2,
+          borderRadius: 3,
           border: "1.5px solid",
           borderColor: "divider",
           borderLeft: `4px solid ${borderColor}`,
@@ -118,6 +118,7 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
 
           <Tooltip title="Cambiar estado">
             <IconButton
+              aria-label="Cambiar estado de la cancha"
               size="small"
               onClick={(e) => { e.stopPropagation(); setStatusOpen(true); }}
               sx={{
@@ -136,6 +137,7 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
 
           <Tooltip title="Eliminar cancha">
             <IconButton
+              aria-label="Eliminar cancha"
               size="small"
               onClick={(e) => { e.stopPropagation(); setDeleteOpen(true); }}
               sx={{

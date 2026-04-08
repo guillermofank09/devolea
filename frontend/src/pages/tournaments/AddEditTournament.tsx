@@ -18,28 +18,28 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTournament, updateTournament } from "../../api/tournamentService";
 import type { Tournament, TournamentCategory, TournamentFormData } from "../../types/Tournament";
+import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 const CATEGORIES: { value: TournamentCategory; label: string }[] = [
-  { value: "PRIMERA", label: "1ra" },
-  { value: "SEGUNDA", label: "2da" },
-  { value: "TERCERA", label: "3ra" },
-  { value: "CUARTA",  label: "4ta" },
-  { value: "QUINTA",  label: "5ta" },
-  { value: "SEXTA",   label: "6ta" },
-  { value: "SEPTIMA", label: "7ma" },
+  { value: "SIN_CATEGORIA", label: "Sin Categoría" },
+  { value: "PRIMERA",       label: "1ra" },
+  { value: "SEGUNDA",       label: "2da" },
+  { value: "TERCERA",       label: "3ra" },
+  { value: "CUARTA",        label: "4ta" },
+  { value: "QUINTA",        label: "5ta" },
+  { value: "SEXTA",         label: "6ta" },
+  { value: "SEPTIMA",       label: "7ma" },
 ];
 
 const EMPTY: TournamentFormData = {
   name: "",
-  category: "CUARTA",
+  category: "SIN_CATEGORIA",
   startDate: "",
   endDate: "",
 };
 
-const labelSx = { mb: 0.5, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" };
-const fieldSx = { "& .MuiInputBase-root": { height: 40, fontSize: "0.875rem" } };
 const dateSx = {
-  ...fieldSx,
+  ...FORM_INPUT_SX,
   "& input[type='date']::-webkit-calendar-picker-indicator": {
     opacity: 0.5,
     cursor: "pointer",
@@ -116,7 +116,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
             <Box>
-              <FormLabel sx={labelSx}>Nombre del torneo</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Nombre del torneo</FormLabel>
               <TextField
                 fullWidth
                 size="small"
@@ -124,12 +124,12 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
                 onChange={e => set("name", e.target.value)}
                 placeholder="Ej: Torneo de Otoño 2026"
                 autoFocus
-                sx={fieldSx}
+                sx={FORM_INPUT_SX}
               />
             </Box>
 
             <Box>
-              <FormLabel sx={labelSx}>Categoría</FormLabel>
+              <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
               <Select
                 fullWidth
                 size="small"
@@ -145,7 +145,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
-                <FormLabel sx={labelSx}>Fecha de inicio</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Fecha de inicio</FormLabel>
                 <TextField
                   fullWidth
                   size="small"
@@ -156,7 +156,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
                 />
               </Box>
               <Box>
-                <FormLabel sx={labelSx}>Fecha de fin</FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>Fecha de fin</FormLabel>
                 <TextField
                   fullWidth
                   size="small"

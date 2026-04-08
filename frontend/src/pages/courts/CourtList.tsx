@@ -11,6 +11,7 @@ import type { Court, CourtStatus } from "../../types/Court";
 import type { AppSettings } from "../../types/AppSettings";
 import { fetchSettings } from "../../api/settingsService";
 import CourtCard from "./CourtCard";
+import EmptyState from "../../components/common/EmptyState";
 
 type FilterStatus = CourtStatus | "ALL";
 
@@ -82,11 +83,7 @@ export default function CourtList({
       </Grid>
 
       {filtered.length === 0 && (
-        <Box textAlign="center" py={6}>
-          <Typography color="text.secondary">
-            No hay canchas con ese estado.
-          </Typography>
-        </Box>
+        <EmptyState message="No hay canchas con ese estado." />
       )}
     </Box>
   );

@@ -37,6 +37,9 @@ import GenerateMatchesDialog from "./GenerateMatchesDialog";
 import EditMatchDialog from "./EditMatchDialog";
 import DeleteDialog from "../../components/common/DeleteDialog";
 import BracketView from "./BracketView";
+import { stringToColor } from "../../utils/uiUtils";
+import EmptyState from "../../components/common/EmptyState";
+import { FORM_LABEL_SX } from "../../styles/formStyles";
 
 const STATUS_LABEL: Record<TournamentStatus, string> = {
   DRAFT: "Borrador",
@@ -49,13 +52,6 @@ const STATUS_COLOR: Record<TournamentStatus, "default" | "success" | "primary"> 
   ACTIVE: "success",
   COMPLETED: "primary",
 };
-
-function stringToColor(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 45%, 40%)`;
-}
-
 
 function pairInitials(pair: Pair) {
   return `${pair.player1.name.split(" ")[0][0]}${pair.player2.name.split(" ")[0][0]}`.toUpperCase();
@@ -128,7 +124,7 @@ function NextRoundDialog({
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
           <Box>
-            <FormLabel sx={{ display: "block", mb: 0.75, fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" }}>
+            <FormLabel sx={FORM_LABEL_SX}>
               Fecha y hora de inicio
             </FormLabel>
             <Box sx={{ display: "flex", gap: 1 }}>
@@ -259,9 +255,7 @@ export default function TournamentDetail() {
           </Box>
 
           {data.pairs.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No hay parejas registradas. Agregá la primera.
-            </Typography>
+            <EmptyState message="No hay parejas registradas. Agregá la primera." />
           ) : (
             <List dense sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0, overflow: "hidden" }}>
               {data.pairs.map((pair, idx) => (
