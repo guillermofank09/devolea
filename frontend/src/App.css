@@ -98,4 +98,4 @@ h2 {
 .Mui-focused                             { color: black !important; }
 .MuiOutlinedInput-root                   { border-radius: 16px !important; }
 .MuiFormLabel-root                       { margin-bottom: 8px; font-weight: bold !important; }
-.MuiDialogActions-root                   { margin: 16px; }
+.MuiDialogActions-root                   { margin: 0; }

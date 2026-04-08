@@ -138,7 +138,7 @@ export default function ProfesorScheduleModal({ profesor, open, onClose }: Props
       <Dialog
         open={!!selectedBooking}
         onClose={() => setSelectedBooking(null)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
       >
