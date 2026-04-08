@@ -31,7 +31,7 @@ export default function PhoneField({ value, onChange, label = "Teléfono (opcion
           height: "40px",
           fontSize: "0.875rem",
           fontFamily: "inherit",
-          borderRadius: "0 4px 4px 0",
+          borderRadius: "0 16px 16px 0",
           border: "1px solid rgba(0,0,0,0.23)",
           borderLeft: "none",
           outline: "none",
@@ -40,7 +40,7 @@ export default function PhoneField({ value, onChange, label = "Teléfono (opcion
         buttonStyle={{
           border: "1px solid rgba(0,0,0,0.23)",
           borderRight: "none",
-          borderRadius: "4px 0 0 4px",
+          borderRadius: "16px 0 0 16px",
           background: "#fff",
         }}
         containerStyle={{
