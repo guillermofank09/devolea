@@ -1,22 +1,18 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Chip,
   CircularProgress,
   Container,
-  Divider,
+  Grid,
   Paper,
   Typography,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import type { TournamentMatch, Pair, TournamentDetail } from "../../types/Tournament";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail } from "../../api/publicService";
 
@@ -32,10 +28,20 @@ const FORMAT_LABEL: Record<string, string> = {
   BRACKET: "Llaves",
 };
 
-const STATUS_LABEL: Record<string, { label: string; color: "success" | "info" | "default" }> = {
-  ACTIVE:  { label: "En curso",     color: "success" },
-  DRAFT:   { label: "Por comenzar", color: "info" },
+const STATUS_INFO: Record<string, { label: string; color: string; bg: string }> = {
+  ACTIVE: { label: "En curso",     color: "#1b5e20", bg: "#e8f5e9" },
+  DRAFT:  { label: "Por comenzar", color: "#0d47a1", bg: "#e3f2fd" },
 };
+
+// Gradient banner per tournament — cycles through a palette
+const BANNER_GRADIENTS = [
+  "linear-gradient(135deg, #1565c0 0%, #42a5f5 100%)",
+  "linear-gradient(135deg, #6a1b9a 0%, #ce93d8 100%)",
+  "linear-gradient(135deg, #e65100 0%, #ffb74d 100%)",
+  "linear-gradient(135deg, #1b5e20 0%, #66bb6a 100%)",
+  "linear-gradient(135deg, #880e4f 0%, #f48fb1 100%)",
+  "linear-gradient(135deg, #004d40 0%, #4db6ac 100%)",
+];
 
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -54,6 +60,14 @@ function getRoundLabel(roundNumber: number, totalRounds: number): string {
   if (fromEnd === 3) return "Octavos de final";
   return `Ronda ${roundNumber}`;
 }
+
+// ─── live status colors ───────────────────────────────────────────────────────
+
+const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: string; text: string; label: string }> = {
+  IN_PLAY: { stripe: "#4caf50", border: "#a5d6a7", bg: "#f1f8f1", text: "#2e7d32", label: "En juego" },
+  DELAYED:  { stripe: "#ff9800", border: "#ffcc80", bg: "#fff8f0", text: "#e65100", label: "Atrasado" },
+  EARLY:    { stripe: "#29b6f6", border: "#90caf9", bg: "#f0f8ff", text: "#1565c0", label: "Adelantado" },
+};
 
 // ─── read-only bracket ────────────────────────────────────────────────────────
 
@@ -129,7 +143,6 @@ function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
     }
   });
 
-  // Champion detection
   const lastRound = generatedRounds[generatedRounds.length - 1];
   const finalMatches = matchesByRound[lastRound];
   let champion: Pair | null = null;
@@ -140,7 +153,6 @@ function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
 
   return (
     <Box sx={{ overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
-      {/* Round headers */}
       <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
         {allRoundNums.map((round, ri) => (
           <Box key={round} sx={{ width: MATCH_W, flexShrink: 0, textAlign: "center", mr: ri < allRoundNums.length - 1 ? `${CONN_W}px` : 0 }}>
@@ -150,8 +162,6 @@ function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
           </Box>
         ))}
       </Box>
-
-      {/* Canvas */}
       <Box sx={{ position: "relative", width: totalW, height: totalH, minWidth: totalW }}>
         <svg style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}>
           {connectors}
@@ -162,17 +172,12 @@ function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
             const isVirt = "virtual" in slot;
             return (
               <Box key={isVirt ? `v-${round}-${mi}` : (slot as TournamentMatch).id} sx={{ position: "absolute", top: cy - MATCH_H / 2, left: ri * (MATCH_W + CONN_W), width: MATCH_W, height: MATCH_H }}>
-                {isVirt ? (
-                  <EmptyCard />
-                ) : (
-                  <PublicMatchCard match={slot as TournamentMatch} />
-                )}
+                {isVirt ? <EmptyCard /> : <PublicMatchCard match={slot as TournamentMatch} />}
               </Box>
             );
           })
         )}
       </Box>
-
       {champion && (
         <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
           <Box sx={{ display: "inline-flex", alignItems: "center", gap: 2, px: 3, py: 1.5, bgcolor: "#fffbeb", border: "2px solid #f59e0b", borderRadius: 3 }}>
@@ -196,19 +201,13 @@ function EmptyCard() {
   );
 }
 
-const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: string; text: string; label: string }> = {
-  IN_PLAY: { stripe: "#4caf50", border: "#a5d6a7", bg: "#f1f8f1", text: "#2e7d32", label: "En juego" },
-  DELAYED:  { stripe: "#ff9800", border: "#ffcc80", bg: "#fff8f0", text: "#e65100", label: "Atrasado" },
-  EARLY:    { stripe: "#29b6f6", border: "#90caf9", bg: "#f0f8ff", text: "#1565c0", label: "Adelantado" },
-};
-
 function PublicMatchCard({ match }: { match: TournamentMatch }) {
   const isBye = match.status === "BYE";
   const isCompleted = match.status === "COMPLETED";
   const pair1Won = match.winnerId != null && match.pair1?.id === match.winnerId;
   const pair2Won = match.winnerId != null && match.pair2?.id === match.winnerId;
   const live = match.liveStatus ? LIVE_STATUS_COLORS[match.liveStatus] : null;
-  const sideColor = live ? live.stripe : isBye ? "#90caf9" : isCompleted ? "#66bb6a" : "#e0e0e0";
+  const sideColor = live ? live.stripe : isBye ? "#90caf9" : isCompleted ? "#66bb6a" : "#bdbdbd";
   const isPlaceholder = !match.pair1 && !match.pair2;
 
   return (
@@ -224,10 +223,7 @@ function PublicMatchCard({ match }: { match: TournamentMatch }) {
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: "0.62rem" }}>{match.result}</Typography>
           ) : live ? (
             <Typography variant="caption" fontWeight={700} sx={{ fontSize: "0.6rem", color: live.text }}>
-              {live.label}
-              {match.liveStatus === "DELAYED" && match.delayedUntil
-                ? ` · ${new Date(match.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
-                : ""}
+              {live.label}{match.liveStatus === "DELAYED" && match.delayedUntil ? ` · ${new Date(match.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}` : ""}
             </Typography>
           ) : match.scheduledAt ? (
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.6rem" }}>
@@ -244,11 +240,7 @@ function PublicMatchCard({ match }: { match: TournamentMatch }) {
 function PublicPairRow({ label, isWinner, isLoser, isPlaceholder }: { label: string; isWinner: boolean; isLoser: boolean; isPlaceholder: boolean }) {
   return (
     <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1, gap: 0.5, bgcolor: isWinner ? "rgba(76,175,80,0.10)" : "transparent", minWidth: 0 }}>
-      {isWinner ? (
-        <EmojiEventsIcon sx={{ fontSize: 11, color: "#f59e0b", flexShrink: 0 }} />
-      ) : (
-        <Box sx={{ width: 11, flexShrink: 0 }} />
-      )}
+      {isWinner ? <EmojiEventsIcon sx={{ fontSize: 11, color: "#f59e0b", flexShrink: 0 }} /> : <Box sx={{ width: 11, flexShrink: 0 }} />}
       <Typography variant="caption" noWrap sx={{ flex: 1, fontSize: "0.7rem", fontWeight: isWinner ? 700 : 400, color: isPlaceholder ? "text.disabled" : isLoser ? "text.disabled" : "text.primary", minWidth: 0 }}>
         {label}
       </Typography>
@@ -263,32 +255,32 @@ function RoundRobinList({ matches }: { matches: TournamentMatch[] }) {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {matches.map(m => {
         const live = m.liveStatus ? LIVE_STATUS_COLORS[m.liveStatus] : null;
+        const isCompleted = m.status === "COMPLETED";
         return (
-          <Paper key={m.id} elevation={0} sx={{ borderRadius: 2, p: 1.5, border: "1px solid", borderColor: live ? live.border : "divider", bgcolor: live ? live.bg : "background.paper" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-              <Typography variant="body2" sx={{ flex: 1, minWidth: 120 }}>
-                <strong>{pairLabel(m.pair1)}</strong>
-                <Typography component="span" variant="caption" color="text.secondary" mx={0.75}>vs</Typography>
-                <strong>{pairLabel(m.pair2)}</strong>
-              </Typography>
-              {m.result && (
-                <Typography variant="caption" fontWeight={700} color="success.main">{m.result}</Typography>
-              )}
-              {live && !m.result && (
-                <Typography variant="caption" fontWeight={700} sx={{ color: live.text }}>
-                  {live.label}
-                  {m.liveStatus === "DELAYED" && m.delayedUntil
-                    ? ` · ${new Date(m.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
-                    : ""}
+          <Paper key={m.id} elevation={0} sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: live ? live.border : isCompleted ? "#c8e6c9" : "divider", bgcolor: live ? live.bg : "background.paper", display: "flex" }}>
+            <Box sx={{ width: 4, flexShrink: 0, bgcolor: live ? live.stripe : isCompleted ? "#66bb6a" : "#bdbdbd" }} />
+            <Box sx={{ flex: 1, p: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                <Typography variant="body2" sx={{ flex: 1, minWidth: 120 }}>
+                  <strong>{pairLabel(m.pair1)}</strong>
+                  <Typography component="span" variant="caption" color="text.secondary" mx={0.75}>vs</Typography>
+                  <strong>{pairLabel(m.pair2)}</strong>
                 </Typography>
-              )}
-              {!live && m.scheduledAt && !m.result && (
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                  {m.court?.name ? ` · ${m.court.name}` : ""}
-                </Typography>
-              )}
-              <Chip label={m.status === "COMPLETED" ? "Finalizado" : live ? live.label : "Pendiente"} size="small" color={m.status === "COMPLETED" ? "success" : "default"} sx={{ height: 20, fontSize: "0.68rem", ...(live ? { bgcolor: live.bg, color: live.text, borderColor: live.border } : {}) }} />
+                {m.result && (
+                  <Typography variant="caption" fontWeight={700} color="success.main">{m.result}</Typography>
+                )}
+                {live && !m.result && (
+                  <Typography variant="caption" fontWeight={700} sx={{ color: live.text }}>
+                    {live.label}{m.liveStatus === "DELAYED" && m.delayedUntil ? ` · ${new Date(m.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                  </Typography>
+                )}
+                {!live && m.scheduledAt && !m.result && (
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {m.court?.name ? ` · ${m.court.name}` : ""}
+                  </Typography>
+                )}
+              </Box>
             </Box>
           </Paper>
         );
@@ -297,46 +289,167 @@ function RoundRobinList({ matches }: { matches: TournamentMatch[] }) {
   );
 }
 
-// ─── tournament fixture panel ─────────────────────────────────────────────────
+// ─── tournament card ──────────────────────────────────────────────────────────
 
-function TournamentFixture({ username, tournamentId }: { username: string; tournamentId: number }) {
+function TournamentCard({ username, tournament, gradientIndex }: { username: string; tournament: { id: number; name: string; startDate: string; endDate: string; category: string; format?: string; status: string }; gradientIndex: number }) {
   const { data, isLoading } = useQuery<TournamentDetail>({
-    queryKey: ["publicTournamentDetail", username, tournamentId],
-    queryFn: () => fetchPublicTournamentDetail(username, tournamentId),
+    queryKey: ["publicTournamentDetail", username, tournament.id],
+    queryFn: () => fetchPublicTournamentDetail(username, tournament.id),
   });
 
-  if (isLoading) return <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={24} /></Box>;
-  if (!data) return null;
-
-  const isBracket = data.format === "BRACKET";
-  const hasMatches = data.matches.length > 0;
-
-  if (!hasMatches) {
-    return (
-      <Box sx={{ py: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          {data.pairs.length === 0 ? "El torneo aún no tiene parejas inscriptas." : "El fixture aún no fue generado."}
-        </Typography>
-        {data.pairs.length > 0 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: 1 }}>Parejas inscriptas</Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-              {data.pairs.map(p => (
-                <Chip key={p.id} size="small" label={`${p.player1.name} / ${p.player2.name}`} variant="outlined" />
-              ))}
-            </Box>
-          </Box>
-        )}
-      </Box>
-    );
-  }
+  const statusInfo = STATUS_INFO[tournament.status] ?? { label: tournament.status, color: "#555", bg: "#f5f5f5" };
+  const gradient = BANNER_GRADIENTS[gradientIndex % BANNER_GRADIENTS.length];
+  const isBracket = data?.format === "BRACKET";
+  const hasMatches = (data?.matches.length ?? 0) > 0;
 
   return (
-    <Box sx={{ pt: 1 }}>
-      {isBracket ? (
-        <ReadOnlyBracket matches={data.matches} />
-      ) : (
-        <RoundRobinList matches={data.matches} />
+    <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+      {/* Banner */}
+      <Box sx={{ background: gradient, px: 3, py: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+          <Box>
+            <Typography variant="h6" fontWeight={800} color="#fff" lineHeight={1.2} sx={{ textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>
+              {tournament.name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", mt: 0.5, display: "block" }}>
+              {new Date(tournament.startDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+              {" — "}
+              {new Date(tournament.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+            <Chip
+              label={statusInfo.label}
+              size="small"
+              sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700, bgcolor: statusInfo.bg, color: statusInfo.color, border: "none" }}
+            />
+            <Chip
+              label={CATEGORY_LABEL[tournament.category] ?? tournament.category}
+              size="small"
+              sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, bgcolor: "rgba(255,255,255,0.20)", color: "#fff" }}
+            />
+            {tournament.format && (
+              <Chip
+                label={FORMAT_LABEL[tournament.format] ?? tournament.format}
+                size="small"
+                sx={{ height: 22, fontSize: "0.7rem", bgcolor: "rgba(255,255,255,0.15)", color: "#fff" }}
+              />
+            )}
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Fixture */}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        {isLoading && (
+          <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={22} /></Box>
+        )}
+        {!isLoading && data && !hasMatches && (
+          <Box>
+            <Typography variant="body2" color="text.secondary" mb={data.pairs.length > 0 ? 1.5 : 0}>
+              {data.pairs.length === 0 ? "El torneo aún no tiene parejas inscriptas." : "El fixture aún no fue generado."}
+            </Typography>
+            {data.pairs.length > 0 && (
+              <>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                  Parejas inscriptas
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+                  {data.pairs.map(p => (
+                    <Chip key={p.id} size="small" label={`${p.player1.name} / ${p.player2.name}`} variant="outlined" />
+                  ))}
+                </Box>
+              </>
+            )}
+          </Box>
+        )}
+        {!isLoading && data && hasMatches && (
+          isBracket
+            ? <ReadOnlyBracket matches={data.matches} />
+            : <RoundRobinList matches={data.matches} />
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
+// ─── sidebar ──────────────────────────────────────────────────────────────────
+
+interface SidebarProps {
+  clubName: string;
+  address?: string;
+  logoBase64?: string | null;
+  mapUrl: string | null;
+  businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
+}
+
+function ClubSidebar({ clubName, address, logoBase64, mapUrl, businessHours }: SidebarProps) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+      {/* Club identity */}
+      <Paper elevation={0} sx={{ borderRadius: 3, p: 3, border: "1px solid", borderColor: "divider" }}>
+        {logoBase64 && (
+          <Box
+            component="img"
+            src={logoBase64}
+            alt="logo"
+            sx={{ width: 72, height: 72, borderRadius: 2, objectFit: "contain", border: "1px solid", borderColor: "divider", display: "block", mb: 2 }}
+          />
+        )}
+        <Typography variant="h5" fontWeight={800} lineHeight={1.2} mb={address ? 0.75 : 0}>
+          {clubName || "Club de Pádel"}
+        </Typography>
+        {address && (
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
+            <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary", mt: "2px", flexShrink: 0 }} />
+            <Typography variant="body2" color="text.secondary">{address}</Typography>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Map */}
+      {mapUrl && (
+        <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider", height: 220 }}>
+          <Box
+            component="iframe"
+            src={mapUrl}
+            title="Ubicación del club"
+            sx={{ width: "100%", height: "100%", border: 0, display: "block" }}
+            loading="lazy"
+          />
+        </Paper>
+      )}
+
+      {/* Business hours */}
+      {businessHours.length > 0 && (
+        <Paper elevation={0} sx={{ borderRadius: 3, p: 3, border: "1px solid", borderColor: "divider" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <AccessTimeIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+            <Typography variant="subtitle1" fontWeight={700}>Horarios</Typography>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+            {DAYS.map(day => {
+              const schedule = businessHours.find(h => h.day === day);
+              const isOpen = schedule?.isOpen;
+              return (
+                <Box key={day} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 0.75, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: 0, pb: 0 } }}>
+                  <Typography variant="body2" fontWeight={isOpen ? 600 : 400} color={isOpen ? "text.primary" : "text.disabled"}>
+                    {day}
+                  </Typography>
+                  {isOpen ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {schedule!.openTime} – {schedule!.closeTime}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="text.disabled" sx={{ fontSize: "0.78rem" }}>
+                      Cerrado
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        </Paper>
       )}
     </Box>
   );
@@ -346,7 +459,6 @@ function TournamentFixture({ username, tournamentId }: { username: string; tourn
 
 export default function ClubPublicPage() {
   const { username } = useParams<{ username: string }>();
-  const [expandedId, setExpandedId] = useState<number | false>(false);
 
   const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: ["publicProfile", username],
@@ -384,144 +496,47 @@ export default function ClubPublicPage() {
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${profile.longitude - 0.006}%2C${profile.latitude - 0.004}%2C${profile.longitude + 0.006}%2C${profile.latitude + 0.004}&layer=mapnik&marker=${profile.latitude}%2C${profile.longitude}`
     : null;
 
-  const handleAccordion = (id: number) => (_: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpandedId(isExpanded ? id : false);
-  };
-
   return (
     <Box sx={{ bgcolor: "grey.50", minHeight: "100vh", py: { xs: 3, md: 5 } }}>
-      <Container maxWidth="md">
+      <Container maxWidth="xl">
+        <Grid container spacing={3} alignItems="flex-start">
 
-        {/* ── Club header ────────────────────────────────────── */}
-        <Paper elevation={0} sx={{ borderRadius: 3, p: { xs: 3, md: 4 }, mb: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
-            {profile.logoBase64 && (
-              <Box
-                component="img"
-                src={profile.logoBase64}
-                alt="logo"
-                sx={{ width: 80, height: 80, borderRadius: 2, objectFit: "contain", flexShrink: 0, border: "1px solid", borderColor: "divider" }}
-              />
+          {/* ── Main: tournaments ─────────────────────────── */}
+          <Grid item xs={12} md={8}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+              <SportsTennisIcon sx={{ color: "primary.main", fontSize: 26 }} />
+              <Typography variant="h5" fontWeight={800}>Torneos</Typography>
+            </Box>
+
+            {tournamentsLoading && (
+              <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress size={28} /></Box>
             )}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="h4" fontWeight={800} lineHeight={1.2} mb={0.5}>
-                {profile.clubName || "Club de Pádel"}
-              </Typography>
-              {profile.address && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                  <Typography variant="body2" color="text.secondary">{profile.address}</Typography>
-                </Box>
-              )}
-            </Box>
-          </Box>
-        </Paper>
 
-        {/* ── Map ────────────────────────────────────────────── */}
-        {mapUrl && (
-          <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", mb: 3, height: 260 }}>
-            <Box
-              component="iframe"
-              src={mapUrl}
-              title="Ubicación del club"
-              sx={{ width: "100%", height: "100%", border: 0, display: "block" }}
-              loading="lazy"
+            {!tournamentsLoading && tournaments.length === 0 && (
+              <Paper elevation={0} sx={{ borderRadius: 3, p: 4, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
+                <Typography variant="body1" color="text.secondary">No hay torneos activos en este momento.</Typography>
+              </Paper>
+            )}
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {tournaments.map((t, idx) => (
+                <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
+              ))}
+            </Box>
+          </Grid>
+
+          {/* ── Sidebar: club info ────────────────────────── */}
+          <Grid item xs={12} md={4}>
+            <ClubSidebar
+              clubName={profile.clubName}
+              address={profile.address}
+              logoBase64={profile.logoBase64}
+              mapUrl={mapUrl}
+              businessHours={profile.businessHours}
             />
-          </Paper>
-        )}
+          </Grid>
 
-        {/* ── Business hours ─────────────────────────────────── */}
-        {profile.businessHours && profile.businessHours.length > 0 && (
-          <Paper elevation={0} sx={{ borderRadius: 3, p: { xs: 2, md: 3 }, mb: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <AccessTimeIcon sx={{ fontSize: 20, color: "text.secondary" }} />
-              <Typography variant="h6" fontWeight={700}>Horarios</Typography>
-            </Box>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(7, 1fr)" }, gap: 1 }}>
-              {DAYS.map(day => {
-                const schedule = profile.businessHours.find(h => h.day === day);
-                const isOpen = schedule?.isOpen;
-                return (
-                  <Box key={day} sx={{ textAlign: "center", p: 1.5, borderRadius: 2, bgcolor: isOpen ? "primary.50" : "grey.100", border: "1px solid", borderColor: isOpen ? "primary.100" : "grey.200" }}>
-                    <Typography variant="caption" fontWeight={700} color={isOpen ? "primary.main" : "text.disabled"} sx={{ display: "block", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: 0.8 }}>
-                      {day.slice(0, 3)}
-                    </Typography>
-                    {isOpen ? (
-                      <>
-                        <Typography variant="caption" sx={{ display: "block", fontSize: "0.72rem", fontWeight: 600, color: "text.primary", mt: 0.5 }}>
-                          {schedule!.openTime}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "text.secondary" }}>
-                          {schedule!.closeTime}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 0.5, fontSize: "0.7rem" }}>
-                        Cerrado
-                      </Typography>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
-          </Paper>
-        )}
-
-        {/* ── Tournaments ────────────────────────────────────── */}
-        <Paper elevation={0} sx={{ borderRadius: 3, p: { xs: 2, md: 3 } }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <EmojiEventsIcon sx={{ fontSize: 20, color: "text.secondary" }} />
-            <Typography variant="h6" fontWeight={700}>Torneos</Typography>
-          </Box>
-
-          {tournamentsLoading && (
-            <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={24} /></Box>
-          )}
-
-          {!tournamentsLoading && tournaments.length === 0 && (
-            <Typography variant="body2" color="text.secondary">No hay torneos activos en este momento.</Typography>
-          )}
-
-          {tournaments.map((t, idx) => {
-            const statusInfo = STATUS_LABEL[t.status] ?? { label: t.status, color: "default" as const };
-            return (
-              <Box key={t.id}>
-                {idx > 0 && <Divider sx={{ my: 1 }} />}
-                <Accordion
-                  expanded={expandedId === t.id}
-                  onChange={handleAccordion(t.id)}
-                  elevation={0}
-                  disableGutters
-                  sx={{ "&:before": { display: "none" }, bgcolor: "transparent" }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0, py: 0.5 }}>
-                    <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", pr: 1 }}>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle2" fontWeight={700} noWrap>{t.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(t.startDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
-                          {" — "}
-                          {new Date(t.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", gap: 0.75, flexShrink: 0, flexWrap: "wrap" }}>
-                        <Chip label={CATEGORY_LABEL[t.category] ?? t.category} size="small" variant="outlined" sx={{ height: 22, fontSize: "0.7rem" }} />
-                        {t.format && (
-                          <Chip label={FORMAT_LABEL[t.format] ?? t.format} size="small" variant="outlined" sx={{ height: 22, fontSize: "0.7rem" }} />
-                        )}
-                        <Chip label={statusInfo.label} size="small" color={statusInfo.color} sx={{ height: 22, fontSize: "0.7rem" }} />
-                      </Box>
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ px: 0, pt: 0, pb: 1 }}>
-                    {expandedId === t.id && <TournamentFixture username={username!} tournamentId={t.id} />}
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
-            );
-          })}
-        </Paper>
-
+        </Grid>
       </Container>
     </Box>
   );
