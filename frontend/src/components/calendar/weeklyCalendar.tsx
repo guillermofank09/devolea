@@ -11,6 +11,8 @@ interface Props {
   events: CalendarEvent[];
   onSelectSlot: (slot: unknown) => void;
   onSelectEvent: (event: CalendarEvent) => void;
+  initialDate?: Date;
+  height?: string | number;
 }
 
 const spanishMessages = {
@@ -144,9 +146,9 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
-export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: Props) {
+export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, initialDate, height }: Props) {
   const isMobile = useMediaQuery("(max-width:600px)");
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(initialDate ?? new Date());
 
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {
@@ -159,7 +161,7 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent }: 
   });
 
   return (
-    <div className="calendarWrapper">
+    <div className="calendarWrapper" style={height !== undefined ? { height } : undefined}>
       <Calendar
         localizer={localizer}
         culture="es"

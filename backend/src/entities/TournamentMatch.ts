@@ -4,6 +4,7 @@ import { Pair } from "./Pair";
 import { Court } from "./Court";
 
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
+export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
 
 @Entity("tournament_match")
 export class TournamentMatch {
@@ -22,5 +23,8 @@ export class TournamentMatch {
   @Column({ default: "PENDING" }) status!: MatchStatus;
   @Column({ type: "int", nullable: true }) winnerId?: number | null;
   @Column({ type: "varchar", nullable: true }) result?: string | null;
+  @Column({ default: false }) isRepechage!: boolean;
+  @Column({ type: "varchar", nullable: true }) liveStatus?: MatchLiveStatus | null;
+  @Column({ type: "timestamptz", nullable: true }) delayedUntil?: Date | null;
   @CreateDateColumn() createdAt!: Date;
 }

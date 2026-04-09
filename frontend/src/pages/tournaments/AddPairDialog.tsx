@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import {
+  Alert,
   Autocomplete,
   Avatar,
   Box,
@@ -10,6 +11,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormLabel,
   TextField,
   Typography,
   useMediaQuery,
@@ -20,9 +22,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers } from "../../api/playerService";
 import { addPair } from "../../api/tournamentService";
 import type { Player, PlayerCategory } from "../../types/Player";
-import type { Pair } from "../../types/Tournament";
+import type { Pair, TournamentCategory } from "../../types/Tournament";
 import AddEditPlayer from "../players/AddEditPlayer";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
+import { FORM_LABEL_SX } from "../../styles/formStyles";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
@@ -41,6 +44,7 @@ interface Props {
   onClose: () => void;
   tournamentId: number;
   existingPairs: Pair[];
+  tournamentCategory: TournamentCategory;
 }
 
 type Option = Player | { id: typeof CREATE_OPTION_ID; name: string };
@@ -103,7 +107,7 @@ function PlayerSelector({
       renderInput={params => (
         <TextField
           {...params}
-          label={label}
+          label={label || undefined}
           placeholder="Buscar por nombre..."
           size="small"
           InputProps={{
@@ -156,10 +160,23 @@ function PlayerSelector({
   );
 }
 
-export default function AddPairDialog({ open, onClose, tournamentId, existingPairs }: Props) {
+export default function AddPairDialog({ open, onClose, tournamentId, existingPairs, tournamentCategory }: Props) {
   const [player1, setPlayer1] = useState<Player | null>(null);
   const [player2, setPlayer2] = useState<Player | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const categoryWarnings = useMemo<string[]>(() => {
+    if (tournamentCategory === "SIN_CATEGORIA") return [];
+    const warnings: string[] = [];
+    for (const p of [player1, player2]) {
+      if (p && p.category !== tournamentCategory) {
+        warnings.push(
+          `${p.name} está en categoría ${CATEGORY_LABEL[p.category as PlayerCategory]}, distinta a la del torneo (${CATEGORY_LABEL[tournamentCategory as PlayerCategory]}).`
+        );
+      }
+    }
+    return warnings;
+  }, [player1, player2, tournamentCategory]);
   const [createPlayerOpen, setCreatePlayerOpen] = useState(false);
   const [creatingForSlot, setCreatingForSlot] = useState<1 | 2>(1);
   const [_createPlayerName, setCreatePlayerName] = useState("");
@@ -216,29 +233,39 @@ export default function AddPairDialog({ open, onClose, tournamentId, existingPai
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
         <DialogTitle>Agregar pareja</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 0.5 }}>
-            <PlayerSelector
-              label="Jugador 1"
-              players={players}
-              isFetching={isFetching}
-              value={player1}
-              onChange={p => { setPlayer1(p); setError(null); }}
-              disabledIds={disabledForP1}
-              onCreatePlayer={name => handleCreatePlayer(1, name)}
-            />
-            <PlayerSelector
-              label="Jugador 2"
-              players={players}
-              isFetching={isFetching}
-              value={player2}
-              onChange={p => { setPlayer2(p); setError(null); }}
-              disabledIds={disabledForP2}
-              onCreatePlayer={name => handleCreatePlayer(2, name)}
-            />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Jugador 1</FormLabel>
+              <PlayerSelector
+                label=""
+                players={players}
+                isFetching={isFetching}
+                value={player1}
+                onChange={p => { setPlayer1(p); setError(null); }}
+                disabledIds={disabledForP1}
+                onCreatePlayer={name => handleCreatePlayer(1, name)}
+              />
+            </Box>
+            <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Jugador 2</FormLabel>
+              <PlayerSelector
+                label=""
+                players={players}
+                isFetching={isFetching}
+                value={player2}
+                onChange={p => { setPlayer2(p); setError(null); }}
+                disabledIds={disabledForP2}
+                onCreatePlayer={name => handleCreatePlayer(2, name)}
+              />
+            </Box>
+            {categoryWarnings.length > 0 && (
+              <Alert severity="warning" sx={{ fontSize: "0.82rem" }}>
+                {categoryWarnings.map((w, i) => <div key={i}>{w}</div>)}
+                <Box sx={{ mt: 0.5, fontWeight: 600 }}>¿Desea avanzar igualmente?</Box>
+              </Alert>
+            )}
             {error && (
-              <Typography variant="body2" color="error">
-                {error}
-              </Typography>
+              <Typography variant="body2" color="error">{error}</Typography>
             )}
           </Box>
         </DialogContent>

@@ -21,6 +21,8 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBookingsByCourt, cancelBooking, cancelBookingGroup } from "../../api/bookingService";
+import { fetchMatchesByCourt } from "../../api/tournamentService";
+import type { TournamentMatch } from "../../types/Tournament";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
 import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
@@ -64,6 +66,7 @@ const CourtView = ({
 }) => {
   const [pendingSlot, setPendingSlot] = useState<SlotInfo | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedTournamentMatch, setSelectedTournamentMatch] = useState<TournamentMatch | null>(null);
   const queryClient = useQueryClient();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -71,6 +74,12 @@ const CourtView = ({
   const { data: bookings = [], isFetching } = useQuery<Booking[]>({
     queryKey: ["bookingsData", court.id],
     queryFn: () => fetchBookingsByCourt(court.id),
+    enabled: isOpen,
+  });
+
+  const { data: tournamentMatches = [] } = useQuery<TournamentMatch[]>({
+    queryKey: ["courtTournamentMatches", court.id],
+    queryFn: () => fetchMatchesByCourt(court.id),
     enabled: isOpen,
   });
 
@@ -92,29 +101,55 @@ const CourtView = ({
     },
   });
 
-  const events: CalendarEvent[] = useMemo(
-    () =>
-      bookings.map((b) => {
-        const displayName = b.player?.name ?? b.profesor?.name ?? "Clase";
+  const events: CalendarEvent[] = useMemo(() => {
+    const bookingEvents: CalendarEvent[] = bookings.map((b) => {
+      const displayName = b.player?.name ?? b.profesor?.name ?? "Clase";
+      return {
+        id: b.id,
+        title: displayName,
+        start: new Date(b.startTime),
+        end: new Date(b.endTime),
+        courtId: court.id,
+        status: "BOOKED",
+        color: stringToColor(displayName),
+        isRecurring: b.isRecurring,
+        recurringGroupId: b.recurringGroupId,
+      };
+    });
+
+    const matchEvents: CalendarEvent[] = tournamentMatches
+      .filter(m => m.scheduledAt)
+      .map(m => {
+        const start = new Date(m.scheduledAt!);
+        const end = new Date(start.getTime() + 90 * 60 * 1000);
+        const p1 = m.pair1 ? m.pair1.player1.name.split(" ")[0] + "/" + m.pair1.player2.name.split(" ")[0] : "?";
+        const p2 = m.pair2 ? m.pair2.player1.name.split(" ")[0] + "/" + m.pair2.player2.name.split(" ")[0] : "BYE";
         return {
-          id: b.id,
-          title: displayName,
-          start: new Date(b.startTime),
-          end: new Date(b.endTime),
+          id: m.id,
+          title: `Torneo: ${p1} vs ${p2}`,
+          start,
+          end,
           courtId: court.id,
           status: "BOOKED",
-          color: stringToColor(displayName),
-          isRecurring: b.isRecurring,
-          recurringGroupId: b.recurringGroupId,
+          color: "#1565c0",
+          isRecurring: false,
+          recurringGroupId: null,
+          isTournamentMatch: true,
+          tournamentMatchId: m.id,
         };
-      }),
-    [bookings, court.id]
-  );
+      });
+
+    return [...bookingEvents, ...matchEvents];
+  }, [bookings, tournamentMatches, court.id]);
 
   const handleSelectSlot = (slot: unknown) => setPendingSlot(slot as SlotInfo);
 
   const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedBooking(bookings.find((b) => b.id === event.id) ?? null);
+    if (event.isTournamentMatch) {
+      setSelectedTournamentMatch(tournamentMatches.find(m => m.id === event.tournamentMatchId) ?? null);
+    } else {
+      setSelectedBooking(bookings.find((b) => b.id === event.id) ?? null);
+    }
   };
 
   return (
@@ -178,6 +213,60 @@ const CourtView = ({
         courtId={court.id}
         onBooked={() => setPendingSlot(null)}
       />
+
+      {/* ── Tournament match detail dialog ── */}
+      <Dialog
+        open={!!selectedTournamentMatch}
+        onClose={() => setSelectedTournamentMatch(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+      >
+        {selectedTournamentMatch && (() => {
+          const m = selectedTournamentMatch;
+          const start = new Date(m.scheduledAt!);
+          const end = new Date(start.getTime() + 90 * 60 * 1000);
+          const p1 = m.pair1 ? `${m.pair1.player1.name} / ${m.pair1.player2.name}` : "A definir";
+          const p2 = m.pair2 ? `${m.pair2.player1.name} / ${m.pair2.player2.name}` : "BYE";
+          return (
+            <>
+              <Box sx={{ bgcolor: "#1565c0", px: 3, pt: 2.5, pb: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography fontWeight={800} color="#fff">
+                    {m.tournament?.name ?? "Torneo"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
+                    Partido de torneo
+                  </Typography>
+                </Box>
+                <IconButton onClick={() => setSelectedTournamentMatch(null)} size="small" sx={{ color: "rgba(255,255,255,0.8)", flexShrink: 0 }}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <DialogContent sx={{ px: 3, pt: 2.5, pb: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.75, bgcolor: "#fafafa", borderRadius: 2, border: "1.5px solid", borderColor: "divider", mb: 2 }}>
+                  <CalendarMonthIcon sx={{ color: "#1565c0", fontSize: 20, flexShrink: 0 }} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={700} sx={{ textTransform: "capitalize" }}>
+                      {formatDate(start)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatTime(start)} – {formatTime(end)}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Typography variant="body2"><strong>Pareja 1:</strong> {p1}</Typography>
+                  <Typography variant="body2"><strong>Pareja 2:</strong> {p2}</Typography>
+                </Box>
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5 }}>
+                <Button onClick={() => setSelectedTournamentMatch(null)} sx={{ textTransform: "none" }}>Cerrar</Button>
+              </DialogActions>
+            </>
+          );
+        })()}
+      </Dialog>
 
       {/* ── Booking detail / cancel dialog ── */}
       <Dialog

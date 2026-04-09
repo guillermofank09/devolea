@@ -15,6 +15,7 @@ import Register from './pages/register';
 import Stats from './pages/stats';
 import Profesores from './pages/profesores';
 import AdminUsers from './pages/admin/users';
+import ClubPublicPage from './pages/public/ClubPublicPage';
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -83,6 +84,7 @@ function ProtectedApp() {
             <Route path="/profesores" element={<Profesores />} />
             <Route path="/stats"    element={<Stats />} />
             <Route path="/logout"   element={<Logout />} />
+            <Route path="/:username" element={<ClubPublicPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
@@ -97,10 +99,11 @@ function App() {
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="/"         element={<Landing />} />
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="*"         element={<Navigate to="/login" replace />} />
+        <Route path="/"          element={<Landing />} />
+        <Route path="/login"     element={<Login />} />
+        <Route path="/register"  element={<Register />} />
+        <Route path="/:username" element={<ClubPublicPage />} />
+        <Route path="*"          element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }

@@ -3,13 +3,15 @@ import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
 import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
+import { Booking } from "../entities/Booking";
 import { TournamentService } from "../services/tournament.service";
 
 function getService() {
   return new TournamentService(
     AppDataSource.getRepository(Tournament),
     AppDataSource.getRepository(Pair),
-    AppDataSource.getRepository(TournamentMatch)
+    AppDataSource.getRepository(TournamentMatch),
+    AppDataSource.getRepository(Booking),
   );
 }
 
@@ -58,9 +60,9 @@ export const removePair = async (req: Request, res: Response) => {
 };
 
 export const generateMatches = async (req: Request, res: Response) => {
-  const { startTime, courtId, matchDuration } = req.body;
+  const { startTime, courtIds, matchDuration } = req.body;
   if (!startTime) return res.status(400).json({ error: "startTime requerido" });
-  try { res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), courtId ?? null, matchDuration ?? 90)); }
+  try { res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), Array.isArray(courtIds) ? courtIds.map(Number) : [], matchDuration ?? 90)); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
@@ -71,10 +73,28 @@ export const nextRound = async (req: Request, res: Response) => {
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
+export const createPlaceholderMatch = async (req: Request, res: Response) => {
+  try {
+    const { round, matchNumber } = req.body ?? {};
+    if (!round || !matchNumber) return res.status(400).json({ error: "round y matchNumber requeridos" });
+    res.status(201).json(await getService().createPlaceholderMatch(Number(req.params.id), Number(round), Number(matchNumber)));
+  } catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
+export const getMatchesByCourt = async (req: Request, res: Response) => {
+  try { res.json(await getService().getMatchesByCourt(Number(req.params.courtId))); }
+  catch (e: any) { res.status(500).json({ error: e.message }); }
+};
+
 export const updateMatch = async (req: Request, res: Response) => {
   try {
     const m = await getService().updateMatch(Number(req.params.matchId), req.body);
     if (!m) return res.status(404).json({ error: "Partido no encontrado" });
     res.json(m);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+};
+
+export const triggerRepechage = async (req: Request, res: Response) => {
+  try { res.json(await getService().triggerRepechage(Number(req.params.id))); }
+  catch (e: any) { res.status(400).json({ error: e.message }); }
 };

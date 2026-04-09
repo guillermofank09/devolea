@@ -29,7 +29,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTournamentById, removePair, triggerNextRound } from "../../api/tournamentService";
+import { fetchTournamentById, removePair, triggerNextRound, triggerRepechage } from "../../api/tournamentService";
 import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddPairDialog from "./AddPairDialog";
@@ -188,6 +188,22 @@ export default function TournamentDetail() {
     },
   });
 
+  // Open dialog immediately with a synthetic match; DB record is created on save
+  const handleVirtualMatchClick = (round: number, matchNumber: number) => {
+    setEditMatch({
+      id: -1,
+      round,
+      matchNumber,
+      status: "PENDING",
+      pair1: null,
+      pair2: null,
+      court: null,
+      scheduledAt: null,
+      winnerId: null,
+      result: null,
+    } as TournamentMatch);
+  };
+
   if (isPending) {
     return (
       <Box display="flex" justifyContent="center" py={6}>
@@ -203,11 +219,21 @@ export default function TournamentDetail() {
   const hasMatches = data.matches.length > 0;
   const isBracket = data.format === "BRACKET";
 
-  // Check if all matches in current max round are done
-  const maxRound = hasMatches ? Math.max(...data.matches.map(m => m.round)) : 0;
-  const currentRoundMatches = data.matches.filter(m => m.round === maxRound);
+  // Separate repechage from bracket matches
+  const bracketMatches = data.matches.filter(m => !m.isRepechage);
+  const repechajeMatches = data.matches.filter(m => m.isRepechage);
+
+  // Active matches: rounds with at least one assigned pair (excludes future placeholders)
+  const activeMatches = data.matches.filter(m => m.pair1 !== null || m.pair2 !== null);
+  const maxRound = activeMatches.length > 0 ? Math.max(...activeMatches.map(m => m.round)) : 0;
+  const currentRoundMatches = activeMatches.filter(m => m.round === maxRound);
   const currentRoundDone = currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status !== "PENDING");
   const canNextRound = isBracket && currentRoundDone && currentRoundMatches.filter(m => m.status !== "BYE").length > 0;
+
+  // Repechage: show trigger button when all round-1 regular matches are done and opponent not yet assigned
+  const round1Regular = data.matches.filter(m => m.round === 1 && !m.isRepechage);
+  const round1Done = round1Regular.length > 0 && round1Regular.every(m => m.status !== "PENDING");
+  const canTriggerRepechaje = isBracket && round1Done && repechajeMatches.some(m => !m.pair2);
 
   // Group matches by round for bracket
   return (
@@ -309,15 +335,8 @@ export default function TournamentDetail() {
               Partidos
             </Typography>
             <Box sx={{ display: "flex", gap: 1 }}>
-              {!hasMatches && data.pairs.length >= 2 && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => setGenerateOpen(true)}
-                  sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}
-                >
-                  Generar cruces
-                </Button>
+              {canTriggerRepechaje && (
+                <RepechajeButton tournamentId={Number(id)} />
               )}
               {canNextRound && (
                 <Button
@@ -334,11 +353,22 @@ export default function TournamentDetail() {
           </Box>
 
           {!hasMatches && (
-            <Typography variant="body2" color="text.secondary">
-              {data.pairs.length < 2
-                ? "Agregá al menos 2 parejas para generar los cruces."
-                : "Los cruces aún no fueron generados."}
-            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 4 }}>
+              <Typography variant="body2" color="text.secondary">
+                {data.pairs.length < 2
+                  ? "Agregá al menos 2 parejas para generar los cruces."
+                  : "Los cruces aún no fueron generados."}
+              </Typography>
+              {data.pairs.length >= 2 && (
+                <Button
+                  variant="contained"
+                  onClick={() => setGenerateOpen(true)}
+                  sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}
+                >
+                  Generar cruces
+                </Button>
+              )}
+            </Box>
           )}
 
           {hasMatches && !isBracket && (
@@ -354,10 +384,25 @@ export default function TournamentDetail() {
           )}
 
           {hasMatches && isBracket && (
-            <BracketView
-              matches={data.matches}
-              onEditMatch={m => setEditMatch(m)}
-            />
+            <>
+              <BracketView
+                matches={bracketMatches}
+                onEditMatch={m => setEditMatch(m)}
+                onVirtualMatchClick={handleVirtualMatchClick}
+              />
+              {repechajeMatches.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, textTransform: "uppercase", letterSpacing: 1.1, fontSize: "0.72rem", color: "text.secondary" }}>
+                    Repechaje
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {repechajeMatches.map(m => (
+                      <MatchCard key={m.id} match={m} onEdit={() => setEditMatch(m)} />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </>
           )}
         </Box>
       </Box>
@@ -367,6 +412,7 @@ export default function TournamentDetail() {
         onClose={() => setAddPairOpen(false)}
         tournamentId={Number(id)}
         existingPairs={data.pairs}
+        tournamentCategory={data.category}
       />
 
       <GenerateMatchesDialog
@@ -374,6 +420,7 @@ export default function TournamentDetail() {
         onClose={() => setGenerateOpen(false)}
         pairCount={data.pairs.length}
         tournamentId={Number(id)}
+        tournamentStartDate={data.startDate}
         onGenerated={() => {}}
       />
 
@@ -390,6 +437,7 @@ export default function TournamentDetail() {
           match={editMatch}
           pairs={data.pairs}
           tournamentId={Number(id)}
+          totalRounds={isBracket && bracketMatches.length > 0 ? Math.max(...bracketMatches.map(m => m.round)) : undefined}
         />
       )}
 
@@ -402,6 +450,26 @@ export default function TournamentDetail() {
         onConfirm={() => deletePairTarget && removePairMutation.mutate(deletePairTarget.id)}
       />
     </Box>
+  );
+}
+
+function RepechajeButton({ tournamentId }: { tournamentId: number }) {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: () => triggerRepechage(tournamentId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] }),
+  });
+  return (
+    <Button
+      size="small"
+      variant="outlined"
+      color="warning"
+      disabled={mutation.isPending}
+      onClick={() => mutation.mutate()}
+      sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}
+    >
+      {mutation.isPending ? <CircularProgress size={14} color="inherit" /> : "Configurar repechaje"}
+    </Button>
   );
 }
 

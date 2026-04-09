@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -9,15 +10,16 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
+  FormGroup,
   FormLabel,
-  MenuItem,
   OutlinedInput,
-  Select,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { generateMatches } from "../../api/tournamentService";
 import { fetchCourts } from "../../api/courtService";
 import { fetchBookingsByCourt } from "../../api/bookingService";
@@ -35,7 +37,7 @@ interface SlotOption {
   available: boolean;
 }
 
-function generateSlots(date: string, hours: DaySchedule[], bookings: Booking[], slotDuration: number): SlotOption[] {
+function getBaseSlots(date: string, hours: DaySchedule[], slotDuration: number): SlotOption[] {
   const [y, mo, d] = date.split("-").map(Number);
   const dayOfWeek = new Date(y, mo - 1, d).getDay();
   const daySchedule = hours.find(h => h.day === DAY_NAMES[dayOfWeek]);
@@ -45,31 +47,26 @@ function generateSlots(date: string, hours: DaySchedule[], bookings: Booking[], 
   const [closeH, closeM] = daySchedule.closeTime.split(":").map(Number);
   const closeMinutes = closeH * 60 + closeM;
 
-  const dayStart = new Date(`${date}T00:00:00`);
-  const dayEnd = new Date(`${date}T23:59:59`);
-  const dayBookings = bookings.filter(b => {
-    const t = new Date(b.startTime);
-    return t >= dayStart && t <= dayEnd;
-  });
-
   const slots: SlotOption[] = [];
   let slotStart = openH * 60 + openM;
   while (slotStart + slotDuration <= closeMinutes) {
     const h = Math.floor(slotStart / 60);
     const m = slotStart % 60;
     const label = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    const datetimeLocal = `${date}T${label}`;
-    const start = new Date(datetimeLocal);
-    const end = new Date(start.getTime() + slotDuration * 60 * 1000);
-    const available = !dayBookings.some(b => {
-      const bStart = new Date(b.startTime);
-      const bEnd = new Date(b.endTime);
-      return bStart < end && bEnd > start;
-    });
-    slots.push({ label, datetimeLocal, available });
+    slots.push({ label, datetimeLocal: `${date}T${label}`, available: true });
     slotStart += slotDuration;
   }
   return slots;
+}
+
+function isSlotFreeForCourt(datetimeLocal: string, bookings: Booking[], slotDuration: number): boolean {
+  const start = new Date(datetimeLocal);
+  const end = new Date(start.getTime() + slotDuration * 60 * 1000);
+  return !bookings.some(b => {
+    const bStart = new Date(b.startTime);
+    const bEnd = new Date(b.endTime);
+    return bStart < end && bEnd > start;
+  });
 }
 
 interface Props {
@@ -77,17 +74,27 @@ interface Props {
   onClose: () => void;
   pairCount: number;
   tournamentId: number;
+  tournamentStartDate: string;
   onGenerated: () => void;
 }
 
-export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, onGenerated }: Props) {
+export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated }: Props) {
   const [date, setDate] = useState("");
-  const [courtId, setCourtId] = useState<number | "">("");
+  const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (open) {
+      setDate(tournamentStartDate ?? "");
+      setCourtIds([]);
+      setStartTime("");
+      setError(null);
+    }
+  }, [open, tournamentStartDate]);
 
   const format = pairCount <= 4 ? "Round Robin" : "Llaves (Bracket)";
   const formatDesc =
@@ -115,23 +122,52 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     enabled: open && !!date,
   });
 
-  const { data: bookings = [] } = useQuery<Booking[]>({
-    queryKey: ["bookingsByCourt", courtId],
-    queryFn: () => fetchBookingsByCourt(Number(courtId)),
-    enabled: open && !!courtId && !!date,
+  const courtBookingResults = useQueries({
+    queries: courts.map(c => ({
+      queryKey: ["bookingsByCourt", c.id],
+      queryFn: () => fetchBookingsByCourt(c.id),
+      enabled: open && !!date && courts.length > 0,
+    })),
   });
 
-  const slots: SlotOption[] =
-    date && profile?.businessHours
-      ? generateSlots(date, profile.businessHours, courtId ? bookings : [], matchDuration)
-      : [];
+  // Per-court availability (has any free slot on that day)
+  const courtAvailability = useMemo<Record<number, boolean>>(() => {
+    if (!date || !profile?.businessHours) return {};
+    return Object.fromEntries(
+      courts.map((court, idx) => {
+        const bookings: Booking[] = courtBookingResults[idx]?.data ?? [];
+        const base = getBaseSlots(date, profile.businessHours!, matchDuration);
+        return [court.id, base.some(s => isSlotFreeForCourt(s.datetimeLocal, bookings, matchDuration))];
+      })
+    );
+  }, [courts, courtBookingResults, date, profile, matchDuration]);
+
+  // Slots available if at least one selected court is free at that time
+  const slots: SlotOption[] = useMemo(() => {
+    if (!date || !profile?.businessHours) return [];
+    const base = getBaseSlots(date, profile.businessHours, matchDuration);
+    if (courtIds.length === 0) return base;
+    return base.map(slot => {
+      const available = courtIds.some(cId => {
+        const idx = courts.findIndex(c => c.id === cId);
+        const bookings: Booking[] = idx >= 0 ? (courtBookingResults[idx]?.data ?? []) : [];
+        return isSlotFreeForCourt(slot.datetimeLocal, bookings, matchDuration);
+      });
+      return { ...slot, available };
+    });
+  }, [courtIds, courts, courtBookingResults, date, profile, matchDuration]);
+
+  const toggleCourt = (id: number) => {
+    setCourtIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setStartTime("");
+  };
 
   const mutation = useMutation({
     mutationFn: () =>
       generateMatches(
         tournamentId,
         new Date(startTime).toISOString(),
-        courtId !== "" ? Number(courtId) : null,
+        courtIds.length > 0 ? courtIds : undefined,
         matchDuration,
       ),
     onSuccess: () => {
@@ -145,8 +181,8 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
   });
 
   const handleClose = () => {
-    setDate("");
-    setCourtId("");
+    setDate(tournamentStartDate ?? "");
+    setCourtIds([]);
     setStartTime("");
     setError(null);
     onClose();
@@ -154,7 +190,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
-      <DialogTitle>Generar cruces</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Generar cruces</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
           <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: "grey.100" }}>
@@ -183,32 +219,55 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           </Box>
 
           <Box>
-            <FormLabel sx={FORM_LABEL_SX}>Cancha</FormLabel>
-            <Select
-              fullWidth
-              size="small"
-              value={courtId}
-              onChange={e => {
-                setCourtId(e.target.value as number | "");
-                setStartTime("");
-              }}
-              displayEmpty
-              sx={{ fontSize: "0.875rem" }}
-            >
-              <MenuItem value=""><em>Sin cancha asignada</em></MenuItem>
-              {courts.map(c => (
-                <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-              ))}
-            </Select>
+            <FormLabel sx={FORM_LABEL_SX}>
+              Canchas
+              {date && Object.keys(courtAvailability).length > 0 && (
+                <Typography component="span" variant="caption" color="text.secondary" ml={1}>
+                  (verde = disponible ese día)
+                </Typography>
+              )}
+            </FormLabel>
+            {courts.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">No hay canchas registradas.</Typography>
+            ) : (
+              <FormGroup>
+                {courts.map(court => {
+                  const available = courtAvailability[court.id];
+                  return (
+                    <FormControlLabel
+                      key={court.id}
+                      control={
+                        <Checkbox
+                          checked={courtIds.includes(court.id)}
+                          onChange={() => toggleCourt(court.id)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          {date && Object.keys(courtAvailability).length > 0 && (
+                            <FiberManualRecordIcon
+                              sx={{ fontSize: 10, color: available ? "success.main" : "text.disabled" }}
+                            />
+                          )}
+                          <Typography variant="body2">{court.name}</Typography>
+                        </Box>
+                      }
+                      sx={{ ml: 0 }}
+                    />
+                  );
+                })}
+              </FormGroup>
+            )}
           </Box>
 
           {date && slots.length > 0 && (
             <FormControl>
               <FormLabel sx={{ mb: 1 }}>
                 Horario de inicio
-                {!!courtId && (
+                {courtIds.length > 0 && (
                   <Typography component="span" variant="caption" color="text.secondary" ml={1}>
-                    (deshabilitado = ocupado)
+                    (deshabilitado = todas las canchas ocupadas)
                   </Typography>
                 )}
               </FormLabel>

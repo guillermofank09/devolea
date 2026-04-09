@@ -8,4 +8,6 @@ export interface CalendarEvent {
   color: string;
   isRecurring: boolean;
   recurringGroupId: string | null;
+  isTournamentMatch?: boolean;
+  tournamentMatchId?: number;
 }

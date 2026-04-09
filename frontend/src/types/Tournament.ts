@@ -4,6 +4,7 @@ export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
+export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
 
 export interface Tournament {
   id: number;
@@ -40,6 +41,10 @@ export interface TournamentMatch {
   status: MatchStatus;
   winnerId?: number | null;
   result?: string | null;
+  isRepechage?: boolean;
+  liveStatus?: MatchLiveStatus | null;
+  delayedUntil?: string | null;
+  tournament?: { id: number; name: string };
 }
 
 export interface TournamentDetail extends Tournament {
