@@ -168,7 +168,7 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick 
   }
 
   return (
-    <Box sx={{ overflowX: "auto", overflowY: "visible", pb: 2, WebkitOverflowScrolling: "touch", maxWidth: "100%" }}>
+    <Box sx={{ width: "100%", overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
       {/* Round column headers */}
       <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
         {allRoundNumbers.map((round, rIdx) => (

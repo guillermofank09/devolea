@@ -329,7 +329,7 @@ export default function TournamentDetail() {
         </Box>
 
         {/* Partidos */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0, width: { xs: "100%", md: "auto" } }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
             <Typography variant="h6" fontWeight={700}>
               Partidos
