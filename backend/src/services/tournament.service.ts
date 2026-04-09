@@ -378,7 +378,7 @@ export class TournamentService {
 
   async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
     // Load the full entity first so save() never zeros out unrelated columns (round, matchNumber, etc.)
-    const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true } });
+    const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true } });
     if (!match) return null;
 
     if (dto.scheduledAt !== undefined) match.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
@@ -392,7 +392,45 @@ export class TournamentService {
     if (dto.delayedUntil !== undefined) match.delayedUntil = dto.delayedUntil ? new Date(dto.delayedUntil) : null;
 
     await this.mRepo.save(match);
+
+    // Auto-advance bracket to the next round when the current round is fully completed
+    if (dto.status === "COMPLETED" && match.tournament?.id) {
+      this.autoAdvanceIfReady(match.tournament.id).catch(() => {});
+    }
+
     // Reload after save to get full relations (especially court)
     return await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true } });
+  }
+
+  private async autoAdvanceIfReady(tournamentId: number): Promise<void> {
+    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    if (!tournament || tournament.format !== "BRACKET") return;
+
+    const allMatches = await this.mRepo.find({
+      where: { tournament: { id: tournamentId } },
+      order: { round: "ASC", matchNumber: "ASC" },
+    });
+
+    // Current active round: highest round that has at least one assigned pair
+    const activeMatches = allMatches.filter(m => m.pair1 !== null || m.pair2 !== null);
+    if (!activeMatches.length) return;
+
+    const maxRound = Math.max(...activeMatches.map(m => m.round));
+    const currentRoundMatches = activeMatches.filter(m => m.round === maxRound);
+
+    // All matches in the current round (including repechage) must be finished
+    const allDone = currentRoundMatches.every(m => m.status !== "PENDING");
+    if (!allDone) return;
+
+    // There must be a next round with placeholder matches ready to receive winners
+    const nextRoundMatches = allMatches.filter(m => m.round === maxRound + 1);
+    if (!nextRoundMatches.length) return;
+
+    // Use the first pre-scheduled time from the next round as the fallback startTime,
+    // so unscheduled slots get a sensible default. nextRound() preserves scheduledAt
+    // on matches that already have one set.
+    const refTime = nextRoundMatches.find(m => m.scheduledAt)?.scheduledAt ?? new Date();
+
+    await this.nextRound(tournamentId, refTime);
   }
 }
