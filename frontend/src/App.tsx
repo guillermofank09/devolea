@@ -21,6 +21,13 @@ import './App.css';
 
 type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
 
+// Paths that belong to the authenticated app — everything else is a public club page
+const PROTECTED_PREFIXES = ['/players', '/tournaments', '/profile', '/settings', '/profesores', '/stats', '/logout', '/admin'];
+function isPublicClubPath(pathname: string): boolean {
+  if (pathname === '/') return false;
+  return !PROTECTED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'));
+}
+
 function SuperAdminApp() {
   const { user } = useAuth();
   if (user?.role !== "superadmin") return <Navigate to="/" replace />;
@@ -46,6 +53,19 @@ function ProtectedApp() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (user?.role === "superadmin") return <SuperAdminApp />;
+
+  // Public club pages: render without sidebar, user menu, or locked-height layout
+  if (isPublicClubPath(location.pathname)) {
+    return (
+      <>
+        <Header publicMode />
+        <Routes>
+          <Route path="/:username" element={<ClubPublicPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </>
+    );
+  }
 
   const activeSection: NavKey =
     location.pathname.startsWith('/players') ? 'jugadores' :
@@ -84,7 +104,6 @@ function ProtectedApp() {
             <Route path="/profesores" element={<Profesores />} />
             <Route path="/stats"    element={<Stats />} />
             <Route path="/logout"   element={<Logout />} />
-            <Route path="/:username" element={<ClubPublicPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
@@ -102,7 +121,12 @@ function App() {
         <Route path="/"          element={<Landing />} />
         <Route path="/login"     element={<Login />} />
         <Route path="/register"  element={<Register />} />
-        <Route path="/:username" element={<ClubPublicPage />} />
+        <Route path="/:username" element={
+          <>
+            <Header publicMode />
+            <ClubPublicPage />
+          </>
+        } />
         <Route path="*"          element={<Navigate to="/login" replace />} />
       </Routes>
     );

@@ -23,9 +23,10 @@ import { useAuth } from "../../context/AuthContext";
 
 interface Props {
   onMenuClick?: () => void;
+  publicMode?: boolean;
 }
 
-const Header = ({ onMenuClick }: Props) => {
+const Header = ({ onMenuClick, publicMode }: Props) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
@@ -47,18 +48,20 @@ const Header = ({ onMenuClick }: Props) => {
   return (
     <header className="header">
       <div className="header-inner">
-        {/* Hamburger — mobile only */}
-        <button
-          className="header-menu-btn"
-          onClick={onMenuClick}
-          aria-label="Abrir menú"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <line x1="3" y1="6"  x2="21" y2="6"  />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        {/* Hamburger — mobile only, hidden in public mode */}
+        {!publicMode && (
+          <button
+            className="header-menu-btn"
+            onClick={onMenuClick}
+            aria-label="Abrir menú"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="3" y1="6"  x2="21" y2="6"  />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+        )}
 
         {/* Logo */}
         <img src={logo} alt="Devolea" className="header-logo" />
@@ -66,27 +69,29 @@ const Header = ({ onMenuClick }: Props) => {
         {/* Push user menu to the right */}
         <div className="header-spacer" />
 
-        {/* User avatar button */}
-        <Tooltip title="Mi cuenta">
-          <IconButton onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
-            <Avatar
-              sx={{
-                width: 34,
-                height: 34,
-                bgcolor: "#111111",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                border: open ? "2px solid #F5AD27" : "2px solid transparent",
-                transition: "border-color 150ms ease",
-              }}
-            >
-              {initials ?? <AccountCircleIcon sx={{ fontSize: 20, color: "#e0e0e0" }} />}
-            </Avatar>
-          </IconButton>
-        </Tooltip>
+        {/* User avatar + dropdown — hidden in public mode */}
+        {!publicMode && (
+          <Tooltip title="Mi cuenta">
+            <IconButton onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
+              <Avatar
+                sx={{
+                  width: 34,
+                  height: 34,
+                  bgcolor: "#111111",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  border: open ? "2px solid #F5AD27" : "2px solid transparent",
+                  transition: "border-color 150ms ease",
+                }}
+              >
+                {initials ?? <AccountCircleIcon sx={{ fontSize: 20, color: "#e0e0e0" }} />}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
+        )}
 
-        {/* Dropdown menu */}
-        <Menu
+        {/* Dropdown menu — only in authenticated mode */}
+        {!publicMode && <Menu
           anchorEl={anchor}
           open={open}
           onClose={handleClose}
@@ -171,7 +176,7 @@ const Header = ({ onMenuClick }: Props) => {
               Cerrar Sesión
             </Typography>
           </MenuItem>
-        </Menu>
+        </Menu>}
       </div>
     </header>
   );
