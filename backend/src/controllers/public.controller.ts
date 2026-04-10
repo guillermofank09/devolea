@@ -7,6 +7,8 @@ import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
 import { Court } from "../entities/Court";
 import { Booking } from "../entities/Booking";
+import { Profesor } from "../entities/Profesor";
+import { AppSettings } from "../entities/AppSettings";
 import { Between, In } from "typeorm";
 
 async function resolveUser(username: string): Promise<User | null> {
@@ -22,6 +24,8 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     const profile = await AppDataSource.getRepository(ClubProfile).findOneBy({ userId: user.id });
     if (!profile) return res.status(404).json({ error: "Club no encontrado" });
 
+    const settings = await AppDataSource.getRepository(AppSettings).findOneBy({ userId: user.id });
+
     let businessHours: unknown[] = [];
     try { businessHours = JSON.parse(profile.businessHoursJson || "[]"); } catch {}
 
@@ -32,6 +36,9 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       longitude: profile.longitude,
       logoBase64: profile.logoBase64,
       businessHours,
+      showTournaments: settings?.showTournaments ?? true,
+      showCourts:      settings?.showCourts      ?? true,
+      showProfesores:  settings?.showProfesores   ?? true,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -95,6 +102,28 @@ export const getPublicCourts = async (req: Request, res: Response) => {
       courts: courts.map(c => ({ id: c.id, name: c.name, type: c.type, status: c.status })),
       bookings,
     });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+export const getPublicProfesores = async (req: Request, res: Response) => {
+  const { username } = req.params;
+  try {
+    const user = await resolveUser(username);
+    if (!user) return res.status(404).json({ error: "Club no encontrado" });
+
+    const profesores = await AppDataSource.getRepository(Profesor).find({
+      where: { userId: user.id },
+      order: { name: "ASC" },
+    });
+
+    res.json(profesores.map(p => ({
+      id: p.id,
+      name: p.name,
+      phone: p.phone ?? null,
+      schedule: p.schedule ?? null,
+    })));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

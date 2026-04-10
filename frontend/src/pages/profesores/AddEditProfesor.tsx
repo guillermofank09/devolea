@@ -7,6 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormLabel,
   InputAdornment,
   TextField,
@@ -17,7 +18,10 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createProfesor, updateProfesor } from "../../api/profesorService";
 import type { Profesor, ProfesorFormData } from "../../types/Profesor";
+import type { DaySchedule } from "../../types/ClubProfile";
+import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PhoneField from "../../components/common/PhoneField";
+import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
 const EMPTY: ProfesorFormData = { name: "", phone: "" };
@@ -31,6 +35,7 @@ interface Props {
 export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
   const [hourlyRateStr, setHourlyRateStr] = useState("");
+  const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -41,9 +46,11 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
     if (profesor) {
       setForm({ name: profesor.name, phone: profesor.phone ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
+      setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
       setForm(EMPTY);
       setHourlyRateStr("");
+      setSchedule(DEFAULT_HOURS);
     }
     setError(null);
   }, [profesor, open]);
@@ -53,6 +60,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
       const payload = {
         ...data,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
+        schedule,
       };
       return isEditing ? updateProfesor(profesor!.id, payload) : createProfesor(payload);
     },
@@ -128,6 +136,16 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 }}
                 helperText="Tarifa propia del profesor. Si se deja vacío se usa el precio general de clases."
                 sx={FORM_INPUT_SX}
+              />
+            </Box>
+
+            <Box>
+              <Divider sx={{ mb: 2 }} />
+              <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1.5 }}>Horarios de clases</FormLabel>
+              <BusinessHoursEditor
+                value={schedule}
+                onChange={setSchedule}
+                disabled={mutation.isPending}
               />
             </Box>
 

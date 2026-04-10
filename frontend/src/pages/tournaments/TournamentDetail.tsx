@@ -32,6 +32,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournamentById, removePair, triggerNextRound, triggerRepechage } from "../../api/tournamentService";
 import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
+import PageLoader from "../../components/common/PageLoader";
 import AddPairDialog from "./AddPairDialog";
 import GenerateMatchesDialog from "./GenerateMatchesDialog";
 import EditMatchDialog from "./EditMatchDialog";
@@ -204,13 +205,7 @@ export default function TournamentDetail() {
     } as TournamentMatch);
   };
 
-  if (isPending) {
-    return (
-      <Box display="flex" justifyContent="center" py={6}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (isPending) return <PageLoader />;
 
   if (error || !data) {
     return <Alert severity="error">{error ? String(error) : "Torneo no encontrado"}</Alert>;

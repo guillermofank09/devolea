@@ -1,11 +1,13 @@
 import axios from "axios";
 import type { Profesor, ProfesorFormData } from "../types/Profesor";
+import type { DaySchedule } from "../types/ClubProfile";
 import { API_BASE } from "./config";
 
 const API_URL = `${API_BASE}/api/profesores`;
 
 export interface ProfesorPayload extends ProfesorFormData {
   hourlyRate?: number;
+  schedule?: DaySchedule[];
 }
 
 export async function fetchProfesores(search?: string): Promise<Profesor[]> {

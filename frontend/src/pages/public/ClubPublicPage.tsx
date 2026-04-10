@@ -1,27 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo, Fragment, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Chip,
-  CircularProgress,
-  Container,
   IconButton,
+  MenuItem,
   Paper,
-  Tooltip,
+  Select,
   Typography,
 } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import type { TournamentMatch, Pair, TournamentDetail } from "../../types/Tournament";
 import type { DaySchedule } from "../../types/ClubProfile";
-import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts } from "../../api/publicService";
-import type { PublicBookingSlot, PublicCourt } from "../../api/publicService";
+import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
+import type { PublicBookingSlot, PublicCourt, PublicProfesor } from "../../api/publicService";
+import PageLoader from "../../components/common/PageLoader";
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -348,9 +350,7 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
 
       {/* Fixture */}
       <Box sx={{ p: { xs: 2, md: 3 } }}>
-        {isLoading && (
-          <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={22} /></Box>
-        )}
+        {isLoading && <PageLoader />}
         {!isLoading && data && !hasMatches && (
           <Box>
             <Typography variant="body2" color="text.secondary" mb={data.pairs.length > 0 ? 1.5 : 0}>
@@ -382,212 +382,292 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
 
 // ─── courts availability ─────────────────────────────────────────────────────
 
-// Width of the court-name label column — must be identical in TimeAxis and CourtTimeline
-const COURT_LABEL_W = 96;
-
-function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function formatDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+const SLOT_MIN = 60;
+const DAY_ABBREVS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 function parseHHMM(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + (m || 0);
 }
 
-function getLocalMinutes(iso: string): number {
-  const d = new Date(iso);
-  return d.getHours() * 60 + d.getMinutes();
+function getMondayOfWeek(d: Date): Date {
+  const diff = (d.getDay() + 6) % 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
 }
 
-function TimeAxis({ openMin, totalMin }: { openMin: number; totalMin: number }) {
-  const marks: { pct: number; label: string }[] = [];
-  const firstHour = Math.ceil(openMin / 60);
-  const lastHour = Math.floor((openMin + totalMin) / 60);
-  for (let h = firstHour; h <= lastHour; h += 2) {
-    const pct = ((h * 60 - openMin) / totalMin) * 100;
-    if (pct >= 0 && pct <= 100) marks.push({ pct, label: `${String(h).padStart(2, "0")}:00` });
-  }
-  return (
-    <Box sx={{ position: "relative", height: 18, mb: 0.5, ml: `${COURT_LABEL_W}px` }}>
-      {marks.map(m => (
-        <Typography
-          key={m.label}
-          variant="caption"
-          sx={{ position: "absolute", left: `${m.pct}%`, transform: "translateX(-50%)", fontSize: "0.6rem", color: "text.disabled", whiteSpace: "nowrap", userSelect: "none" }}
-        >
-          {m.label}
-        </Typography>
-      ))}
-    </Box>
-  );
+function addDays(d: Date, n: number): Date {
+  const result = new Date(d);
+  result.setDate(d.getDate() + n);
+  return result;
 }
 
-function CourtTimeline({
-  court, bookings, openMin, totalMin, nowPct,
+function dateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function CourtCalendar({
+  court, bookings, businessHours, weekDays, selectedDayIdx, hideCourtName,
 }: {
   court: PublicCourt;
   bookings: PublicBookingSlot[];
-  openMin: number;
-  totalMin: number;
-  nowPct: number;
+  businessHours: DaySchedule[];
+  weekDays: Date[];
+  selectedDayIdx: number;
+  hideCourtName?: boolean;
 }) {
-  const slots = bookings
-    .filter(b => b.courtId === court.id)
-    .map(b => {
-      const startM = getLocalMinutes(b.startTime);
-      const endM   = getLocalMinutes(b.endTime);
-      const cs = Math.max(startM, openMin);
-      const ce = Math.min(endM, openMin + totalMin);
-      if (ce <= cs) return null;
-      const left  = ((cs - openMin) / totalMin) * 100;
-      const width = ((ce - cs) / totalMin) * 100;
-      const startLabel = new Date(b.startTime).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-      const endLabel   = new Date(b.endTime).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-      return { left, width, label: `${startLabel} – ${endLabel}` };
-    })
-    .filter((s): s is { left: number; width: number; label: string } => s !== null);
+  // Per-day schedule info indexed 0=Mon … 6=Sun (same order as DAYS array)
+  const daySchedules = DAYS.map(dayName => {
+    const schedule = businessHours.find(h => h.day === dayName);
+    const isClosed = schedule != null && schedule.isOpen === false;
+    return {
+      isClosed,
+      openMin:  isClosed ? null : parseHHMM(schedule?.openTime  ?? "08:00"),
+      closeMin: isClosed ? null : parseHHMM(schedule?.closeTime ?? "22:00"),
+    };
+  });
 
-  const isUnavailable = court.status === "NOT AVAILABLE";
+  // Global open/close to determine the row range shown
+  const allOpen  = daySchedules.filter(d => !d.isClosed).map(d => d.openMin!);
+  const allClose = daySchedules.filter(d => !d.isClosed).map(d => d.closeMin!);
+  const globalOpen  = allOpen.length  ? Math.min(...allOpen)  : parseHHMM("08:00");
+  const globalClose = allClose.length ? Math.max(...allClose) : parseHHMM("22:00");
+
+  const slots: number[] = [];
+  for (let m = globalOpen; m < globalClose; m += SLOT_MIN) slots.push(m);
+
+  const occupiedKeys = useMemo(() => {
+    const s = new Set<string>();
+    bookings
+      .filter(b => b.courtId === court.id)
+      .forEach(b => {
+        const start = new Date(b.startTime);
+        const end   = new Date(b.endTime);
+        const startMin = start.getHours() * 60 + start.getMinutes();
+        const endMin   = end.getHours()   * 60 + end.getMinutes();
+        const dk = dateKey(start);
+        for (let m = Math.floor(startMin / SLOT_MIN) * SLOT_MIN; m < endMin; m += SLOT_MIN) {
+          s.add(`${dk}-${m}`);
+        }
+      });
+    return s;
+  }, [bookings, court.id]);
+
+  const todayDk = dateKey(new Date());
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-      <Box sx={{ width: COURT_LABEL_W, flexShrink: 0 }}>
-        <Typography variant="body2" fontWeight={600} noWrap sx={{ fontSize: "0.82rem" }}>{court.name}</Typography>
-        {isUnavailable && (
-          <Typography variant="caption" sx={{ fontSize: "0.62rem", color: "warning.main" }}>No disponible</Typography>
-        )}
+    <Box sx={{ mb: 3 }}>
+      {!hideCourtName && (
+        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.75, fontSize: "0.85rem" }}>
+          {court.name}
+          {court.status === "NOT AVAILABLE" && (
+            <Typography component="span" variant="caption" color="warning.main" sx={{ ml: 1 }}>
+              No disponible
+            </Typography>
+          )}
+        </Typography>
+      )}
+
+      {/* ── Desktop: full 7-column weekly grid ── */}
+      <Box sx={{ display: { xs: "none", md: "block" }, overflowX: "auto" }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "44px repeat(7, minmax(38px, 1fr))", minWidth: 340 }}>
+          {/* Header row */}
+          <Box sx={{ height: 32 }} />
+          {weekDays.map((day, di) => {
+            const dk = dateKey(day);
+            const isToday = dk === todayDk;
+            return (
+              <Box key={dk} sx={{ height: 32, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", bgcolor: isToday ? "#e3f2fd" : "transparent", borderRadius: "4px 4px 0 0", borderBottom: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" fontWeight={isToday ? 700 : 500} sx={{ fontSize: "0.65rem", lineHeight: 1.2 }}>{DAY_ABBREVS[di]}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "text.secondary", lineHeight: 1.1 }}>{day.getDate()}</Typography>
+              </Box>
+            );
+          })}
+          {/* Slot rows */}
+          {slots.map(slotMin => (
+            <Fragment key={slotMin}>
+              <Box sx={{ height: 26, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 0.75, borderRight: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "text.disabled", whiteSpace: "nowrap" }}>
+                  {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
+                </Typography>
+              </Box>
+              {weekDays.map((day, di) => {
+                const dk = dateKey(day);
+                const { isClosed, openMin, closeMin } = daySchedules[di];
+                const outside = isClosed || openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
+                const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
+                const isToday = dk === todayDk;
+                return (
+                  <Box key={dk} sx={{ height: 26, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: isToday ? "#bbdefb" : "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                );
+              })}
+            </Fragment>
+          ))}
+        </Box>
       </Box>
-      <Box sx={{ flex: 1, position: "relative", height: 36, borderRadius: 1.5, overflow: "hidden", bgcolor: isUnavailable ? "grey.200" : "#e8f5e9", border: "1px solid", borderColor: isUnavailable ? "grey.300" : "#c8e6c9" }}>
-        {isUnavailable ? (
-          <Box sx={{ height: "100%", backgroundImage: "repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.06) 5px, rgba(0,0,0,0.06) 10px)" }} />
-        ) : (
-          <>
-            {slots.map((s, i) => (
-              <Tooltip key={i} title={`Ocupado ${s.label}`} placement="top" arrow>
-                <Box sx={{ position: "absolute", top: 0, left: `${s.left}%`, width: `${s.width}%`, height: "100%", bgcolor: "#90a4ae", cursor: "default", "&:hover": { bgcolor: "#78909c" } }}>
-                  {s.width >= 8 && (
-                    <Typography variant="caption" sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.58rem", color: "#fff", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", px: 0.5 }}>
-                      Ocupado
-                    </Typography>
-                  )}
-                </Box>
-              </Tooltip>
-            ))}
-            {nowPct >= 0 && nowPct <= 100 && (
-              <Box sx={{ position: "absolute", top: 0, left: `${nowPct}%`, width: 2, height: "100%", bgcolor: "#f44336", zIndex: 2 }} />
-            )}
-          </>
-        )}
+
+      {/* ── Mobile: single-day column (day chosen via chips above) ── */}
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        {(() => {
+          const day = weekDays[selectedDayIdx];
+          const dk  = dateKey(day);
+          const { isClosed, openMin, closeMin } = daySchedules[selectedDayIdx];
+          if (isClosed) {
+            return <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>Cerrado este día.</Typography>;
+          }
+          return (
+            <Box sx={{ display: "grid", gridTemplateColumns: "44px 1fr" }}>
+              {slots.map(slotMin => {
+                const outside = openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
+                const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
+                return (
+                  <Fragment key={slotMin}>
+                    <Box sx={{ height: 36, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
+                      <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.disabled", whiteSpace: "nowrap" }}>
+                        {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ height: 36, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                  </Fragment>
+                );
+              })}
+            </Box>
+          );
+        })()}
       </Box>
     </Box>
   );
 }
 
 function CourtsSection({ username, businessHours }: { username: string; businessHours: DaySchedule[] }) {
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const todayDayIdx = (new Date().getDay() + 6) % 7; // 0=Mon…6=Sun
+  const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()));
+  const [selectedDayIdx, setSelectedDayIdx] = useState(todayDayIdx);
+  const [selectedCourtId, setSelectedCourtId] = useState<number | null>(null);
 
-  const from = new Date(`${selectedDate}T00:00:00`).toISOString();
-  const to   = new Date(`${selectedDate}T23:59:59.999`).toISOString();
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const from = weekStart.toISOString();
+  const to   = addDays(weekStart, 7).toISOString();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["publicCourts", username, selectedDate],
-    queryFn: () => fetchPublicCourts(username, from, to),
-    enabled: !!username,
+    queryKey: ["publicCourts", username, dateKey(weekStart)],
+    queryFn:  () => fetchPublicCourts(username, from, to),
+    enabled:  !!username,
   });
 
-  // Day of week (0=Sun … 6=Sat) → Spanish DAYS index: (jsDay+6)%7
-  const dateObj = new Date(`${selectedDate}T12:00:00`);
-  const dayName = DAYS[(dateObj.getDay() + 6) % 7];
-  const schedule = businessHours.find(h => h.day === dayName);
-  // Only treat the day as closed when explicitly set to isOpen:false
-  // If no schedule exists (business hours not configured), default to open
-  const isClosed = schedule != null && schedule.isOpen === false;
-  const openMin  = isClosed ? 0 : parseHHMM(schedule?.openTime  ?? "08:00");
-  const closeMin = isClosed ? 0 : parseHHMM(schedule?.closeTime ?? "22:00");
-  const totalMin = closeMin - openMin;
+  // Auto-select the first court once data loads
+  useEffect(() => {
+    if (data?.courts.length && selectedCourtId === null) {
+      setSelectedCourtId(data.courts[0].id);
+    }
+  }, [data, selectedCourtId]);
 
-  const isToday = selectedDate === todayStr();
-  const nowMin = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
-  const nowPct = (!isClosed && nowMin >= openMin && nowMin <= openMin + totalMin)
-    ? ((nowMin - openMin) / totalMin) * 100
-    : -1;
-
-  const shiftDate = (delta: number) => {
-    const d = new Date(`${selectedDate}T12:00:00`);
-    d.setDate(d.getDate() + delta);
-    setSelectedDate(formatDateStr(d));
+  const shiftWeek = (delta: number) => {
+    setWeekStart(prev => addDays(prev, delta * 7));
+    setSelectedDayIdx(0);
   };
 
-  const dateLabel = dateObj.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const isCurrentWeek = dateKey(weekStart) === dateKey(getMondayOfWeek(new Date()));
+  const fromLabel = weekDays[0].toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+  const toLabel   = weekDays[6].toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+  const todayDk   = dateKey(new Date());
+
+  const activeCourt = data?.courts.find(c => c.id === selectedCourtId) ?? data?.courts[0] ?? null;
 
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-      {/* Header */}
       <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
         <CalendarTodayIcon sx={{ color: "text.secondary", fontSize: 20 }} />
-        <Typography variant="h6" fontWeight={800} sx={{ flex: 1 }}>Disponibilidad de canchas</Typography>
+        <Typography variant="h6" fontWeight={800} sx={{ flex: 1, minWidth: 0 }}>Disponibilidad de canchas</Typography>
+        {!isLoading && data && data.courts.length > 1 && (
+          <Select
+            size="small"
+            value={selectedCourtId ?? data.courts[0].id}
+            onChange={e => setSelectedCourtId(Number(e.target.value))}
+            sx={{ fontSize: "0.85rem", minWidth: 140, "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } }}
+          >
+            {data.courts.map(c => (
+              <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+            ))}
+          </Select>
+        )}
       </Box>
 
       <Box sx={{ px: 3, py: 2.5 }}>
-        {/* Date navigation */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-          <IconButton size="small" onClick={() => shiftDate(-1)}><ChevronLeftIcon /></IconButton>
-          <Typography variant="body1" fontWeight={600} sx={{ flex: 1, textAlign: "center", textTransform: "capitalize" }}>
-            {dateLabel}
+        {/* Week navigation */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+          <IconButton size="small" onClick={() => shiftWeek(-1)}><ChevronLeftIcon /></IconButton>
+          <Typography variant="body2" fontWeight={600} sx={{ flex: 1, textAlign: "center" }}>
+            {fromLabel} — {toLabel}
           </Typography>
-          <IconButton size="small" onClick={() => shiftDate(1)}><ChevronRightIcon /></IconButton>
-          {!isToday && (
-            <Chip label="Hoy" size="small" onClick={() => setSelectedDate(todayStr())} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
+          <IconButton size="small" onClick={() => shiftWeek(1)}><ChevronRightIcon /></IconButton>
+          {!isCurrentWeek && (
+            <Chip label="Semana actual" size="small" onClick={() => { setWeekStart(getMondayOfWeek(new Date())); setSelectedDayIdx(todayDayIdx); }} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
           )}
         </Box>
 
-        {isLoading && (
-          <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={22} /></Box>
-        )}
+        {/* Mobile: day selector chips */}
+        <Box sx={{ display: { xs: "flex", md: "none" }, gap: 0.75, overflowX: "auto", pb: 0.5, mb: 2, scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } }}>
+          {weekDays.map((day, di) => {
+            const dk = dateKey(day);
+            const isToday = dk === todayDk;
+            const isSelected = di === selectedDayIdx;
+            return (
+              <Box
+                key={di}
+                onClick={() => setSelectedDayIdx(di)}
+                sx={{ flexShrink: 0, width: 44, height: 52, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 2, cursor: "pointer", bgcolor: isSelected ? "primary.main" : isToday ? "#e3f2fd" : "grey.100", border: "1px solid", borderColor: isSelected ? "primary.main" : isToday ? "primary.light" : "transparent", transition: "all 150ms ease" }}
+              >
+                <Typography sx={{ fontSize: "0.6rem", fontWeight: 600, lineHeight: 1.2, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.secondary", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  {DAY_ABBREVS[di]}
+                </Typography>
+                <Typography sx={{ fontSize: "0.88rem", fontWeight: isSelected || isToday ? 700 : 400, lineHeight: 1.3, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.primary" }}>
+                  {day.getDate()}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
 
-        {!isLoading && isClosed && (
-          <Box sx={{ py: 3, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">El club está cerrado este día.</Typography>
-          </Box>
-        )}
+        {isLoading && <PageLoader />}
 
-        {!isLoading && !isClosed && data && data.courts.length === 0 && (
+        {!isLoading && data && data.courts.length === 0 && (
           <Typography variant="body2" color="text.secondary">No hay canchas registradas.</Typography>
         )}
 
-        {!isLoading && !isClosed && data && data.courts.length > 0 && (
+        {!isLoading && data && activeCourt && (
           <>
-            <TimeAxis openMin={openMin} totalMin={totalMin} />
-            {data.courts.map(court => (
-              <CourtTimeline
-                key={court.id}
-                court={court}
-                bookings={data.bookings}
-                openMin={openMin}
-                totalMin={totalMin}
-                nowPct={nowPct}
-              />
-            ))}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2, flexWrap: "wrap" }}>
+            {data.courts.length === 1 && (
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, fontSize: "0.85rem" }}>
+                {activeCourt.name}
+                {activeCourt.status === "NOT AVAILABLE" && (
+                  <Typography component="span" variant="caption" color="warning.main" sx={{ ml: 1 }}>No disponible</Typography>
+                )}
+              </Typography>
+            )}
+            <CourtCalendar
+              court={activeCourt}
+              bookings={data.bookings}
+              businessHours={businessHours}
+              weekDays={weekDays}
+              selectedDayIdx={selectedDayIdx}
+              hideCourtName
+            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1, flexWrap: "wrap" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 16, height: 12, borderRadius: 0.5, bgcolor: "#e8f5e9", border: "1px solid #c8e6c9" }} />
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f1f8e9", border: "0.5px solid #c8e6c9" }} />
                 <Typography variant="caption" color="text.secondary">Disponible</Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 16, height: 12, borderRadius: 0.5, bgcolor: "#90a4ae" }} />
-                <Typography variant="caption" color="text.secondary">Ocupado</Typography>
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#ffcdd2", border: "0.5px solid #ef9a9a" }} />
+                <Typography variant="caption" color="text.secondary">Reservado</Typography>
               </Box>
-              {nowPct >= 0 && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 2, height: 12, bgcolor: "#f44336" }} />
-                  <Typography variant="caption" color="text.secondary">Ahora</Typography>
-                </Box>
-              )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f5f5f5", border: "0.5px solid #e0e0e0" }} />
+                <Typography variant="caption" color="text.secondary">Fuera de horario</Typography>
+              </Box>
             </Box>
           </>
         )}
@@ -596,9 +676,106 @@ function CourtsSection({ username, businessHours }: { username: string; business
   );
 }
 
-// ─── sidebar ──────────────────────────────────────────────────────────────────
+// ─── profesores ───────────────────────────────────────────────────────────────
 
-interface SidebarProps {
+function waLink(phone: string): string {
+  return `https://wa.me/${phone.replace(/\D/g, "")}`;
+}
+
+function ProfesorCard({ profesor }: { profesor: PublicProfesor }) {
+  const openDays = (profesor.schedule ?? []).filter(d => d.isOpen);
+
+  return (
+    <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+        {profesor.name}
+      </Typography>
+
+      {profesor.phone && (
+        <Box
+          component="a"
+          href={waLink(profesor.phone)}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, color: "#25d366", textDecoration: "none", width: "fit-content", "&:hover": { opacity: 0.8 } }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 18 }} />
+          <Typography variant="body2" fontWeight={500}>{profesor.phone}</Typography>
+        </Box>
+      )}
+
+      {openDays.length > 0 && (
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.75 }}>
+            <AccessTimeIcon sx={{ fontSize: 14, color: "text.secondary" }} />
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Horarios
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+            {openDays.map(d => (
+              <Box key={d.day} sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                <Typography variant="caption" fontWeight={600} color="text.primary">{d.day}</Typography>
+                <Typography variant="caption" color="text.secondary">{d.openTime} – {d.closeTime}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+    </Paper>
+  );
+}
+
+function ProfesoresSection({ username }: { username: string }) {
+  const { data: profesores = [], isLoading } = useQuery({
+    queryKey: ["publicProfesores", username],
+    queryFn: () => fetchPublicProfesores(username),
+    enabled: !!username,
+  });
+
+  if (!isLoading && profesores.length === 0) return null;
+
+  return (
+    <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5 }}>
+        <SchoolOutlinedIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+        <Typography variant="h6" fontWeight={800} sx={{ flex: 1 }}>Profesores</Typography>
+      </Box>
+
+      <Box sx={{ px: 3, py: 2.5 }}>
+        {isLoading ? (
+          <PageLoader />
+        ) : (
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
+            {profesores.map(p => <ProfesorCard key={p.id} profesor={p} />)}
+          </Box>
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
+
+// ─── navigation items ─────────────────────────────────────────────────────────
+
+interface PublicNavItem {
+  id: string;
+  label: string;
+  Icon: React.ComponentType<{ sx?: object }>;
+}
+
+const ALL_NAV_ITEMS: PublicNavItem[] = [
+  { id: "section-torneos",    label: "Torneos",    Icon: EmojiEventsIcon },
+  { id: "section-canchas",    label: "Canchas",    Icon: SportsTennisIcon },
+  { id: "section-profesores", label: "Profesores", Icon: SchoolOutlinedIcon },
+];
+
+// ─── public page sidebar (desktop) ───────────────────────────────────────────
+
+interface PublicSidebarProps {
+  items: PublicNavItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
   clubName: string;
   address?: string;
   logoBase64?: string | null;
@@ -606,74 +783,222 @@ interface SidebarProps {
   businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
 }
 
-function ClubSidebar({ clubName, address, logoBase64, mapUrl, businessHours }: SidebarProps) {
+function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoBase64, mapUrl, businessHours }: PublicSidebarProps) {
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+    <Box
+      sx={{
+        width: 260,
+        flexShrink: 0,
+        bgcolor: "#111",
+        display: { xs: "none", md: "flex" },
+        flexDirection: "column",
+        position: "sticky",
+        top: 0,
+        height: "100vh",
+        overflowY: "auto",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+        scrollbarWidth: "thin",
+        scrollbarColor: "rgba(255,255,255,0.1) transparent",
+        "&::-webkit-scrollbar": { width: 4 },
+        "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.12)", borderRadius: "4px" },
+      }}
+    >
       {/* Club identity */}
-      <Paper elevation={0} sx={{ borderRadius: 3, p: 3, border: "1px solid", borderColor: "divider" }}>
-        {logoBase64 && (
+      <Box sx={{ px: 2.5, pt: 3, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        {logoBase64 ? (
           <Box
             component="img"
             src={logoBase64}
             alt="logo"
-            sx={{ width: 72, height: 72, borderRadius: 2, objectFit: "contain", border: "1px solid", borderColor: "divider", display: "block", mb: 2 }}
+            sx={{ width: 72, height: 72, borderRadius: 2.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", display: "block", mb: 2, bgcolor: "#1a1a1a" }}
           />
+        ) : (
+          <Box sx={{ width: 72, height: 72, borderRadius: 2.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", mb: 2, flexShrink: 0 }}>
+            <SportsTennisIcon sx={{ fontSize: 34, color: "#111" }} />
+          </Box>
         )}
-        <Typography variant="h5" fontWeight={800} lineHeight={1.2} mb={address ? 0.75 : 0}>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#e8eaf0", lineHeight: 1.25 }}>
           {clubName || "Club de Pádel"}
         </Typography>
         {address && (
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
-            <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary", mt: "2px", flexShrink: 0 }} />
-            <Typography variant="body2" color="text.secondary">{address}</Typography>
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 0.5, mt: 0.75 }}>
+            <LocationOnIcon sx={{ fontSize: 13, color: "#6b7a99", mt: "2px", flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: "#6b7a99", lineHeight: 1.4 }}>{address}</Typography>
           </Box>
         )}
-      </Paper>
+      </Box>
 
       {/* Map */}
       {mapUrl && (
-        <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider", height: 220 }}>
-          <Box
-            component="iframe"
-            src={mapUrl}
-            title="Ubicación del club"
-            sx={{ width: "100%", height: "100%", border: 0, display: "block" }}
-            loading="lazy"
-          />
-        </Paper>
+        <Box sx={{ mx: 2, mb: 2, borderRadius: 2, overflow: "hidden", height: 140, flexShrink: 0, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Box component="iframe" src={mapUrl} title="Ubicación del club" sx={{ width: "100%", height: "100%", border: 0, display: "block" }} loading="lazy" />
+        </Box>
       )}
 
+      <Box sx={{ mx: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+
+      {/* Section navigation */}
+      <Box sx={{ px: 1.5, py: 2, display: "flex", flexDirection: "column", gap: "3px" }}>
+        {items.map(({ id, label, Icon }) => {
+          const active = activeId === id;
+          return (
+            <Box
+              key={id}
+              component="button"
+              onClick={() => onSelect(id)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: "14px",
+                py: "11px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: "pointer",
+                textAlign: "left",
+                width: "100%",
+                bgcolor: active ? "#F5AD27" : "transparent",
+                color: active ? "#111" : "#6b7a99",
+                fontWeight: active ? 700 : 500,
+                fontSize: "14px",
+                letterSpacing: "0.1px",
+                transition: "background 150ms ease, color 150ms ease",
+                "&:hover": active
+                  ? { bgcolor: "#e09b18" }
+                  : { bgcolor: "rgba(255,255,255,0.05)", color: "#e8eaf0" },
+              }}
+            >
+              <Box
+                sx={{
+                  width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, borderRadius: "9px",
+                  bgcolor: active ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.04)",
+                  transition: "background 150ms ease",
+                }}
+              >
+                <Icon sx={{ fontSize: 18 }} />
+              </Box>
+              {label}
+            </Box>
+          );
+        })}
+      </Box>
+
       {/* Business hours */}
-      {businessHours.length > 0 && (
-        <Paper elevation={0} sx={{ borderRadius: 3, p: 3, border: "1px solid", borderColor: "divider" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <AccessTimeIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-            <Typography variant="subtitle1" fontWeight={700}>Horarios</Typography>
+      {businessHours.some(h => h.isOpen) && (
+        <>
+          <Box sx={{ mx: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+          <Box sx={{ px: 2.5, py: 2.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+              <AccessTimeIcon sx={{ fontSize: 15, color: "#6b7a99" }} />
+              <Typography sx={{ color: "#6b7a99", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem" }}>
+                Horarios
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+              {DAYS.map(day => {
+                const sched = businessHours.find(h => h.day === day);
+                if (!sched?.isOpen) return null;
+                return (
+                  <Box key={day} sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                    <Typography sx={{ color: "#e8eaf0", fontWeight: 600, fontSize: "0.75rem" }}>{day.slice(0, 3)}</Typography>
+                    <Typography sx={{ color: "#6b7a99", fontSize: "0.75rem" }}>{sched.openTime}–{sched.closeTime}</Typography>
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-            {DAYS.map(day => {
-              const schedule = businessHours.find(h => h.day === day);
-              const isOpen = schedule?.isOpen;
-              return (
-                <Box key={day} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", py: 0.75, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: 0, pb: 0 } }}>
-                  <Typography variant="body2" fontWeight={isOpen ? 600 : 400} color={isOpen ? "text.primary" : "text.disabled"}>
-                    {day}
-                  </Typography>
-                  {isOpen ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {schedule!.openTime} – {schedule!.closeTime}
-                    </Typography>
-                  ) : (
-                    <Typography variant="body2" color="text.disabled" sx={{ fontSize: "0.78rem" }}>
-                      Cerrado
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
-        </Paper>
+        </>
       )}
+    </Box>
+  );
+}
+
+// ─── mobile bottom nav ────────────────────────────────────────────────────────
+
+function MobileBottomNav({ items, activeId, onSelect }: { items: PublicNavItem[]; activeId: string; onSelect: (id: string) => void }) {
+  if (!items.length) return null;
+  return (
+    <Box
+      component="nav"
+      sx={{
+        display: { xs: "flex", md: "none" },
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        bgcolor: "#111",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 -4px 20px rgba(0,0,0,0.35)",
+      }}
+    >
+      {items.map(({ id, label, Icon }) => {
+        const active = activeId === id;
+        return (
+          <Box
+            key={id}
+            component="button"
+            onClick={() => onSelect(id)}
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 0.4,
+              py: 1.25,
+              border: "none",
+              bgcolor: "transparent",
+              cursor: "pointer",
+              color: active ? "#F5AD27" : "#6b7a99",
+              transition: "color 150ms ease",
+            }}
+          >
+            <Icon sx={{ fontSize: 22 }} />
+            <Typography sx={{ fontSize: "0.65rem", fontWeight: active ? 700 : 500, lineHeight: 1, color: "inherit" }}>
+              {label}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+// ─── mobile club header ───────────────────────────────────────────────────────
+
+function MobileClubHeader({ clubName, address, logoBase64 }: { clubName: string; address?: string; logoBase64?: string | null }) {
+  return (
+    <Box
+      sx={{
+        display: { xs: "flex", md: "none" },
+        alignItems: "center",
+        gap: 2,
+        px: 2,
+        py: 1.75,
+        bgcolor: "#111",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      {logoBase64 ? (
+        <Box component="img" src={logoBase64} alt="logo" sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0, bgcolor: "#1a1a1a" }} />
+      ) : (
+        <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <SportsTennisIcon sx={{ fontSize: 20, color: "#111" }} />
+        </Box>
+      )}
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#e8eaf0", lineHeight: 1.2 }} noWrap>
+          {clubName || "Club de Pádel"}
+        </Typography>
+        {address && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.2 }}>
+            <LocationOnIcon sx={{ fontSize: 12, color: "#6b7a99", flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: "#6b7a99" }} noWrap>{address}</Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }
@@ -696,20 +1021,49 @@ export default function ClubPublicPage() {
     enabled: !!username,
   });
 
-  if (profileLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <CircularProgress />
-      </Box>
-    );
+  const visibleNavItems = useMemo(() => {
+    if (!profile) return ALL_NAV_ITEMS;
+    return ALL_NAV_ITEMS.filter(({ id }) => {
+      if (id === "section-torneos")    return profile.showTournaments ?? true;
+      if (id === "section-canchas")    return profile.showCourts      ?? true;
+      if (id === "section-profesores") return profile.showProfesores  ?? true;
+      return true;
+    });
+  }, [profile]);
+
+  const [activeSection, setActiveSection] = useState(() => visibleNavItems[0]?.id ?? "section-torneos");
+
+  useEffect(() => {
+    setActiveSection(visibleNavItems[0]?.id ?? "section-torneos");
+  }, [visibleNavItems]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const observers = visibleNavItems.map(({ id }) => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { rootMargin: "-10% 0px -85% 0px", threshold: 0 },
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach(o => o?.disconnect());
+  }, [profile, visibleNavItems]);
+
+  function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  if (profileLoading) return <PageLoader />;
 
   if (profileError || !profile) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", bgcolor: "#111" }}>
         <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h5" fontWeight={700} mb={1}>Club no encontrado</Typography>
-          <Typography color="text.secondary">No existe un club con ese nombre de usuario.</Typography>
+          <Typography variant="h5" fontWeight={700} mb={1} sx={{ color: "#e8eaf0" }}>Club no encontrado</Typography>
+          <Typography sx={{ color: "#6b7a99" }}>No existe un club con ese nombre de usuario.</Typography>
         </Box>
       </Box>
     );
@@ -720,47 +1074,95 @@ export default function ClubPublicPage() {
     : null;
 
   return (
-    <Box sx={{ bgcolor: "grey.50", minHeight: "100vh", py: { xs: 3, md: 5 } }}>
-      <Container maxWidth="lg">
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: "flex-start" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "grey.50" }}>
 
-          {/* ── Sidebar: club info (top on mobile, right on desktop) ─── */}
-          <Box sx={{ width: { xs: "100%", md: 300 }, flexShrink: 0, order: { xs: 1, md: 2 } }}>
-            <ClubSidebar
-              clubName={profile.clubName}
-              address={profile.address}
-              logoBase64={profile.logoBase64}
-              mapUrl={mapUrl}
-              businessHours={profile.businessHours}
-            />
-          </Box>
+      {/* ── Left sidebar (desktop) ── */}
+      <PublicPageSidebar
+        items={visibleNavItems}
+        activeId={activeSection}
+        onSelect={scrollToSection}
+        clubName={profile.clubName}
+        address={profile.address}
+        logoBase64={profile.logoBase64}
+        mapUrl={mapUrl}
+        businessHours={profile.businessHours}
+      />
 
-          {/* ── Main: tournaments + courts (below on mobile, left on desktop) ─── */}
-          <Box sx={{ flex: 1, minWidth: 0, width: { xs: "100%", md: "auto" }, order: { xs: 2, md: 1 }, display: "flex", flexDirection: "column", gap: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <SportsTennisIcon sx={{ color: "primary.main", fontSize: 24 }} />
-              <Typography variant="h5" fontWeight={800}>Torneos</Typography>
-            </Box>
+      {/* ── Main content ── */}
+      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
 
-            {tournamentsLoading && (
-              <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress size={28} /></Box>
+        {/* Mobile club header */}
+        <MobileClubHeader
+          clubName={profile.clubName}
+          address={profile.address}
+          logoBase64={profile.logoBase64}
+        />
+
+        {/* Scrollable body */}
+        <Box sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 2.5, md: 4 }, pb: { xs: "80px", md: 4 } }}>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
+
+            {/* Torneos */}
+            {(profile.showTournaments ?? true) && (
+              <Box id="section-torneos" sx={{ scrollMarginTop: "16px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <EmojiEventsIcon sx={{ fontSize: 20, color: "#111" }} />
+                  </Box>
+                  <Typography variant="h5" fontWeight={800}>Torneos</Typography>
+                </Box>
+
+                {tournamentsLoading && <PageLoader />}
+
+                {!tournamentsLoading && tournaments.length === 0 && (
+                  <Paper elevation={0} sx={{ borderRadius: 3, p: 5, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
+                    <EmojiEventsIcon sx={{ fontSize: 44, color: "text.disabled", mb: 1.5 }} />
+                    <Typography variant="body1" color="text.secondary">No hay torneos activos en este momento.</Typography>
+                  </Paper>
+                )}
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  {tournaments.map((t, idx) => (
+                    <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
+                  ))}
+                </Box>
+              </Box>
             )}
 
-            {!tournamentsLoading && tournaments.length === 0 && (
-              <Paper elevation={0} sx={{ borderRadius: 3, p: 4, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
-                <Typography variant="body1" color="text.secondary">No hay torneos activos en este momento.</Typography>
-              </Paper>
+            {/* Canchas */}
+            {(profile.showCourts ?? true) && (
+              <Box id="section-canchas" sx={{ scrollMarginTop: "16px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SportsTennisIcon sx={{ fontSize: 20, color: "#111" }} />
+                  </Box>
+                  <Typography variant="h5" fontWeight={800}>Canchas</Typography>
+                </Box>
+                <CourtsSection username={username!} businessHours={profile.businessHours} />
+              </Box>
             )}
 
-            {tournaments.map((t, idx) => (
-              <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
-            ))}
+            {/* Profesores */}
+            {(profile.showProfesores ?? true) && (
+              <Box id="section-profesores" sx={{ scrollMarginTop: "16px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SchoolOutlinedIcon sx={{ fontSize: 20, color: "#111" }} />
+                  </Box>
+                  <Typography variant="h5" fontWeight={800}>Profesores</Typography>
+                </Box>
+                <ProfesoresSection username={username!} />
+              </Box>
+            )}
 
-            <CourtsSection username={username!} businessHours={profile.businessHours} />
           </Box>
-
         </Box>
-      </Container>
+      </Box>
+
+      {/* ── Mobile bottom nav ── */}
+      <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={scrollToSection} />
+
     </Box>
   );
 }

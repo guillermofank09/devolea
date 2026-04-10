@@ -10,12 +10,8 @@ import {
   Divider,
   Grid,
   Snackbar,
-  Switch,
   TextField,
-  Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import UploadIcon from "@mui/icons-material/UploadOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -28,6 +24,7 @@ import type { ClubProfile, DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
+import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 
 // ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
 interface NominatimPlace {
@@ -66,9 +63,6 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Profile() {
   const qc = useQueryClient();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   const { data, isPending, isError } = useQuery<ClubProfile>({
     queryKey: ["clubProfile"],
     queryFn: fetchProfile,
@@ -135,11 +129,6 @@ export default function Profile() {
     const reader = new FileReader();
     reader.onload = ev => setLogoBase64(ev.target?.result as string);
     reader.readAsDataURL(file);
-  }
-
-  // ── hours helpers ──
-  function setDayField<K extends keyof DaySchedule>(idx: number, field: K, value: DaySchedule[K]) {
-    setHours(prev => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d));
   }
 
   // ── save ──
@@ -353,125 +342,7 @@ export default function Profile() {
 
       {/* ── Business hours ── */}
       <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-
-          {/* Column headers — desktop only */}
-          {!isMobile && (
-            <Box sx={{ display: "grid", gridTemplateColumns: "120px 56px 1fr 1fr", gap: 1.5, mb: 1, px: 1 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>Día</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>Abierto</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>Apertura</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>Cierre</Typography>
-            </Box>
-          )}
-
-          {hours.map((d, idx) => (
-            isMobile ? (
-              /* ── Mobile: two-row card per day ── */
-              <Box
-                key={d.day}
-                sx={{
-                  px: 1,
-                  py: 0.75,
-                  borderRadius: 2,
-                  bgcolor: d.isOpen ? "transparent" : "rgba(0,0,0,0.02)",
-                }}
-              >
-                {/* Row 1: day name + switch */}
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Typography
-                    variant="body2"
-                    fontWeight={d.isOpen ? 600 : 400}
-                    color={d.isOpen ? "text.primary" : "text.disabled"}
-                  >
-                    {d.day}
-                  </Typography>
-                  <Switch
-                    size="small"
-                    checked={d.isOpen}
-                    onChange={e => setDayField(idx, "isOpen", e.target.checked)}
-                    sx={{
-                      "& .MuiSwitch-thumb": { bgcolor: d.isOpen ? "#F5AD27" : undefined },
-                      "& .MuiSwitch-track": { bgcolor: d.isOpen ? "rgba(245,173,39,0.4) !important" : undefined },
-                    }}
-                  />
-                </Box>
-                {/* Row 2: time pickers — only when open */}
-                {d.isOpen && (
-                  <Box sx={{ display: "flex", gap: 1, mt: 0.75 }}>
-                    <TextField
-                      type="time"
-                      size="small"
-                      value={d.openTime}
-                      onChange={e => setDayField(idx, "openTime", e.target.value)}
-                      sx={{ flex: 1, "& input": { fontSize: "0.82rem" } }}
-                    />
-                    <TextField
-                      type="time"
-                      size="small"
-                      value={d.closeTime}
-                      onChange={e => setDayField(idx, "closeTime", e.target.value)}
-                      sx={{ flex: 1, "& input": { fontSize: "0.82rem" } }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            ) : (
-              /* ── Desktop: single 4-column row ── */
-              <Box
-                key={d.day}
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "120px 56px 1fr 1fr",
-                  gap: 1.5,
-                  alignItems: "center",
-                  px: 1,
-                  py: 0.75,
-                  borderRadius: 2,
-                  bgcolor: d.isOpen ? "transparent" : "rgba(0,0,0,0.02)",
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  fontWeight={d.isOpen ? 600 : 400}
-                  color={d.isOpen ? "text.primary" : "text.disabled"}
-                >
-                  {d.day}
-                </Typography>
-
-                <Tooltip title={d.isOpen ? "Marcar como cerrado" : "Marcar como abierto"}>
-                  <Switch
-                    size="small"
-                    checked={d.isOpen}
-                    onChange={e => setDayField(idx, "isOpen", e.target.checked)}
-                    sx={{
-                      "& .MuiSwitch-thumb":  { bgcolor: d.isOpen ? "#F5AD27" : undefined },
-                      "& .MuiSwitch-track":  { bgcolor: d.isOpen ? "rgba(245,173,39,0.4) !important" : undefined },
-                    }}
-                  />
-                </Tooltip>
-
-                <TextField
-                  type="time"
-                  size="small"
-                  value={d.openTime}
-                  onChange={e => setDayField(idx, "openTime", e.target.value)}
-                  disabled={!d.isOpen}
-                  sx={{ "& input": { fontSize: "0.82rem" } }}
-                />
-
-                <TextField
-                  type="time"
-                  size="small"
-                  value={d.closeTime}
-                  onChange={e => setDayField(idx, "closeTime", e.target.value)}
-                  disabled={!d.isOpen}
-                  sx={{ "& input": { fontSize: "0.82rem" } }}
-                />
-              </Box>
-            )
-          ))}
-        </Box>
+        <BusinessHoursEditor value={hours} onChange={setHours} />
       </Section>
 
       {/* ── Save ── */}

@@ -5,6 +5,7 @@ export interface CreateProfesorDto {
   name: string;
   phone?: string;
   hourlyRate?: number;
+  schedule?: object[];
 }
 
 export class ProfesorService {
@@ -26,8 +27,10 @@ export class ProfesorService {
   }
 
   async update(id: number, dto: Partial<CreateProfesorDto>): Promise<Profesor | null> {
-    await this.repo.update(id, dto);
-    return await this.repo.findOneBy({ id });
+    const existing = await this.repo.findOneBy({ id });
+    if (!existing) return null;
+    Object.assign(existing, dto);
+    return await this.repo.save(existing);
   }
 
   async delete(id: number): Promise<void> {

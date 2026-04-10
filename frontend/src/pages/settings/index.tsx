@@ -16,9 +16,11 @@ import {
   Typography,
 } from "@mui/material";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
-import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
+import SportsTennisOutlinedIcon from "@mui/icons-material/SportsTennisOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, saveSettings } from "../../api/settingsService";
 import type { AppSettings } from "../../types/AppSettings";
@@ -70,7 +72,9 @@ export default function Settings() {
 
   const [hourlyRate, setHourlyRate] = useState<string>("");
   const [classHourlyRate, setClassHourlyRate] = useState<string>("");
-  const [shareSchedules, setShareSchedules] = useState<boolean>(false);
+  const [showTournaments, setShowTournaments] = useState<boolean>(true);
+  const [showCourts, setShowCourts] = useState<boolean>(true);
+  const [showProfesores, setShowProfesores] = useState<boolean>(true);
   const [tournamentMatchDuration, setTournamentMatchDuration] = useState<string>("60");
   const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
   const [snack, setSnack] = useState(false);
@@ -81,7 +85,9 @@ export default function Settings() {
     const classRate = Number(data.classHourlyRate);
     setHourlyRate(rate > 0 ? String(rate) : "");
     setClassHourlyRate(classRate > 0 ? String(classRate) : "");
-    setShareSchedules(data.shareSchedules ?? false);
+    setShowTournaments(data.showTournaments ?? true);
+    setShowCourts(data.showCourts ?? true);
+    setShowProfesores(data.showProfesores ?? true);
     setTournamentMatchDuration(String(data.tournamentMatchDuration ?? 60));
     setTournamentSetsCount(data.tournamentSetsCount ?? 3);
   }, [data]);
@@ -90,9 +96,12 @@ export default function Settings() {
     mutation.mutate({
       hourlyRate: Number(hourlyRate) || 0,
       classHourlyRate: Number(classHourlyRate) || 0,
-      shareSchedules,
+      showTournaments,
+      showCourts,
+      showProfesores,
       tournamentMatchDuration: Number(tournamentMatchDuration) || 60,
       tournamentSetsCount,
+      shareSchedules: false
     });
   }
 
@@ -168,25 +177,63 @@ export default function Settings() {
         </Box>
       </Section>
 
-      {/* ── Disponibilidad ── */}
-      <Section icon={<ShareOutlinedIcon />} title="Disponibilidad">
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Switch
-            checked={shareSchedules}
-            onChange={(e) => setShareSchedules(e.target.checked)}
-            sx={{
-              "& .MuiSwitch-thumb": { bgcolor: shareSchedules ? "#F5AD27" : undefined },
-              "& .MuiSwitch-track": { bgcolor: shareSchedules ? "rgba(245,173,39,0.4) !important" : undefined },
-            }}
-          />
-          <Box>
-            <Typography variant="body2" fontWeight={600}>
-              Compartir horarios disponibles
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Permite que los clientes vean los turnos disponibles de las canchas.
-            </Typography>
-          </Box>
+      {/* ── Visibilidad Pública ── */}
+      <Section icon={<PublicOutlinedIcon />} title="Visibilidad Pública">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+
+          {[
+            {
+              checked: showTournaments,
+              onChange: setShowTournaments,
+              icon: <EmojiEventsOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />,
+              label: "Mostrar torneos",
+              description: "Muestra la sección de torneos activos en la página pública.",
+            },
+            {
+              checked: showCourts,
+              onChange: setShowCourts,
+              icon: <SportsTennisOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />,
+              label: "Mostrar disponibilidad de canchas",
+              description: "Muestra el calendario de disponibilidad en la página pública.",
+            },
+            {
+              checked: showProfesores,
+              onChange: setShowProfesores,
+              icon: <SchoolOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />,
+              label: "Mostrar profesores",
+              description: "Muestra los profesores del club en la página pública.",
+            },
+          ].map(({ checked, onChange, icon, label, description }, i, arr) => (
+            <Box
+              key={label}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                py: 1.75,
+                borderBottom: i < arr.length - 1 ? "1px solid" : "none",
+                borderColor: "divider",
+              }}
+            >
+              <Switch
+                checked={checked}
+                onChange={(e) => onChange(e.target.checked)}
+                sx={{
+                  flexShrink: 0,
+                  "& .MuiSwitch-thumb": { bgcolor: checked ? "#F5AD27" : undefined },
+                  "& .MuiSwitch-track": { bgcolor: checked ? "rgba(245,173,39,0.4) !important" : undefined },
+                }}
+              />
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, flex: 1 }}>
+                <Box sx={{ mt: "2px", flexShrink: 0 }}>{icon}</Box>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>{label}</Typography>
+                  <Typography variant="body2" color="text.secondary">{description}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          ))}
+
         </Box>
       </Section>
 

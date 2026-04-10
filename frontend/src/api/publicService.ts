@@ -3,6 +3,13 @@ import type { Tournament, TournamentDetail } from "../types/Tournament";
 import type { DaySchedule } from "../types/ClubProfile";
 import { API_BASE } from "./config";
 
+export interface PublicProfesor {
+  id: number;
+  name: string;
+  phone: string | null;
+  schedule: DaySchedule[] | null;
+}
+
 const BASE = `${API_BASE}/api`;
 
 export interface PublicProfile {
@@ -12,6 +19,9 @@ export interface PublicProfile {
   longitude?: number | null;
   logoBase64?: string | null;
   businessHours: DaySchedule[];
+  showTournaments: boolean;
+  showCourts: boolean;
+  showProfesores: boolean;
 }
 
 export const fetchPublicProfile = (username: string): Promise<PublicProfile> =>
@@ -43,3 +53,6 @@ export interface PublicCourtsData {
 
 export const fetchPublicCourts = (username: string, from: string, to: string): Promise<PublicCourtsData> =>
   axios.get(`${BASE}/public/${username}/courts`, { params: { from, to } }).then(r => r.data);
+
+export const fetchPublicProfesores = (username: string): Promise<PublicProfesor[]> =>
+  axios.get(`${BASE}/public/${username}/profesores`).then(r => r.data);

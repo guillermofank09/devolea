@@ -14,6 +14,16 @@ export class Profesor {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   hourlyRate?: number;
 
+  @Column({
+    type: "text",
+    nullable: true,
+    transformer: {
+      to: (v: object[] | null | undefined) => (v ? JSON.stringify(v) : null),
+      from: (v: string | null) => (v ? JSON.parse(v) : null),
+    },
+  })
+  schedule?: object[] | null;
+
   @Column({ nullable: true })
   userId?: number;
 

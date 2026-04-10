@@ -14,6 +14,15 @@ export class AppSettings {
   @Column({ default: false })
   shareSchedules!: boolean;
 
+  @Column({ default: true })
+  showTournaments!: boolean;
+
+  @Column({ default: true })
+  showCourts!: boolean;
+
+  @Column({ default: true })
+  showProfesores!: boolean;
+
   @Column({ type: "int", default: 60 })
   tournamentMatchDuration!: number;
 
