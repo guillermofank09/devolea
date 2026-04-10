@@ -5,9 +5,11 @@ import {
   Box,
   Chip,
   IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Select,
+  TextField,
   Typography,
 } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -19,6 +21,7 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import SearchIcon from "@mui/icons-material/Search";
 import type { TournamentMatch, Pair, TournamentDetail } from "../../types/Tournament";
 import type { DaySchedule } from "../../types/ClubProfile";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
@@ -269,8 +272,8 @@ function RoundRobinList({ matches }: { matches: TournamentMatch[] }) {
           <Paper key={m.id} elevation={0} sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: live ? live.border : isCompleted ? "#c8e6c9" : "divider", bgcolor: live ? live.bg : "background.paper", display: "flex" }}>
             <Box sx={{ width: 4, flexShrink: 0, bgcolor: live ? live.stripe : isCompleted ? "#66bb6a" : "#bdbdbd" }} />
             <Box sx={{ flex: 1, p: 1.5 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                <Typography variant="body2" sx={{ flex: 1, minWidth: 120 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, flexWrap: "wrap" }}>
+                <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
                   <strong>{pairLabel(m.pair1)}</strong>
                   <Typography component="span" variant="caption" color="text.secondary" mx={0.75}>vs</Typography>
                   <strong>{pairLabel(m.pair2)}</strong>
@@ -314,37 +317,33 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
       {/* Banner */}
-      <Box sx={{ background: gradient, px: 3, py: 2.5 }}>
-        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
-          <Box>
-            <Typography variant="h6" fontWeight={800} color="#fff" lineHeight={1.2} sx={{ textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>
-              {tournament.name}
-            </Typography>
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", mt: 0.5, display: "block" }}>
-              {new Date(tournament.startDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
-              {" — "}
-              {new Date(tournament.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+      <Box sx={{ background: gradient, px: { xs: 2.5, md: 3 }, py: 2.5 }}>
+        <Typography variant="h6" fontWeight={800} color="#fff" lineHeight={1.2} sx={{ textShadow: "0 1px 3px rgba(0,0,0,0.3)", mb: 0.5 }}>
+          {tournament.name}
+        </Typography>
+        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", display: "block", mb: 1.25 }}>
+          {new Date(tournament.startDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+          {" — "}
+          {new Date(tournament.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+        </Typography>
+        <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+          <Chip
+            label={statusInfo.label}
+            size="small"
+            sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700, bgcolor: statusInfo.bg, color: statusInfo.color, border: "none" }}
+          />
+          <Chip
+            label={CATEGORY_LABEL[tournament.category] ?? tournament.category}
+            size="small"
+            sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, bgcolor: "rgba(255,255,255,0.20)", color: "#fff" }}
+          />
+          {tournament.format && (
             <Chip
-              label={statusInfo.label}
+              label={FORMAT_LABEL[tournament.format] ?? tournament.format}
               size="small"
-              sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700, bgcolor: statusInfo.bg, color: statusInfo.color, border: "none" }}
+              sx={{ height: 22, fontSize: "0.7rem", bgcolor: "rgba(255,255,255,0.15)", color: "#fff" }}
             />
-            <Chip
-              label={CATEGORY_LABEL[tournament.category] ?? tournament.category}
-              size="small"
-              sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, bgcolor: "rgba(255,255,255,0.20)", color: "#fff" }}
-            />
-            {tournament.format && (
-              <Chip
-                label={FORMAT_LABEL[tournament.format] ?? tournament.format}
-                size="small"
-                sx={{ height: 22, fontSize: "0.7rem", bgcolor: "rgba(255,255,255,0.15)", color: "#fff" }}
-              />
-            )}
-          </Box>
+          )}
         </Box>
       </Box>
 
@@ -578,15 +577,15 @@ function CourtsSection({ username, businessHours }: { username: string; business
 
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-      <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
         <CalendarTodayIcon sx={{ color: "text.secondary", fontSize: 20 }} />
-        <Typography variant="h6" fontWeight={800} sx={{ flex: 1, minWidth: 0 }}>Disponibilidad de canchas</Typography>
+        <Typography variant="h6" fontWeight={800} sx={{ flex: 1, minWidth: 0, fontSize: { xs: "1rem", md: "1.25rem" } }}>Disponibilidad de canchas</Typography>
         {!isLoading && data && data.courts.length > 1 && (
           <Select
             size="small"
             value={selectedCourtId ?? data.courts[0].id}
             onChange={e => setSelectedCourtId(Number(e.target.value))}
-            sx={{ fontSize: "0.85rem", minWidth: 140, "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } }}
+            sx={{ fontSize: "0.85rem", width: { xs: "100%", sm: "auto" }, minWidth: { sm: 140 }, "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } }}
           >
             {data.courts.map(c => (
               <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
@@ -595,16 +594,20 @@ function CourtsSection({ username, businessHours }: { username: string; business
         )}
       </Box>
 
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
         {/* Week navigation */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-          <IconButton size="small" onClick={() => shiftWeek(-1)}><ChevronLeftIcon /></IconButton>
-          <Typography variant="body2" fontWeight={600} sx={{ flex: 1, textAlign: "center" }}>
-            {fromLabel} — {toLabel}
-          </Typography>
-          <IconButton size="small" onClick={() => shiftWeek(1)}><ChevronRightIcon /></IconButton>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton size="small" onClick={() => shiftWeek(-1)}><ChevronLeftIcon /></IconButton>
+            <Typography variant="body2" fontWeight={600} sx={{ flex: 1, textAlign: "center" }}>
+              {fromLabel} — {toLabel}
+            </Typography>
+            <IconButton size="small" onClick={() => shiftWeek(1)}><ChevronRightIcon /></IconButton>
+          </Box>
           {!isCurrentWeek && (
-            <Chip label="Semana actual" size="small" onClick={() => { setWeekStart(getMondayOfWeek(new Date())); setSelectedDayIdx(todayDayIdx); }} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Chip label="Volver a semana actual" size="small" onClick={() => { setWeekStart(getMondayOfWeek(new Date())); setSelectedDayIdx(todayDayIdx); }} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
+            </Box>
           )}
         </Box>
 
@@ -687,22 +690,23 @@ function ProfesorCard({ profesor }: { profesor: PublicProfesor }) {
 
   return (
     <Paper elevation={0} sx={{ borderRadius: 2.5, p: 2.5, border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", gap: 1.5 }}>
-      <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
-        {profesor.name}
-      </Typography>
-
-      {profesor.phone && (
-        <Box
-          component="a"
-          href={waLink(profesor.phone)}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, color: "#25d366", textDecoration: "none", width: "fit-content", "&:hover": { opacity: 0.8 } }}
-        >
-          <WhatsAppIcon sx={{ fontSize: 18 }} />
-          <Typography variant="body2" fontWeight={500}>{profesor.phone}</Typography>
-        </Box>
-      )}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+        <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+          {profesor.name}
+        </Typography>
+        {profesor.phone && (
+          <Box
+            component="a"
+            href={waLink(profesor.phone)}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, color: "#25d366", textDecoration: "none", flexShrink: 0, "&:hover": { opacity: 0.8 } }}
+          >
+            <WhatsAppIcon sx={{ fontSize: 17 }} />
+            <Typography variant="body2" fontWeight={500}>{profesor.phone}</Typography>
+          </Box>
+        )}
+      </Box>
 
       {openDays.length > 0 && (
         <Box>
@@ -733,21 +737,49 @@ function ProfesoresSection({ username }: { username: string }) {
     enabled: !!username,
   });
 
+  const [search, setSearch] = useState("");
+
+  const filtered = search.trim()
+    ? profesores.filter(p => p.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : profesores;
+
   if (!isLoading && profesores.length === 0) return null;
 
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-      <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
         <SchoolOutlinedIcon sx={{ color: "text.secondary", fontSize: 20 }} />
-        <Typography variant="h6" fontWeight={800} sx={{ flex: 1 }}>Profesores</Typography>
+        <Typography variant="h6" fontWeight={800} sx={{ flex: 1, fontSize: { xs: "1rem", md: "1.25rem" } }}>Profesores</Typography>
+        {!isLoading && profesores.length > 1 && (
+          <TextField
+            size="small"
+            placeholder="Buscar profesor…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18, color: "text.disabled" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ width: { xs: "100%", sm: 200 }, "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } }}
+          />
+        )}
       </Box>
 
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
         {isLoading ? (
           <PageLoader />
+        ) : filtered.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No se encontraron profesores con ese nombre.
+          </Typography>
         ) : (
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
-            {profesores.map(p => <ProfesorCard key={p.id} profesor={p} />)}
+            {filtered.map(p => <ProfesorCard key={p.id} profesor={p} />)}
           </Box>
         )}
       </Box>
@@ -1099,30 +1131,30 @@ export default function ClubPublicPage() {
         />
 
         {/* Scrollable body */}
-        <Box sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 2.5, md: 4 }, pb: { xs: "80px", md: 4 } }}>
+        <Box sx={{ flex: 1, px: { xs: 1.5, md: 4 }, py: { xs: 2, md: 4 }, pb: { xs: "calc(72px + env(safe-area-inset-bottom, 0px))", md: 4 } }}>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 3, md: 5 } }}>
 
             {/* Torneos */}
             {(profile.showTournaments ?? true) && (
               <Box id="section-torneos" sx={{ scrollMarginTop: "16px" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
-                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <EmojiEventsIcon sx={{ fontSize: 20, color: "#111" }} />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
+                  <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <EmojiEventsIcon sx={{ fontSize: { xs: 17, md: 20 }, color: "#111" }} />
                   </Box>
-                  <Typography variant="h5" fontWeight={800}>Torneos</Typography>
+                  <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Torneos</Typography>
                 </Box>
 
                 {tournamentsLoading && <PageLoader />}
 
                 {!tournamentsLoading && tournaments.length === 0 && (
-                  <Paper elevation={0} sx={{ borderRadius: 3, p: 5, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
-                    <EmojiEventsIcon sx={{ fontSize: 44, color: "text.disabled", mb: 1.5 }} />
+                  <Paper elevation={0} sx={{ borderRadius: 3, p: { xs: 3, md: 5 }, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
+                    <EmojiEventsIcon sx={{ fontSize: { xs: 36, md: 44 }, color: "text.disabled", mb: 1.5 }} />
                     <Typography variant="body1" color="text.secondary">No hay torneos activos en este momento.</Typography>
                   </Paper>
                 )}
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, md: 2.5 } }}>
                   {tournaments.map((t, idx) => (
                     <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
                   ))}
@@ -1133,11 +1165,11 @@ export default function ClubPublicPage() {
             {/* Canchas */}
             {(profile.showCourts ?? true) && (
               <Box id="section-canchas" sx={{ scrollMarginTop: "16px" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
-                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <SportsTennisIcon sx={{ fontSize: 20, color: "#111" }} />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
+                  <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SportsTennisIcon sx={{ fontSize: { xs: 17, md: 20 }, color: "#111" }} />
                   </Box>
-                  <Typography variant="h5" fontWeight={800}>Canchas</Typography>
+                  <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Canchas</Typography>
                 </Box>
                 <CourtsSection username={username!} businessHours={profile.businessHours} />
               </Box>
@@ -1146,11 +1178,11 @@ export default function ClubPublicPage() {
             {/* Profesores */}
             {(profile.showProfesores ?? true) && (
               <Box id="section-profesores" sx={{ scrollMarginTop: "16px" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
-                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <SchoolOutlinedIcon sx={{ fontSize: 20, color: "#111" }} />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
+                  <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <SchoolOutlinedIcon sx={{ fontSize: { xs: 17, md: 20 }, color: "#111" }} />
                   </Box>
-                  <Typography variant="h5" fontWeight={800}>Profesores</Typography>
+                  <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Profesores</Typography>
                 </Box>
                 <ProfesoresSection username={username!} />
               </Box>
