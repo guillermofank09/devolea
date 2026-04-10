@@ -6,7 +6,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Grid,
   IconButton,
   Paper,
   Tooltip,
@@ -381,7 +380,10 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
   );
 }
 
-// ─── courts availability ──────────────────────────────────────────────────────
+// ─── courts availability ─────────────────────────────────────────────────────
+
+// Width of the court-name label column — must be identical in TimeAxis and CourtTimeline
+const COURT_LABEL_W = 96;
 
 function todayStr(): string {
   const d = new Date();
@@ -411,7 +413,7 @@ function TimeAxis({ openMin, totalMin }: { openMin: number; totalMin: number }) 
     if (pct >= 0 && pct <= 100) marks.push({ pct, label: `${String(h).padStart(2, "0")}:00` });
   }
   return (
-    <Box sx={{ position: "relative", height: 18, mb: 0.5, ml: "110px" }}>
+    <Box sx={{ position: "relative", height: 18, mb: 0.5, ml: `${COURT_LABEL_W}px` }}>
       {marks.map(m => (
         <Typography
           key={m.label}
@@ -454,7 +456,7 @@ function CourtTimeline({
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-      <Box sx={{ width: 110, flexShrink: 0 }}>
+      <Box sx={{ width: COURT_LABEL_W, flexShrink: 0 }}>
         <Typography variant="body2" fontWeight={600} noWrap sx={{ fontSize: "0.82rem" }}>{court.name}</Typography>
         {isUnavailable && (
           <Typography variant="caption" sx={{ fontSize: "0.62rem", color: "warning.main" }}>No disponible</Typography>
@@ -719,13 +721,24 @@ export default function ClubPublicPage() {
 
   return (
     <Box sx={{ bgcolor: "grey.50", minHeight: "100vh", py: { xs: 3, md: 5 } }}>
-      <Container maxWidth="xl">
-        <Grid container spacing={3} alignItems="flex-start">
+      <Container maxWidth="lg">
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: "flex-start" }}>
 
-          {/* ── Main: tournaments ─────────────────────────── */}
-          <Grid item xs={12} md={8}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-              <SportsTennisIcon sx={{ color: "primary.main", fontSize: 26 }} />
+          {/* ── Sidebar: club info (top on mobile, right on desktop) ─── */}
+          <Box sx={{ width: { xs: "100%", md: 300 }, flexShrink: 0, order: { xs: 1, md: 2 } }}>
+            <ClubSidebar
+              clubName={profile.clubName}
+              address={profile.address}
+              logoBase64={profile.logoBase64}
+              mapUrl={mapUrl}
+              businessHours={profile.businessHours}
+            />
+          </Box>
+
+          {/* ── Main: tournaments + courts (below on mobile, left on desktop) ─── */}
+          <Box sx={{ flex: 1, minWidth: 0, width: { xs: "100%", md: "auto" }, order: { xs: 2, md: 1 }, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <SportsTennisIcon sx={{ color: "primary.main", fontSize: 24 }} />
               <Typography variant="h5" fontWeight={800}>Torneos</Typography>
             </Box>
 
@@ -739,28 +752,14 @@ export default function ClubPublicPage() {
               </Paper>
             )}
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {tournaments.map((t, idx) => (
-                <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
-              ))}
-            </Box>
+            {tournaments.map((t, idx) => (
+              <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
+            ))}
 
-            {/* Courts availability */}
             <CourtsSection username={username!} businessHours={profile.businessHours} />
-          </Grid>
+          </Box>
 
-          {/* ── Sidebar: club info ────────────────────────── */}
-          <Grid item xs={12} md={4}>
-            <ClubSidebar
-              clubName={profile.clubName}
-              address={profile.address}
-              logoBase64={profile.logoBase64}
-              mapUrl={mapUrl}
-              businessHours={profile.businessHours}
-            />
-          </Grid>
-
-        </Grid>
+        </Box>
       </Container>
     </Box>
   );
