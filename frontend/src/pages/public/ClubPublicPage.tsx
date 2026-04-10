@@ -502,14 +502,16 @@ function CourtsSection({ username, businessHours }: { username: string; business
   const dateObj = new Date(`${selectedDate}T12:00:00`);
   const dayName = DAYS[(dateObj.getDay() + 6) % 7];
   const schedule = businessHours.find(h => h.day === dayName);
-  const isOpen = !!schedule?.isOpen;
-  const openMin  = isOpen ? parseHHMM(schedule!.openTime)  : 0;
-  const closeMin = isOpen ? parseHHMM(schedule!.closeTime) : 0;
+  // Only treat the day as closed when explicitly set to isOpen:false
+  // If no schedule exists (business hours not configured), default to open
+  const isClosed = schedule != null && schedule.isOpen === false;
+  const openMin  = isClosed ? 0 : parseHHMM(schedule?.openTime  ?? "08:00");
+  const closeMin = isClosed ? 0 : parseHHMM(schedule?.closeTime ?? "22:00");
   const totalMin = closeMin - openMin;
 
   const isToday = selectedDate === todayStr();
   const nowMin = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
-  const nowPct = (nowMin >= openMin && nowMin <= openMin + totalMin)
+  const nowPct = (!isClosed && nowMin >= openMin && nowMin <= openMin + totalMin)
     ? ((nowMin - openMin) / totalMin) * 100
     : -1;
 
@@ -546,17 +548,17 @@ function CourtsSection({ username, businessHours }: { username: string; business
           <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={22} /></Box>
         )}
 
-        {!isLoading && !isOpen && (
+        {!isLoading && isClosed && (
           <Box sx={{ py: 3, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">El club está cerrado este día.</Typography>
           </Box>
         )}
 
-        {!isLoading && isOpen && data && data.courts.length === 0 && (
+        {!isLoading && !isClosed && data && data.courts.length === 0 && (
           <Typography variant="body2" color="text.secondary">No hay canchas registradas.</Typography>
         )}
 
-        {!isLoading && isOpen && data && data.courts.length > 0 && (
+        {!isLoading && !isClosed && data && data.courts.length > 0 && (
           <>
             <TimeAxis openMin={openMin} totalMin={totalMin} />
             {data.courts.map(court => (
