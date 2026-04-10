@@ -22,3 +22,24 @@ export const fetchPublicTournaments = (username: string): Promise<Tournament[]> 
 
 export const fetchPublicTournamentDetail = (username: string, tournamentId: number): Promise<TournamentDetail> =>
   axios.get(`${BASE}/public/${username}/tournaments/${tournamentId}`).then(r => r.data);
+
+export interface PublicCourt {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+}
+
+export interface PublicBookingSlot {
+  courtId: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface PublicCourtsData {
+  courts: PublicCourt[];
+  bookings: PublicBookingSlot[];
+}
+
+export const fetchPublicCourts = (username: string, from: string, to: string): Promise<PublicCourtsData> =>
+  axios.get(`${BASE}/public/${username}/courts`, { params: { from, to } }).then(r => r.data);

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -6,15 +7,22 @@ import {
   CircularProgress,
   Container,
   Grid,
+  IconButton,
   Paper,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import type { TournamentMatch, Pair, TournamentDetail } from "../../types/Tournament";
-import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail } from "../../api/publicService";
+import type { DaySchedule } from "../../types/ClubProfile";
+import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts } from "../../api/publicService";
+import type { PublicBookingSlot, PublicCourt } from "../../api/publicService";
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -373,6 +381,217 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
   );
 }
 
+// ─── courts availability ──────────────────────────────────────────────────────
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function parseHHMM(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function getLocalMinutes(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+function TimeAxis({ openMin, totalMin }: { openMin: number; totalMin: number }) {
+  const marks: { pct: number; label: string }[] = [];
+  const firstHour = Math.ceil(openMin / 60);
+  const lastHour = Math.floor((openMin + totalMin) / 60);
+  for (let h = firstHour; h <= lastHour; h += 2) {
+    const pct = ((h * 60 - openMin) / totalMin) * 100;
+    if (pct >= 0 && pct <= 100) marks.push({ pct, label: `${String(h).padStart(2, "0")}:00` });
+  }
+  return (
+    <Box sx={{ position: "relative", height: 18, mb: 0.5, ml: "110px" }}>
+      {marks.map(m => (
+        <Typography
+          key={m.label}
+          variant="caption"
+          sx={{ position: "absolute", left: `${m.pct}%`, transform: "translateX(-50%)", fontSize: "0.6rem", color: "text.disabled", whiteSpace: "nowrap", userSelect: "none" }}
+        >
+          {m.label}
+        </Typography>
+      ))}
+    </Box>
+  );
+}
+
+function CourtTimeline({
+  court, bookings, openMin, totalMin, nowPct,
+}: {
+  court: PublicCourt;
+  bookings: PublicBookingSlot[];
+  openMin: number;
+  totalMin: number;
+  nowPct: number;
+}) {
+  const slots = bookings
+    .filter(b => b.courtId === court.id)
+    .map(b => {
+      const startM = getLocalMinutes(b.startTime);
+      const endM   = getLocalMinutes(b.endTime);
+      const cs = Math.max(startM, openMin);
+      const ce = Math.min(endM, openMin + totalMin);
+      if (ce <= cs) return null;
+      const left  = ((cs - openMin) / totalMin) * 100;
+      const width = ((ce - cs) / totalMin) * 100;
+      const startLabel = new Date(b.startTime).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      const endLabel   = new Date(b.endTime).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      return { left, width, label: `${startLabel} – ${endLabel}` };
+    })
+    .filter((s): s is { left: number; width: number; label: string } => s !== null);
+
+  const isUnavailable = court.status === "NOT AVAILABLE";
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+      <Box sx={{ width: 110, flexShrink: 0 }}>
+        <Typography variant="body2" fontWeight={600} noWrap sx={{ fontSize: "0.82rem" }}>{court.name}</Typography>
+        {isUnavailable && (
+          <Typography variant="caption" sx={{ fontSize: "0.62rem", color: "warning.main" }}>No disponible</Typography>
+        )}
+      </Box>
+      <Box sx={{ flex: 1, position: "relative", height: 36, borderRadius: 1.5, overflow: "hidden", bgcolor: isUnavailable ? "grey.200" : "#e8f5e9", border: "1px solid", borderColor: isUnavailable ? "grey.300" : "#c8e6c9" }}>
+        {isUnavailable ? (
+          <Box sx={{ height: "100%", backgroundImage: "repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.06) 5px, rgba(0,0,0,0.06) 10px)" }} />
+        ) : (
+          <>
+            {slots.map((s, i) => (
+              <Tooltip key={i} title={`Ocupado ${s.label}`} placement="top" arrow>
+                <Box sx={{ position: "absolute", top: 0, left: `${s.left}%`, width: `${s.width}%`, height: "100%", bgcolor: "#90a4ae", cursor: "default", "&:hover": { bgcolor: "#78909c" } }}>
+                  {s.width >= 8 && (
+                    <Typography variant="caption" sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.58rem", color: "#fff", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", px: 0.5 }}>
+                      Ocupado
+                    </Typography>
+                  )}
+                </Box>
+              </Tooltip>
+            ))}
+            {nowPct >= 0 && nowPct <= 100 && (
+              <Box sx={{ position: "absolute", top: 0, left: `${nowPct}%`, width: 2, height: "100%", bgcolor: "#f44336", zIndex: 2 }} />
+            )}
+          </>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function CourtsSection({ username, businessHours }: { username: string; businessHours: DaySchedule[] }) {
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const from = new Date(`${selectedDate}T00:00:00`).toISOString();
+  const to   = new Date(`${selectedDate}T23:59:59.999`).toISOString();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["publicCourts", username, selectedDate],
+    queryFn: () => fetchPublicCourts(username, from, to),
+    enabled: !!username,
+  });
+
+  // Day of week (0=Sun … 6=Sat) → Spanish DAYS index: (jsDay+6)%7
+  const dateObj = new Date(`${selectedDate}T12:00:00`);
+  const dayName = DAYS[(dateObj.getDay() + 6) % 7];
+  const schedule = businessHours.find(h => h.day === dayName);
+  const isOpen = !!schedule?.isOpen;
+  const openMin  = isOpen ? parseHHMM(schedule!.openTime)  : 0;
+  const closeMin = isOpen ? parseHHMM(schedule!.closeTime) : 0;
+  const totalMin = closeMin - openMin;
+
+  const isToday = selectedDate === todayStr();
+  const nowMin = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
+  const nowPct = (nowMin >= openMin && nowMin <= openMin + totalMin)
+    ? ((nowMin - openMin) / totalMin) * 100
+    : -1;
+
+  const shiftDate = (delta: number) => {
+    const d = new Date(`${selectedDate}T12:00:00`);
+    d.setDate(d.getDate() + delta);
+    setSelectedDate(formatDateStr(d));
+  };
+
+  const dateLabel = dateObj.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+
+  return (
+    <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+      {/* Header */}
+      <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+        <CalendarTodayIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+        <Typography variant="h6" fontWeight={800} sx={{ flex: 1 }}>Disponibilidad de canchas</Typography>
+      </Box>
+
+      <Box sx={{ px: 3, py: 2.5 }}>
+        {/* Date navigation */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+          <IconButton size="small" onClick={() => shiftDate(-1)}><ChevronLeftIcon /></IconButton>
+          <Typography variant="body1" fontWeight={600} sx={{ flex: 1, textAlign: "center", textTransform: "capitalize" }}>
+            {dateLabel}
+          </Typography>
+          <IconButton size="small" onClick={() => shiftDate(1)}><ChevronRightIcon /></IconButton>
+          {!isToday && (
+            <Chip label="Hoy" size="small" onClick={() => setSelectedDate(todayStr())} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
+          )}
+        </Box>
+
+        {isLoading && (
+          <Box sx={{ py: 3, display: "flex", justifyContent: "center" }}><CircularProgress size={22} /></Box>
+        )}
+
+        {!isLoading && !isOpen && (
+          <Box sx={{ py: 3, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">El club está cerrado este día.</Typography>
+          </Box>
+        )}
+
+        {!isLoading && isOpen && data && data.courts.length === 0 && (
+          <Typography variant="body2" color="text.secondary">No hay canchas registradas.</Typography>
+        )}
+
+        {!isLoading && isOpen && data && data.courts.length > 0 && (
+          <>
+            <TimeAxis openMin={openMin} totalMin={totalMin} />
+            {data.courts.map(court => (
+              <CourtTimeline
+                key={court.id}
+                court={court}
+                bookings={data.bookings}
+                openMin={openMin}
+                totalMin={totalMin}
+                nowPct={nowPct}
+              />
+            ))}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 2, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 16, height: 12, borderRadius: 0.5, bgcolor: "#e8f5e9", border: "1px solid #c8e6c9" }} />
+                <Typography variant="caption" color="text.secondary">Disponible</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 16, height: 12, borderRadius: 0.5, bgcolor: "#90a4ae" }} />
+                <Typography variant="caption" color="text.secondary">Ocupado</Typography>
+              </Box>
+              {nowPct >= 0 && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Box sx={{ width: 2, height: 12, bgcolor: "#f44336" }} />
+                  <Typography variant="caption" color="text.secondary">Ahora</Typography>
+                </Box>
+              )}
+            </Box>
+          </>
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
 // ─── sidebar ──────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
@@ -523,6 +742,9 @@ export default function ClubPublicPage() {
                 <TournamentCard key={t.id} username={username!} tournament={t} gradientIndex={idx} />
               ))}
             </Box>
+
+            {/* Courts availability */}
+            <CourtsSection username={username!} businessHours={profile.businessHours} />
           </Grid>
 
           {/* ── Sidebar: club info ────────────────────────── */}
