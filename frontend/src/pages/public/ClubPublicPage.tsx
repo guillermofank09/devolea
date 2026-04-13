@@ -389,13 +389,6 @@ function parseHHMM(time: string): number {
   return h * 60 + (m || 0);
 }
 
-function getMondayOfWeek(d: Date): Date {
-  const diff = (d.getDay() + 6) % 7;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
 
 function addDays(d: Date, n: number): Date {
   const result = new Date(d);
