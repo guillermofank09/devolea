@@ -17,6 +17,7 @@ import Profesores from './pages/profesores';
 import AdminUsers from './pages/admin/users';
 import ClubPublicPage from './pages/public/ClubPublicPage';
 import { useAuth } from './context/AuthContext';
+import { usePageTracking } from './hooks/usePageTracking';
 import './App.css';
 
 type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
@@ -114,6 +115,7 @@ function ProtectedApp() {
 
 function App() {
   const { isAuthenticated } = useAuth();
+  usePageTracking();
 
   if (!isAuthenticated) {
     return (
