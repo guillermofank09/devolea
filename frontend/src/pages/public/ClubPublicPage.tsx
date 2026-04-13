@@ -1054,9 +1054,9 @@ export default function ClubPublicPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detect sub-route: /:username/canchas or /:username/torneos
+  // Detect sub-route: /:username/canchas, /:username/torneos, /:username/profesores
   const pathParts = location.pathname.split("/").filter(Boolean);
-  const subSection = pathParts.length >= 2 ? pathParts[1] as "canchas" | "torneos" : null;
+  const subSection = pathParts.length >= 2 ? pathParts[1] as "canchas" | "torneos" | "profesores" : null;
 
   const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: ["publicProfile", username],
@@ -1083,8 +1083,9 @@ export default function ClubPublicPage() {
 
   // On sub-routes the active section is fixed; on the full page it's scroll-driven
   const activeSectionForSubRoute =
-    subSection === "canchas" ? "section-canchas" :
-    subSection === "torneos" ? "section-torneos" : null;
+    subSection === "canchas"    ? "section-canchas" :
+    subSection === "torneos"    ? "section-torneos" :
+    subSection === "profesores" ? "section-profesores" : null;
 
   const [activeSection, setActiveSection] = useState(
     () => activeSectionForSubRoute ?? visibleNavItems[0]?.id ?? "section-torneos"
@@ -1117,8 +1118,9 @@ export default function ClubPublicPage() {
   // On sub-routes navigate to the section URL; on full page scroll
   function handleNavSelect(id: string) {
     if (subSection) {
-      if (id === "section-torneos") navigate(`/${username}/torneos`);
-      else if (id === "section-canchas") navigate(`/${username}/canchas`);
+      if (id === "section-torneos")    navigate(`/${username}/torneos`);
+      else if (id === "section-canchas")    navigate(`/${username}/canchas`);
+      else if (id === "section-profesores") navigate(`/${username}/profesores`);
       else navigate(`/${username}`);
     } else {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1213,7 +1215,7 @@ export default function ClubPublicPage() {
             )}
 
             {/* Profesores */}
-            {!subSection && (profile.showProfesores ?? true) && (
+            {(!subSection || subSection === "profesores") && (profile.showProfesores ?? true) && (
               <Box id="section-profesores" sx={{ scrollMarginTop: "16px" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
                   <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

@@ -64,6 +64,7 @@ function ProtectedApp() {
           <Route path="/:username" element={<ClubPublicPage />} />
           <Route path="/:username/canchas" element={<ClubPublicPage />} />
           <Route path="/:username/torneos" element={<ClubPublicPage />} />
+          <Route path="/:username/profesores" element={<ClubPublicPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </>
@@ -128,6 +129,7 @@ function App() {
         <Route path="/:username" element={<><Header publicMode /><ClubPublicPage /></>} />
         <Route path="/:username/canchas" element={<><Header publicMode /><ClubPublicPage /></>} />
         <Route path="/:username/torneos" element={<><Header publicMode /><ClubPublicPage /></>} />
+        <Route path="/:username/profesores" element={<><Header publicMode /><ClubPublicPage /></>} />
         <Route path="*"          element={<Navigate to="/login" replace />} />
       </Routes>
     );
