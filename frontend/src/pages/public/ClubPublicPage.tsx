@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Box,
@@ -1051,6 +1051,12 @@ function MobileClubHeader({ clubName, address, logoBase64 }: { clubName: string;
 
 export default function ClubPublicPage() {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detect sub-route: /:username/canchas or /:username/torneos
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const subSection = pathParts.length >= 2 ? pathParts[1] as "canchas" | "torneos" : null;
 
   const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: ["publicProfile", username],
@@ -1075,14 +1081,26 @@ export default function ClubPublicPage() {
     });
   }, [profile]);
 
-  const [activeSection, setActiveSection] = useState(() => visibleNavItems[0]?.id ?? "section-torneos");
+  // On sub-routes the active section is fixed; on the full page it's scroll-driven
+  const activeSectionForSubRoute =
+    subSection === "canchas" ? "section-canchas" :
+    subSection === "torneos" ? "section-torneos" : null;
+
+  const [activeSection, setActiveSection] = useState(
+    () => activeSectionForSubRoute ?? visibleNavItems[0]?.id ?? "section-torneos"
+  );
 
   useEffect(() => {
-    setActiveSection(visibleNavItems[0]?.id ?? "section-torneos");
-  }, [visibleNavItems]);
+    if (activeSectionForSubRoute) {
+      setActiveSection(activeSectionForSubRoute);
+    } else {
+      setActiveSection(visibleNavItems[0]?.id ?? "section-torneos");
+    }
+  }, [activeSectionForSubRoute, visibleNavItems]);
 
+  // IntersectionObserver only on full page (no sub-route)
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || subSection) return;
     const observers = visibleNavItems.map(({ id }) => {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -1094,10 +1112,17 @@ export default function ClubPublicPage() {
       return obs;
     });
     return () => observers.forEach(o => o?.disconnect());
-  }, [profile, visibleNavItems]);
+  }, [profile, visibleNavItems, subSection]);
 
-  function scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // On sub-routes navigate to the section URL; on full page scroll
+  function handleNavSelect(id: string) {
+    if (subSection) {
+      if (id === "section-torneos") navigate(`/${username}/torneos`);
+      else if (id === "section-canchas") navigate(`/${username}/canchas`);
+      else navigate(`/${username}`);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   if (profileLoading) return <PageLoader />;
@@ -1124,7 +1149,7 @@ export default function ClubPublicPage() {
       <PublicPageSidebar
         items={visibleNavItems}
         activeId={activeSection}
-        onSelect={scrollToSection}
+        onSelect={handleNavSelect}
         clubName={profile.clubName}
         address={profile.address}
         logoBase64={profile.logoBase64}
@@ -1148,7 +1173,7 @@ export default function ClubPublicPage() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 3, md: 5 } }}>
 
             {/* Torneos */}
-            {(profile.showTournaments ?? true) && (
+            {(!subSection || subSection === "torneos") && (profile.showTournaments ?? true) && (
               <Box id="section-torneos" sx={{ scrollMarginTop: "16px" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
                   <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1175,7 +1200,7 @@ export default function ClubPublicPage() {
             )}
 
             {/* Canchas */}
-            {(profile.showCourts ?? true) && (
+            {(!subSection || subSection === "canchas") && (profile.showCourts ?? true) && (
               <Box id="section-canchas" sx={{ scrollMarginTop: "16px" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
                   <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1188,7 +1213,7 @@ export default function ClubPublicPage() {
             )}
 
             {/* Profesores */}
-            {(profile.showProfesores ?? true) && (
+            {!subSection && (profile.showProfesores ?? true) && (
               <Box id="section-profesores" sx={{ scrollMarginTop: "16px" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 2.5 } }}>
                   <Box sx={{ width: { xs: 30, md: 36 }, height: { xs: 30, md: 36 }, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1205,7 +1230,7 @@ export default function ClubPublicPage() {
       </Box>
 
       {/* ── Mobile bottom nav ── */}
-      <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={scrollToSection} />
+      <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} />
 
     </Box>
   );
