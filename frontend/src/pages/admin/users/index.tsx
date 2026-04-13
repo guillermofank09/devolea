@@ -23,12 +23,14 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGetUsers, apiCreateUser, apiDeleteUser, apiUpdateUser } from "../../../api/authService";
 import type { AdminUser } from "../../../api/authService";
 import { useAuth } from "../../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../../../components/common/PageHeader";
 import DeleteDialog from "../../../components/common/DeleteDialog";
 import PageLoader from "../../../components/common/PageLoader";
@@ -253,6 +255,13 @@ function UserRow({
   onEditPayment: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { impersonate } = useAuth();
+  const navigate = useNavigate();
+
+  const impersonateMutation = useMutation({
+    mutationFn: () => impersonate(user.id),
+    onSuccess: () => navigate("/"),
+  });
 
   const toggleMutation = useMutation({
     mutationFn: (isActive: boolean) => apiUpdateUser(token, user.id, { isActive }),
@@ -356,11 +365,25 @@ function UserRow({
             </Tooltip>
           )}
           {user.role !== "superadmin" && (
-            <Tooltip title="Editar fecha de pago">
-              <IconButton size="small" onClick={onEditPayment} sx={{ color: "text.secondary" }}>
-                <EditCalendarIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <>
+              <Tooltip title="Editar fecha de pago">
+                <IconButton size="small" onClick={onEditPayment} sx={{ color: "text.secondary" }}>
+                  <EditCalendarIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Acceder al portal del club">
+                <IconButton
+                  size="small"
+                  disabled={!user.isActive || impersonateMutation.isPending}
+                  onClick={() => impersonateMutation.mutate()}
+                  sx={{ color: "primary.main" }}
+                >
+                  {impersonateMutation.isPending
+                    ? <CircularProgress size={16} />
+                    : <OpenInNewIcon fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+            </>
           )}
           {!isSelf && (
             <Tooltip title="Eliminar usuario">

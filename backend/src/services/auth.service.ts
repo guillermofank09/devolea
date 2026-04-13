@@ -69,6 +69,14 @@ export class AuthService {
     };
   }
 
+  async impersonateUser(targetId: number) {
+    const user = await this.repo.findOneBy({ id: targetId });
+    if (!user) throw new Error("NOT_FOUND");
+    if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
+    const token = this.signToken(user);
+    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
+  }
+
   async changePassword(id: number, currentPassword: string, newPassword: string) {
     const user = await this.repo.findOneBy({ id });
     if (!user) throw new Error("NOT_FOUND");

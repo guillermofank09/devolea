@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Box, Button, Typography } from '@mui/material';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import Landing from './pages/landing';
 import Header from './components/common/header';
 import Sidebar from './components/sidebar';
@@ -47,10 +49,38 @@ function SuperAdminApp() {
   );
 }
 
+function ImpersonationBanner() {
+  const { user, stopImpersonating } = useAuth();
+  return (
+    <Box sx={{
+      bgcolor: "#F5AD27",
+      px: { xs: 2, md: 3 },
+      py: 0.75,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 1,
+      flexShrink: 0,
+    }}>
+      <Typography variant="caption" fontWeight={700} sx={{ color: "#111" }}>
+        Accediendo al portal de <strong>@{user?.username}</strong> como superadmin
+      </Typography>
+      <Button
+        size="small"
+        startIcon={<ExitToAppIcon sx={{ fontSize: 15 }} />}
+        onClick={stopImpersonating}
+        sx={{ textTransform: "none", fontWeight: 700, color: "#111", fontSize: "0.75rem", py: 0.25, px: 1.25, minWidth: 0, bgcolor: "rgba(0,0,0,0.1)", borderRadius: 1.5, "&:hover": { bgcolor: "rgba(0,0,0,0.18)" } }}
+      >
+        Salir
+      </Button>
+    </Box>
+  );
+}
+
 function ProtectedApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (user?.role === "superadmin") return <SuperAdminApp />;
@@ -87,6 +117,7 @@ function ProtectedApp() {
   return (
     <div className="root-layout">
       <Header onMenuClick={() => setMobileOpen(true)} />
+      {isImpersonating && <ImpersonationBanner />}
       <div className="body-area">
         <Sidebar
           initialActive={activeSection}

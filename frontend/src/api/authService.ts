@@ -58,6 +58,15 @@ export async function apiUpdateUser(
   return data;
 }
 
+export async function apiImpersonate(token: string, userId: number): Promise<AuthResponse> {
+  const { data } = await axios.post<AuthResponse>(
+    `${API}/auth/impersonate/${userId}`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return data;
+}
+
 export async function apiChangePassword(
   token: string,
   currentPassword: string,

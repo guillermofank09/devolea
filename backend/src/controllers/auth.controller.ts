@@ -72,6 +72,21 @@ export async function updateUser(req: Request, res: Response) {
   }
 }
 
+export async function impersonateUser(req: Request, res: Response) {
+  try {
+    const result = await getService().impersonateUser(Number(req.params.id));
+    res.json(result);
+  } catch (err: any) {
+    if (err.message === "NOT_FOUND") {
+      res.status(404).json({ message: "Usuario no encontrado." });
+    } else if (err.message === "ACCOUNT_DISABLED") {
+      res.status(403).json({ message: "El usuario está deshabilitado." });
+    } else {
+      res.status(500).json({ message: "Error al acceder al portal." });
+    }
+  }
+}
+
 export async function changePassword(req: Request, res: Response) {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {
