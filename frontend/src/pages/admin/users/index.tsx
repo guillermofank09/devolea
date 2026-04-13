@@ -21,6 +21,7 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import LockResetIcon from "@mui/icons-material/LockReset";
@@ -563,6 +564,9 @@ export default function AdminUsers() {
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<AdminUser | null>(null);
   const [resetPassTarget, setResetPassTarget] = useState<AdminUser | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterOverdue, setFilterOverdue] = useState(false);
+  const [filterDisabled, setFilterDisabled] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: users = [], isPending, isError } = useQuery<AdminUser[]>({
@@ -578,6 +582,20 @@ export default function AdminUsers() {
       setDeleteTarget(null);
     },
   });
+
+  const filtered = users.filter(u => {
+    if (search.trim() && !u.name.toLowerCase().includes(search.trim().toLowerCase()) &&
+        !u.username.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    if (filterDisabled && u.isActive) return false;
+    if (filterOverdue) {
+      const { color } = paymentStatus(u.lastPaymentDate);
+      if (color !== "error") return false;
+    }
+    return true;
+  });
+
+  const overdueCount  = users.filter(u => paymentStatus(u.lastPaymentDate).color === "error").length;
+  const disabledCount = users.filter(u => !u.isActive).length;
 
   if (isPending) return <PageLoader />;
 
@@ -607,8 +625,50 @@ export default function AdminUsers() {
         }
       />
 
-      <Box sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, overflow: "hidden" }}>
-        {users.map((u, idx) => (
+      {/* Search + filters */}
+      <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
+        <TextField
+          size="small"
+          placeholder="Buscar por nombre o usuario…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          sx={{ flex: 1, minWidth: 200 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 18, color: "text.disabled" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+        <Chip
+          label={`Pago vencido${overdueCount ? ` (${overdueCount})` : ""}`}
+          onClick={() => setFilterOverdue(v => !v)}
+          color={filterOverdue ? "error" : "default"}
+          variant={filterOverdue ? "filled" : "outlined"}
+          size="small"
+          sx={{ fontWeight: 600, cursor: "pointer" }}
+        />
+        <Chip
+          label={`Deshabilitados${disabledCount ? ` (${disabledCount})` : ""}`}
+          onClick={() => setFilterDisabled(v => !v)}
+          color={filterDisabled ? "warning" : "default"}
+          variant={filterDisabled ? "filled" : "outlined"}
+          size="small"
+          sx={{ fontWeight: 600, cursor: "pointer" }}
+        />
+      </Box>
+
+      <Box sx={{
+        border: "1.5px solid", borderColor: "divider", borderRadius: 3, overflow: "hidden",
+        maxHeight: "calc(100vh - 260px)", overflowY: "auto",
+        scrollbarWidth: "thin",
+        "&::-webkit-scrollbar": { width: 4 },
+        "&::-webkit-scrollbar-thumb": { background: "rgba(0,0,0,0.15)", borderRadius: 4 },
+      }}>
+        {filtered.map((u, idx) => (
           <Box key={u.id}>
             {idx > 0 && <Divider />}
             <UserRow
@@ -621,12 +681,19 @@ export default function AdminUsers() {
             />
           </Box>
         ))}
-        {users.length === 0 && (
+        {filtered.length === 0 && (
           <Box sx={{ px: 3, py: 4, textAlign: "center" }}>
-            <Typography color="text.secondary">No hay usuarios registrados.</Typography>
+            <Typography color="text.secondary">
+              {users.length === 0 ? "No hay usuarios registrados." : "No hay usuarios que coincidan con los filtros."}
+            </Typography>
           </Box>
         )}
       </Box>
+      {filtered.length > 0 && filtered.length < users.length && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block", textAlign: "right" }}>
+          Mostrando {filtered.length} de {users.length} usuarios
+        </Typography>
+      )}
 
       <CreateUserDialog open={createOpen} onClose={() => setCreateOpen(false)} token={token!} />
 
