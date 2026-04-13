@@ -355,11 +355,13 @@ function UserRow({
               />
             </Tooltip>
           )}
-          <Tooltip title="Editar fecha de pago">
-            <IconButton size="small" onClick={onEditPayment} sx={{ color: "text.secondary" }}>
-              <EditCalendarIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {user.role !== "superadmin" && (
+            <Tooltip title="Editar fecha de pago">
+              <IconButton size="small" onClick={onEditPayment} sx={{ color: "text.secondary" }}>
+                <EditCalendarIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {!isSelf && (
             <Tooltip title="Eliminar usuario">
               <IconButton size="small" color="error" onClick={onDelete}>
