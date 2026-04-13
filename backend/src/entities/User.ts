@@ -17,6 +17,12 @@ export class User {
   @Column({ default: "user" })
   role!: "superadmin" | "user";
 
+  @Column({ default: true })
+  isActive!: boolean;
+
+  @Column({ type: "date", nullable: true, default: null })
+  lastPaymentDate!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

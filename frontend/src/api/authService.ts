@@ -20,6 +20,8 @@ export interface AdminUser {
   username: string;
   name: string;
   role: "superadmin" | "user";
+  isActive: boolean;
+  lastPaymentDate: string | null;
   createdAt: string;
 }
 
@@ -48,7 +50,7 @@ export async function apiCreateUser(
 export async function apiUpdateUser(
   token: string,
   id: number,
-  payload: { name?: string; password?: string }
+  payload: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null }
 ): Promise<AdminUser> {
   const { data } = await axios.put<AdminUser>(`${API}/auth/users/${id}`, payload, {
     headers: { Authorization: `Bearer ${token}` },

@@ -24,22 +24,48 @@ export class AuthService {
     const hashed = await bcrypt.hash(password, 10);
     const user = this.repo.create({ username, name, password: hashed, role });
     await this.repo.save(user);
-    return { id: user.id, username: user.username, name: user.name, role: user.role, createdAt: user.createdAt };
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      lastPaymentDate: user.lastPaymentDate ?? null,
+      createdAt: user.createdAt,
+    };
   }
 
   async getUsers() {
     const users = await this.repo.find({ order: { createdAt: "ASC" } });
-    return users.map(u => ({ id: u.id, username: u.username, name: u.name, role: u.role, createdAt: u.createdAt }));
+    return users.map(u => ({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: u.role,
+      isActive: u.isActive,
+      lastPaymentDate: u.lastPaymentDate ?? null,
+      createdAt: u.createdAt,
+    }));
   }
 
-  async updateUser(id: number, dto: { name?: string; password?: string }) {
+  async updateUser(id: number, dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null }) {
     const update: Partial<User> = {};
     if (dto.name !== undefined) update.name = dto.name;
     if (dto.password) update.password = await bcrypt.hash(dto.password, 10);
+    if (dto.isActive !== undefined) update.isActive = dto.isActive;
+    if ("lastPaymentDate" in dto) update.lastPaymentDate = dto.lastPaymentDate ?? null;
     await this.repo.update(id, update);
     const user = await this.repo.findOneBy({ id });
     if (!user) throw new Error("NOT_FOUND");
-    return { id: user.id, username: user.username, name: user.name, role: user.role };
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      lastPaymentDate: user.lastPaymentDate ?? null,
+      createdAt: user.createdAt,
+    };
   }
 
   async deleteUser(id: number) {

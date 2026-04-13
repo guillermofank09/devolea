@@ -52,9 +52,14 @@ export async function getUsers(_req: Request, res: Response) {
 }
 
 export async function updateUser(req: Request, res: Response) {
-  const { name, password } = req.body;
+  const { name, password, isActive, lastPaymentDate } = req.body;
   try {
-    const user = await getService().updateUser(Number(req.params.id), { name, password });
+    const dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null } = {};
+    if (name !== undefined) dto.name = name;
+    if (password !== undefined) dto.password = password;
+    if (isActive !== undefined) dto.isActive = isActive;
+    if ("lastPaymentDate" in req.body) dto.lastPaymentDate = lastPaymentDate ?? null;
+    const user = await getService().updateUser(Number(req.params.id), dto);
     res.json(user);
   } catch (err: any) {
     if (err.message === "NOT_FOUND") {
