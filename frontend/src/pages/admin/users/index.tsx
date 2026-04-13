@@ -23,6 +23,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
+import LockResetIcon from "@mui/icons-material/LockReset";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
@@ -157,6 +158,84 @@ function PaymentDialog({
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
         >
           {mutation.isPending ? "Guardando…" : "Guardar"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Reset password dialog ────────────────────────────────────────────────────
+
+function ResetPasswordDialog({ user, token, onClose }: { user: AdminUser; token: string; onClose: () => void }) {
+  const [newPass, setNewPass]       = useState("");
+  const [confirm, setConfirm]       = useState("");
+  const [showNew, setShowNew]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [success, setSuccess]       = useState(false);
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const mutation = useMutation({
+    mutationFn: () => apiUpdateUser(token, user.id, { password: newPass }),
+    onSuccess: () => { setSuccess(true); setNewPass(""); setConfirm(""); setError(null); },
+    onError: (e: any) => setError(e?.response?.data?.message ?? "Error al cambiar la contraseña."),
+  });
+
+  function handleSave() {
+    setError(null);
+    if (newPass !== confirm) { setError("Las contraseñas no coinciden."); return; }
+    if (newPass.length < 6)  { setError("La contraseña debe tener al menos 6 caracteres."); return; }
+    mutation.mutate();
+  }
+
+  function passField(label: string, value: string, setter: (v: string) => void, show: boolean, setShow: (v: boolean) => void) {
+    return (
+      <Box>
+        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" sx={FORM_LABEL_SX}>{label}</Typography>
+        <TextField
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={e => setter(e.target.value)}
+          fullWidth size="small" autoComplete="new-password"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" edge="end" onClick={() => setShow(!show)}>
+                    {show ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Box>
+    );
+  }
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Cambiar contraseña — {user.name}</DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
+          {passField("Nueva contraseña", newPass, setNewPass, showNew, setShowNew)}
+          {passField("Confirmar nueva contraseña", confirm, setConfirm, showConfirm, setShowConfirm)}
+          {error   && <Alert severity="error"   sx={{ borderRadius: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ borderRadius: 2 }}>Contraseña actualizada correctamente.</Alert>}
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+        <Button onClick={onClose} fullWidth={fullScreen} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>Cerrar</Button>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={!newPass || !confirm || mutation.isPending}
+          fullWidth={fullScreen}
+          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
+        >
+          {mutation.isPending ? "Guardando…" : "Cambiar contraseña"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -308,12 +387,14 @@ function UserRow({
   token,
   onDelete,
   onEditPayment,
+  onResetPassword,
 }: {
   user: AdminUser;
   isSelf: boolean;
   token: string;
   onDelete: () => void;
   onEditPayment: () => void;
+  onResetPassword: () => void;
 }) {
   const queryClient = useQueryClient();
   const { impersonate } = useAuth();
@@ -442,6 +523,11 @@ function UserRow({
                   <EditCalendarIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+              <Tooltip title="Cambiar contraseña">
+                <IconButton size="small" onClick={onResetPassword} sx={{ color: "text.secondary" }}>
+                  <LockResetIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Acceder al portal del club">
                 <IconButton
                   size="small"
@@ -476,6 +562,7 @@ export default function AdminUsers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<AdminUser | null>(null);
+  const [resetPassTarget, setResetPassTarget] = useState<AdminUser | null>(null);
   const queryClient = useQueryClient();
 
   const { data: users = [], isPending, isError } = useQuery<AdminUser[]>({
@@ -530,6 +617,7 @@ export default function AdminUsers() {
               token={token!}
               onDelete={() => setDeleteTarget(u)}
               onEditPayment={() => setPaymentTarget(u)}
+              onResetPassword={() => setResetPassTarget(u)}
             />
           </Box>
         ))}
@@ -543,11 +631,11 @@ export default function AdminUsers() {
       <CreateUserDialog open={createOpen} onClose={() => setCreateOpen(false)} token={token!} />
 
       {paymentTarget && (
-        <PaymentDialog
-          user={paymentTarget}
-          token={token!}
-          onClose={() => setPaymentTarget(null)}
-        />
+        <PaymentDialog user={paymentTarget} token={token!} onClose={() => setPaymentTarget(null)} />
+      )}
+
+      {resetPassTarget && (
+        <ResetPasswordDialog user={resetPassTarget} token={token!} onClose={() => setResetPassTarget(null)} />
       )}
 
       <DeleteDialog
