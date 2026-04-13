@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Box,
@@ -816,6 +816,7 @@ interface PublicSidebarProps {
 }
 
 function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoBase64, mapUrl, businessHours }: PublicSidebarProps) {
+  const navigate = useNavigate();
   return (
     <Box
       sx={{
@@ -837,18 +838,23 @@ function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoB
     >
       {/* Club identity */}
       <Box sx={{ px: 2.5, pt: 3, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-        {logoBase64 ? (
-          <Box
-            component="img"
-            src={logoBase64}
-            alt="logo"
-            sx={{ width: 72, height: 72, borderRadius: 2.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", display: "block", mb: 2, bgcolor: "#1a1a1a" }}
-          />
-        ) : (
-          <Box sx={{ width: 72, height: 72, borderRadius: 2.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", mb: 2, flexShrink: 0 }}>
-            <SportsTennisIcon sx={{ fontSize: 34, color: "#111" }} />
-          </Box>
-        )}
+        <Box
+          onClick={() => navigate("/")}
+          sx={{ cursor: "pointer", mb: 2, "&:hover": { opacity: 0.85 }, transition: "opacity 150ms ease" }}
+        >
+          {logoBase64 ? (
+            <Box
+              component="img"
+              src={logoBase64}
+              alt="logo"
+              sx={{ width: 72, height: 72, borderRadius: 2.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", display: "block", bgcolor: "#1a1a1a" }}
+            />
+          ) : (
+            <Box sx={{ width: 72, height: 72, borderRadius: 2.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <SportsTennisIcon sx={{ fontSize: 34, color: "#111" }} />
+            </Box>
+          )}
+        </Box>
         <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#e8eaf0", lineHeight: 1.25 }}>
           {clubName || "Club de Pádel"}
         </Typography>
@@ -1001,6 +1007,7 @@ function MobileBottomNav({ items, activeId, onSelect }: { items: PublicNavItem[]
 // ─── mobile club header ───────────────────────────────────────────────────────
 
 function MobileClubHeader({ clubName, address, logoBase64 }: { clubName: string; address?: string; logoBase64?: string | null }) {
+  const navigate = useNavigate();
   return (
     <Box
       sx={{
@@ -1013,13 +1020,18 @@ function MobileClubHeader({ clubName, address, logoBase64 }: { clubName: string;
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      {logoBase64 ? (
-        <Box component="img" src={logoBase64} alt="logo" sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0, bgcolor: "#1a1a1a" }} />
-      ) : (
-        <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <SportsTennisIcon sx={{ fontSize: 20, color: "#111" }} />
-        </Box>
-      )}
+      <Box
+        onClick={() => navigate("/")}
+        sx={{ cursor: "pointer", flexShrink: 0, "&:hover": { opacity: 0.85 }, transition: "opacity 150ms ease" }}
+      >
+        {logoBase64 ? (
+          <Box component="img" src={logoBase64} alt="logo" sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", display: "block", bgcolor: "#1a1a1a" }} />
+        ) : (
+          <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <SportsTennisIcon sx={{ fontSize: 20, color: "#111" }} />
+          </Box>
+        )}
+      </Box>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#e8eaf0", lineHeight: 1.2 }} noWrap>
           {clubName || "Club de Pádel"}
