@@ -19,6 +19,8 @@ export async function login(req: Request, res: Response) {
   } catch (err: any) {
     if (err.message === "INVALID_CREDENTIALS") {
       res.status(401).json({ message: "Usuario o contraseña incorrectos." });
+    } else if (err.message === "ACCOUNT_DISABLED") {
+      res.status(403).json({ message: "Tu cuenta está deshabilitada. Contactá con el administrador para poder utilizar el sistema." });
     } else {
       res.status(500).json({ message: "Error al iniciar sesión." });
     }

@@ -14,6 +14,7 @@ export class AuthService {
     if (!user) throw new Error("INVALID_CREDENTIALS");
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new Error("INVALID_CREDENTIALS");
+    if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
     const token = this.signToken(user);
     return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
   }
