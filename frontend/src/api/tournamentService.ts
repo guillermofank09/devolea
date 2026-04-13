@@ -19,11 +19,24 @@ export const updateTournament = (id: number, data: Partial<TournamentFormData>):
 export const deleteTournament = (id: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${id}`).then(() => undefined);
 
-export const addPair = (tournamentId: number, player1Id: number, player2Id: number): Promise<Pair> =>
-  axios.post(`${BASE}/tournaments/${tournamentId}/pairs`, { player1Id, player2Id }).then(r => r.data);
+export const addPair = (tournamentId: number, player1Id: number, player2Id: number, opts?: {
+  player1InscriptionPaid?: boolean;
+  player2InscriptionPaid?: boolean;
+  preferredStartTimes?: string[] | null;
+}): Promise<Pair> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/pairs`, { player1Id, player2Id, ...opts }).then(r => r.data);
 
 export const removePair = (tournamentId: number, pairId: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${tournamentId}/pairs/${pairId}`).then(() => undefined);
+
+export const updatePair = (tournamentId: number, pairId: number, dto: {
+  player1Id?: number;
+  player2Id?: number;
+  player1InscriptionPaid?: boolean;
+  player2InscriptionPaid?: boolean;
+  preferredStartTimes?: string[] | null;
+}): Promise<Pair> =>
+  axios.patch(`${BASE}/tournaments/${tournamentId}/pairs/${pairId}`, dto).then(r => r.data);
 
 export const generateMatches = (tournamentId: number, startTime: string, courtIds?: number[], matchDuration?: number): Promise<TournamentMatch[]> =>
   axios.post(`${BASE}/tournaments/${tournamentId}/generate`, { startTime, courtIds, matchDuration }).then(r => r.data);

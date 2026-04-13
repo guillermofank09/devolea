@@ -34,6 +34,7 @@ import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, T
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
 import AddPairDialog from "./AddPairDialog";
+import EditPairDialog from "./EditPairDialog";
 import GenerateMatchesDialog from "./GenerateMatchesDialog";
 import EditMatchDialog from "./EditMatchDialog";
 import DeleteDialog from "../../components/common/DeleteDialog";
@@ -46,6 +47,12 @@ const STATUS_LABEL: Record<TournamentStatus, string> = {
   DRAFT: "Borrador",
   ACTIVE: "Activo",
   COMPLETED: "Finalizado",
+};
+
+const SEX_LABEL: Record<string, string> = {
+  MASCULINO: "Masculino",
+  FEMENINO: "Femenino",
+  MIXTO: "Mixto",
 };
 
 const STATUS_COLOR: Record<TournamentStatus, "default" | "success" | "primary"> = {
@@ -170,6 +177,7 @@ export default function TournamentDetail() {
   const queryClient = useQueryClient();
 
   const [addPairOpen, setAddPairOpen] = useState(false);
+  const [editPairTarget, setEditPairTarget] = useState<Pair | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [nextRoundOpen, setNextRoundOpen] = useState(false);
   const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
@@ -188,6 +196,7 @@ export default function TournamentDetail() {
       setDeletePairTarget(null);
     },
   });
+
 
   // Open dialog immediately with a synthetic match; DB record is created on save
   const handleVirtualMatchClick = (round: number, matchNumber: number) => {
@@ -247,11 +256,20 @@ export default function TournamentDetail() {
         title={data.name}
         subtitle={`${data.startDate} → ${data.endDate}`}
         action={
-          <Chip
-            label={STATUS_LABEL[data.status]}
-            color={STATUS_COLOR[data.status]}
-            sx={{ fontWeight: 700 }}
-          />
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {data.sex && (
+              <Chip
+                label={SEX_LABEL[data.sex] ?? data.sex}
+                variant="outlined"
+                sx={{ fontWeight: 600 }}
+              />
+            )}
+            <Chip
+              label={STATUS_LABEL[data.status]}
+              color={STATUS_COLOR[data.status]}
+              sx={{ fontWeight: 700 }}
+            />
+          </Box>
         }
       />
 
@@ -284,18 +302,20 @@ export default function TournamentDetail() {
                   {idx > 0 && <Divider />}
                   <ListItem
                     secondaryAction={
-                      !hasMatches ? (
-                        <Tooltip title="Eliminar pareja">
-                          <IconButton
-                            edge="end"
-                            size="small"
-                            color="error"
-                            onClick={() => setDeletePairTarget(pair)}
-                          >
-                            <DeleteIcon fontSize="small" />
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Tooltip title="Editar pareja">
+                          <IconButton size="small" onClick={() => setEditPairTarget(pair)}>
+                            <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                      ) : null
+                        {!hasMatches && (
+                          <Tooltip title="Eliminar pareja">
+                            <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
                     }
                   >
                     <ListItemAvatar>
@@ -310,11 +330,21 @@ export default function TournamentDetail() {
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Typography variant="body2" fontWeight={600}>
-                          {pair.player1.name}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                          <Typography variant="body2" fontWeight={600}>{pair.player1.name}</Typography>
+                          {pair.player1InscriptionPaid && (
+                            <Chip label="✓" size="small" color="success" sx={{ height: 16, fontSize: "0.65rem", fontWeight: 700, "& .MuiChip-label": { px: 0.5 } }} />
+                          )}
+                        </Box>
                       }
-                      secondary={pair.player2.name}
+                      secondary={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                          <Typography variant="caption" color="text.secondary">{pair.player2.name}</Typography>
+                          {pair.player2InscriptionPaid && (
+                            <Chip label="✓" size="small" color="success" sx={{ height: 16, fontSize: "0.65rem", fontWeight: 700, "& .MuiChip-label": { px: 0.5 } }} />
+                          )}
+                        </Box>
+                      }
                     />
                   </ListItem>
                 </Box>
@@ -408,7 +438,21 @@ export default function TournamentDetail() {
         tournamentId={Number(id)}
         existingPairs={data.pairs}
         tournamentCategory={data.category}
+        tournamentStartDate={data.startDate}
       />
+
+      {editPairTarget && (
+        <EditPairDialog
+          open={!!editPairTarget}
+          onClose={() => setEditPairTarget(null)}
+          pair={editPairTarget}
+          tournamentId={Number(id)}
+          existingPairs={data.pairs}
+          tournamentCategory={data.category}
+          tournamentStartDate={data.startDate}
+          hasMatches={hasMatches}
+        />
+      )}
 
       <GenerateMatchesDialog
         open={generateOpen}

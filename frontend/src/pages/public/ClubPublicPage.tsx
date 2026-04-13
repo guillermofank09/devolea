@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Box,
+  Button,
   Chip,
   IconButton,
   InputAdornment,
@@ -536,7 +537,7 @@ function CourtCalendar({
 
 const WINDOW_SIZE = 3;
 
-function CourtsSection({ username, businessHours }: { username: string; businessHours: DaySchedule[] }) {
+function CourtsSection({ username, businessHours, clubPhone }: { username: string; businessHours: DaySchedule[]; clubPhone?: string | null }) {
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [windowStart, setWindowStart] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
@@ -662,19 +663,40 @@ function CourtsSection({ username, businessHours }: { username: string; business
               selectedDayIdx={selectedDayIdx}
               hideCourtName
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1, flexWrap: "wrap" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f1f8e9", border: "0.5px solid #c8e6c9" }} />
-                <Typography variant="caption" color="text.secondary">Disponible</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, mt: 1, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f1f8e9", border: "0.5px solid #c8e6c9" }} />
+                  <Typography variant="caption" color="text.secondary">Disponible</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#ffcdd2", border: "0.5px solid #ef9a9a" }} />
+                  <Typography variant="caption" color="text.secondary">Reservado</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f5f5f5", border: "0.5px solid #e0e0e0" }} />
+                  <Typography variant="caption" color="text.secondary">Fuera de horario</Typography>
+                </Box>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#ffcdd2", border: "0.5px solid #ef9a9a" }} />
-                <Typography variant="caption" color="text.secondary">Reservado</Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f5f5f5", border: "0.5px solid #e0e0e0" }} />
-                <Typography variant="caption" color="text.secondary">Fuera de horario</Typography>
-              </Box>
+              {clubPhone && activeCourt && (() => {
+                const selectedDay = days[selectedDayIdx];
+                const dateLabel = selectedDay.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+                const msg = `Hola! Quisiera reservar la ${activeCourt.name} para el ${dateLabel}`;
+                const waUrl = `https://wa.me/${clubPhone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+                return (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<WhatsAppIcon />}
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ flexShrink: 0, textTransform: "none" }}
+                  >
+                    Reservar cancha
+                  </Button>
+                );
+              })()}
             </Box>
           </>
         )}
@@ -1233,7 +1255,7 @@ export default function ClubPublicPage() {
                   </Box>
                   <Typography variant="h6" fontWeight={800} sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Canchas</Typography>
                 </Box>
-                <CourtsSection username={username!} businessHours={profile.businessHours} />
+                <CourtsSection username={username!} businessHours={profile.businessHours} clubPhone={profile.phone} />
               </Box>
             )}
 

@@ -3,6 +3,7 @@ import type { Player } from "./Player";
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
+export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
 export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
 
@@ -10,6 +11,7 @@ export interface Tournament {
   id: number;
   name: string;
   category: TournamentCategory;
+  sex: TournamentSex;
   startDate: string;
   endDate: string;
   status: TournamentStatus;
@@ -20,6 +22,7 @@ export interface Tournament {
 export interface TournamentFormData {
   name: string;
   category: TournamentCategory;
+  sex: TournamentSex;
   startDate: string;
   endDate: string;
 }
@@ -28,6 +31,9 @@ export interface Pair {
   id: number;
   player1: Player;
   player2: Player;
+  player1InscriptionPaid: boolean;
+  player2InscriptionPaid: boolean;
+  preferredStartTimes?: string[];
 }
 
 export interface TournamentMatch {

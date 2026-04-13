@@ -49,13 +49,22 @@ export const deleteTournament = async (req: Request, res: Response) => {
 };
 
 export const addPair = async (req: Request, res: Response) => {
-  const { player1Id, player2Id } = req.body;
-  try { res.status(201).json(await getService().addPair(Number(req.params.id), Number(player1Id), Number(player2Id))); }
-  catch (e: any) { res.status(400).json({ error: e.message }); }
+  const { player1Id, player2Id, player1InscriptionPaid, player2InscriptionPaid, preferredStartTimes } = req.body;
+  try {
+    res.status(201).json(await getService().addPair(
+      Number(req.params.id), Number(player1Id), Number(player2Id),
+      { player1InscriptionPaid, player2InscriptionPaid, preferredStartTimes },
+    ));
+  } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
 export const removePair = async (req: Request, res: Response) => {
   try { await getService().removePair(Number(req.params.pairId)); res.json({ message: "Pareja eliminada" }); }
+  catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
+export const updatePair = async (req: Request, res: Response) => {
+  try { res.json(await getService().updatePair(Number(req.params.pairId), req.body)); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 

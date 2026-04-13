@@ -35,6 +35,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       latitude: profile.latitude,
       longitude: profile.longitude,
       logoBase64: profile.logoBase64,
+      phone: profile.phone ?? null,
       businessHours,
       showTournaments: settings?.showTournaments ?? true,
       showCourts:      settings?.showCourts      ?? true,

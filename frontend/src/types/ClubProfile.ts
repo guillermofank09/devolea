@@ -10,6 +10,7 @@ export interface ClubProfile {
   clubName: string;
   logoBase64?: string;
   address: string;
+  phone?: string;
   latitude?: number | null;
   longitude?: number | null;
   businessHoursJson?: string;

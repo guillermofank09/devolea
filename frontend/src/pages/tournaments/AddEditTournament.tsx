@@ -17,8 +17,14 @@ import {
 } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTournament, updateTournament } from "../../api/tournamentService";
-import type { Tournament, TournamentCategory, TournamentFormData } from "../../types/Tournament";
+import type { Tournament, TournamentCategory, TournamentSex, TournamentFormData } from "../../types/Tournament";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+
+const SEX_OPTIONS: { value: TournamentSex; label: string }[] = [
+  { value: "MIXTO",     label: "Mixto" },
+  { value: "MASCULINO", label: "Masculino" },
+  { value: "FEMENINO",  label: "Femenino" },
+];
 
 const CATEGORIES: { value: TournamentCategory; label: string }[] = [
   { value: "SIN_CATEGORIA", label: "Sin Categoría" },
@@ -34,6 +40,7 @@ const CATEGORIES: { value: TournamentCategory; label: string }[] = [
 const EMPTY: TournamentFormData = {
   name: "",
   category: "SIN_CATEGORIA",
+  sex: "MIXTO",
   startDate: "",
   endDate: "",
 };
@@ -66,6 +73,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
       setForm({
         name: tournament.name,
         category: tournament.category,
+        sex: tournament.sex ?? "MIXTO",
         startDate: tournament.startDate,
         endDate: tournament.endDate,
       });
@@ -76,7 +84,13 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
   }, [tournament, open]);
 
   const set = (field: keyof TournamentFormData, value: string) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === "startDate" && next.endDate && next.endDate < value) {
+        next.endDate = "";
+      }
+      return next;
+    });
 
   const mutation = useMutation({
     mutationFn: (data: TournamentFormData) =>
@@ -128,19 +142,35 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
               />
             </Box>
 
-            <Box>
-              <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
-              <Select
-                fullWidth
-                size="small"
-                value={form.category}
-                onChange={e => set("category", e.target.value)}
-                sx={{ height: 40, fontSize: "0.875rem" }}
-              >
-                {CATEGORIES.map(c => (
-                  <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                ))}
-              </Select>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={form.category}
+                  onChange={e => set("category", e.target.value)}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  {CATEGORIES.map(c => (
+                    <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={form.sex}
+                  onChange={e => set("sex", e.target.value)}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  {SEX_OPTIONS.map(s => (
+                    <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
@@ -163,6 +193,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
                   type="date"
                   value={form.endDate}
                   onChange={e => set("endDate", e.target.value)}
+                  inputProps={{ min: form.startDate || undefined }}
                   sx={dateSx}
                 />
               </Box>

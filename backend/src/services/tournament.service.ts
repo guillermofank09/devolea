@@ -4,6 +4,13 @@ import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
 import { Booking } from "../entities/Booking";
 
+function deserializePair(pair: Pair): any {
+  return {
+    ...pair,
+    preferredStartTimes: pair.preferredStartTimes ? JSON.parse(pair.preferredStartTimes) : [],
+  };
+}
+
 export class TournamentService {
   constructor(
     private tRepo: Repository<Tournament>,
@@ -30,7 +37,7 @@ export class TournamentService {
       order: { round: "ASC", matchNumber: "ASC" },
       relations: { court: true },
     });
-    return { ...tournament, pairs, matches };
+    return { ...tournament, pairs: pairs.map(deserializePair), matches };
   }
 
   async update(id: number, dto: Partial<Tournament>): Promise<Tournament | null> {
@@ -42,12 +49,14 @@ export class TournamentService {
     await this.tRepo.delete(id);
   }
 
-  async addPair(tournamentId: number, player1Id: number, player2Id: number): Promise<Pair> {
-    // Check no matches exist yet
+  async addPair(tournamentId: number, player1Id: number, player2Id: number, opts?: {
+    player1InscriptionPaid?: boolean;
+    player2InscriptionPaid?: boolean;
+    preferredStartTimes?: string[] | null;
+  }): Promise<Pair> {
     const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
     if (matchCount > 0) throw new Error("No se pueden agregar parejas después de generar los cruces");
 
-    // Check players not already in a pair in this tournament
     const existingPairs = await this.pRepo.find({ where: { tournament: { id: tournamentId } } });
     const usedPlayerIds = existingPairs.flatMap(p => [p.player1.id, p.player2.id]);
     if (usedPlayerIds.includes(player1Id) || usedPlayerIds.includes(player2Id)) {
@@ -55,13 +64,51 @@ export class TournamentService {
     }
     if (player1Id === player2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
 
-    return await this.pRepo.save(
+    const saved = await this.pRepo.save(
       this.pRepo.create({
         tournament: { id: tournamentId } as any,
         player1: { id: player1Id } as any,
         player2: { id: player2Id } as any,
+        player1InscriptionPaid: opts?.player1InscriptionPaid ?? false,
+        player2InscriptionPaid: opts?.player2InscriptionPaid ?? false,
+        preferredStartTimes: opts?.preferredStartTimes?.length ? JSON.stringify(opts.preferredStartTimes) : null,
       })
     );
+    return deserializePair(saved);
+  }
+
+  async updatePair(pairId: number, dto: {
+    player1Id?: number;
+    player2Id?: number;
+    player1InscriptionPaid?: boolean;
+    player2InscriptionPaid?: boolean;
+    preferredStartTimes?: string[] | null;
+  }): Promise<Pair> {
+    const pair = await this.pRepo.findOne({ where: { id: pairId }, relations: ["tournament"] });
+    if (!pair) throw new Error("Pareja no encontrada");
+
+    if (dto.player1Id !== undefined || dto.player2Id !== undefined) {
+      const matchCount = await this.mRepo.count({ where: { tournament: { id: pair.tournament.id } } });
+      if (matchCount > 0) throw new Error("No se pueden modificar jugadores después de generar los cruces");
+      const newP1Id = dto.player1Id ?? pair.player1.id;
+      const newP2Id = dto.player2Id ?? pair.player2.id;
+      if (newP1Id === newP2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
+      const existing = await this.pRepo.find({ where: { tournament: { id: pair.tournament.id } } });
+      const usedIds = existing.filter(p => p.id !== pairId).flatMap(p => [p.player1.id, p.player2.id]);
+      if (usedIds.includes(newP1Id) || usedIds.includes(newP2Id)) {
+        throw new Error("Uno o ambos jugadores ya están en otra pareja del torneo");
+      }
+      if (dto.player1Id !== undefined) (pair as any).player1 = { id: dto.player1Id };
+      if (dto.player2Id !== undefined) (pair as any).player2 = { id: dto.player2Id };
+    }
+
+    if (dto.player1InscriptionPaid !== undefined) pair.player1InscriptionPaid = dto.player1InscriptionPaid;
+    if (dto.player2InscriptionPaid !== undefined) pair.player2InscriptionPaid = dto.player2InscriptionPaid;
+    if ("preferredStartTimes" in dto) {
+      pair.preferredStartTimes = dto.preferredStartTimes?.length ? JSON.stringify(dto.preferredStartTimes) : null;
+    }
+
+    return deserializePair(await this.pRepo.save(pair));
   }
 
   async removePair(pairId: number): Promise<void> {

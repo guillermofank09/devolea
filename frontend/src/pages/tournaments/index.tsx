@@ -21,7 +21,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournaments, deleteTournament } from "../../api/tournamentService";
 import PageLoader from "../../components/common/PageLoader";
 import EmptyState from "../../components/common/EmptyState";
-import type { Tournament, TournamentCategory, TournamentStatus } from "../../types/Tournament";
+import type { Tournament, TournamentCategory, TournamentSex, TournamentStatus } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
 import DeleteDialog from "../../components/common/DeleteDialog";
@@ -35,6 +35,12 @@ const STATUS_LABEL: Record<TournamentStatus, string> = {
   DRAFT: "Borrador",
   ACTIVE: "Activo",
   COMPLETED: "Finalizado",
+};
+
+const SEX_LABEL: Record<TournamentSex, string> = {
+  MASCULINO: "Masculino",
+  FEMENINO: "Femenino",
+  MIXTO: "Mixto",
 };
 
 const STATUS_COLOR: Record<TournamentStatus, "default" | "success" | "primary"> = {
@@ -156,6 +162,14 @@ export default function Tournaments() {
                       color="info"
                       sx={{ fontWeight: 700, fontSize: "0.7rem" }}
                     />
+                    {tournament.sex && (
+                      <Chip
+                        label={SEX_LABEL[tournament.sex] ?? tournament.sex}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 600, fontSize: "0.7rem" }}
+                      />
+                    )}
                     <Chip
                       label={STATUS_LABEL[tournament.status]}
                       size="small"

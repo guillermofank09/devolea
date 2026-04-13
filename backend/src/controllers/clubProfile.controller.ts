@@ -15,6 +15,7 @@ export async function getProfile(req: Request, res: Response) {
 
 export async function saveProfile(req: Request, res: Response) {
   const userId = req.authUser!.sub;
-  const profile = await getService().save(req.body, userId);
+  const { businessHours, ...dto } = req.body;
+  const profile = await getService().save(dto, userId);
   res.json(profile);
 }

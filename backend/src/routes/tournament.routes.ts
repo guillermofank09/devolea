@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createTournament, getTournaments, getTournamentById,
-  updateTournament, deleteTournament, addPair, removePair,
+  updateTournament, deleteTournament, addPair, removePair, updatePair,
   generateMatches, nextRound, updateMatch, createPlaceholderMatch, getMatchesByCourt, triggerRepechage,
 } from "../controllers/tournament.controller";
 import { requireAuth } from "../middleware/auth.middleware";
@@ -14,6 +14,7 @@ router.get("/tournaments/:id", requireAuth, getTournamentById);
 router.put("/tournaments/:id", requireAuth, updateTournament);
 router.delete("/tournaments/:id", requireAuth, deleteTournament);
 router.post("/tournaments/:id/pairs", requireAuth, addPair);
+router.patch("/tournaments/:id/pairs/:pairId", requireAuth, updatePair);
 router.delete("/tournaments/:id/pairs/:pairId", requireAuth, removePair);
 router.post("/tournaments/:id/generate", requireAuth, generateMatches);
 router.post("/tournaments/:id/next-round", requireAuth, nextRound);

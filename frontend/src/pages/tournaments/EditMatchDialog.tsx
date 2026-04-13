@@ -259,7 +259,9 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
         delayedUntilISO = localToISO(`${baseDateStr}T${delayedUntilTime}`);
       }
 
-      const status = winnerId ? "COMPLETED" : match.status;
+      const wasBye = match.status === "BYE";
+      const pair2IsNowSet = pair2Id !== "" && pair2Id != null;
+      const status = winnerId ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
       const result = composeSetsResult(sets);
       return updateMatch(match.id, {
         scheduledAt: scheduledAtISO,
@@ -296,8 +298,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
       flexDirection: "column",
       gap: 2,
       p: 2.5,
-      overflowY: "auto",
-      ...(sideLayout ? { width: 300, flexShrink: 0 } : {}),
+      ...(sideLayout ? { width: 300, flexShrink: 0, overflowY: "auto" } : {}),
     }}>
       {isPlaceholder && (
         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "grey.100" }}>
@@ -544,7 +545,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
           p: 0,
           flex: 1,
           display: "flex",
-          overflow: "hidden",
+          overflow: sideLayout ? "hidden" : "auto",
           flexDirection: sideLayout ? "row" : "column",
         }}
       >

@@ -3,12 +3,14 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeor
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
+export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
 
 @Entity()
 export class Tournament {
   @PrimaryGeneratedColumn() id!: number;
   @Column() name!: string;
   @Column() category!: TournamentCategory;
+  @Column({ default: "MIXTO" }) sex!: TournamentSex;
   @Column({ type: "date" }) startDate!: string;
   @Column({ type: "date" }) endDate!: string;
   @Column({ default: "DRAFT" }) status!: TournamentStatus;

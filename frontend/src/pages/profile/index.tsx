@@ -31,6 +31,7 @@ import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
+import PhoneField from "../../components/common/PhoneField";
 import { useAuth } from "../../context/AuthContext";
 
 // ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
@@ -194,6 +195,7 @@ export default function Profile() {
   const [clubName, setClubName]     = useState("");
   const [logoBase64, setLogoBase64] = useState("");
   const [address, setAddress]       = useState("");
+  const [phone, setPhone]           = useState("");
   const [lat, setLat]               = useState<number | null>(null);
   const [lng, setLng]               = useState<number | null>(null);
   const [hours, setHours]           = useState<DaySchedule[]>(DEFAULT_HOURS);
@@ -211,6 +213,7 @@ export default function Profile() {
     setClubName(data.clubName ?? "");
     setLogoBase64(data.logoBase64 ?? "");
     setAddress(data.address ?? "");
+    setPhone(data.phone ?? "");
     setAddrInput(data.address ?? "");
     setLat(data.latitude ?? null);
     setLng(data.longitude ?? null);
@@ -245,7 +248,7 @@ export default function Profile() {
 
   // ── save ──
   function handleSave() {
-    mutation.mutate({ clubName, logoBase64, address, latitude: lat, longitude: lng, businessHours: hours });
+    mutation.mutate({ clubName, logoBase64, address, phone, latitude: lat, longitude: lng, businessHours: hours });
   }
 
   if (isPending) return <PageLoader />;
@@ -278,6 +281,13 @@ export default function Profile() {
               value={clubName}
               onChange={e => setClubName(e.target.value)}
               size="small"
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <PhoneField
+              value={phone}
+              onChange={setPhone}
+              label="Teléfono / WhatsApp"
             />
           </Grid>
 

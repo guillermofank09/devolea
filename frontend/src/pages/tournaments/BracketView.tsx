@@ -334,12 +334,12 @@ function BracketMatchCard({ match, onEdit }: { match: TournamentMatch; onEdit: (
         bgcolor: live ? live.bg : "background.paper",
         borderRadius: 2, overflow: "hidden",
         display: "flex",
-        cursor: !isBye ? "pointer" : "default",
+        cursor: "pointer",
         userSelect: "none",
         transition: "box-shadow 0.15s, border-color 0.15s",
-        "&:hover": !isBye ? { boxShadow: "0 2px 10px rgba(0,0,0,0.13)", borderColor: live ? live.stripe : "#aaa" } : {},
+        "&:hover": { boxShadow: "0 2px 10px rgba(0,0,0,0.13)", borderColor: live ? live.stripe : "#aaa" },
       }}
-      onClick={!isBye ? onEdit : undefined}
+      onClick={onEdit}
     >
       <Box sx={{ width: 4, flexShrink: 0, bgcolor: sideColor }} />
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>

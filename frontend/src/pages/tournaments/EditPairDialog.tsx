@@ -22,7 +22,7 @@ import {
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers } from "../../api/playerService";
-import { addPair } from "../../api/tournamentService";
+import { updatePair } from "../../api/tournamentService";
 import { fetchCourts } from "../../api/courtService";
 import { fetchBookingsByCourt } from "../../api/bookingService";
 import { fetchProfile } from "../../api/profileService";
@@ -170,14 +170,16 @@ function PlayerSelector({
 interface Props {
   open: boolean;
   onClose: () => void;
+  pair: Pair;
   tournamentId: number;
   existingPairs: Pair[];
   tournamentCategory: TournamentCategory;
   tournamentStartDate: string;
+  hasMatches: boolean;
 }
 
-export default function AddPairDialog({
-  open, onClose, tournamentId, existingPairs, tournamentCategory, tournamentStartDate,
+export default function EditPairDialog({
+  open, onClose, pair, tournamentId, existingPairs, tournamentCategory, tournamentStartDate, hasMatches,
 }: Props) {
   const [player1, setPlayer1] = useState<Player | null>(null);
   const [player2, setPlayer2] = useState<Player | null>(null);
@@ -197,16 +199,16 @@ export default function AddPairDialog({
   const date2 = useMemo(() => addDays(tournamentStartDate, 1), [tournamentStartDate]);
 
   useEffect(() => {
-    if (open) {
-      setPlayer1(null);
-      setPlayer2(null);
-      setP1Paid(false);
-      setP2Paid(false);
+    if (open && pair) {
+      setPlayer1(pair.player1);
+      setPlayer2(pair.player2);
+      setP1Paid(pair.player1InscriptionPaid ?? false);
+      setP2Paid(pair.player2InscriptionPaid ?? false);
       setSelectedDate(tournamentStartDate);
-      setSelectedTimes([]);
+      setSelectedTimes(pair.preferredStartTimes ?? []);
       setError(null);
     }
-  }, [open, tournamentStartDate]);
+  }, [open, pair, tournamentStartDate]);
 
   const { data: players = [], isFetching } = useQuery<Player[]>({
     queryKey: ["playersData"],
@@ -249,7 +251,9 @@ export default function AddPairDialog({
     });
   }, [selectedDate, profile, matchDuration, courts, courtBookingResults]);
 
-  const usedInTournament = existingPairs.flatMap(p => [p.player1.id, p.player2.id]);
+  const otherPairs = existingPairs.filter(p => p.id !== pair.id);
+  const usedInTournament = otherPairs.flatMap(p => [p.player1.id, p.player2.id]);
+
   const disabledForP1 = [...usedInTournament, ...(player2 ? [player2.id] : [])];
   const disabledForP2 = [...usedInTournament, ...(player1 ? [player1.id] : [])];
 
@@ -265,17 +269,19 @@ export default function AddPairDialog({
   }, [player1, player2, tournamentCategory]);
 
   const mutation = useMutation({
-    mutationFn: () => addPair(tournamentId, player1!.id, player2!.id, {
+    mutationFn: () => updatePair(tournamentId, pair.id, {
+      player1Id: !hasMatches && player1 && player1.id !== pair.player1.id ? player1.id : undefined,
+      player2Id: !hasMatches && player2 && player2.id !== pair.player2.id ? player2.id : undefined,
       player1InscriptionPaid: p1Paid,
       player2InscriptionPaid: p2Paid,
       preferredStartTimes: selectedTimes.length ? selectedTimes : null,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
-      onClose();
+      handleClose();
     },
     onError: (e: any) => {
-      setError(e?.response?.data?.error ?? "Error al agregar la pareja");
+      setError(e?.response?.data?.error ?? "Error al guardar");
     },
   });
 
@@ -300,7 +306,7 @@ export default function AddPairDialog({
   return (
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Agregar pareja</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Editar pareja</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
 
@@ -310,19 +316,28 @@ export default function AddPairDialog({
                 Jugador 1
               </Typography>
               <Box sx={{ mt: 1, mb: 1.5 }}>
-                <PlayerSelector
-                  label=""
-                  players={players}
-                  isFetching={isFetching}
-                  value={player1}
-                  onChange={p => { setPlayer1(p); setError(null); }}
-                  disabledIds={disabledForP1}
-                  onCreatePlayer={name => handleCreatePlayer(1, name)}
-                />
+                {hasMatches ? (
+                  <Typography variant="body2" fontWeight={600}>{player1?.name}</Typography>
+                ) : (
+                  <PlayerSelector
+                    label=""
+                    players={players}
+                    isFetching={isFetching}
+                    value={player1}
+                    onChange={p => { setPlayer1(p); setError(null); }}
+                    disabledIds={disabledForP1}
+                    onCreatePlayer={name => handleCreatePlayer(1, name)}
+                  />
+                )}
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Inscripción abonada</Typography>
-                <Switch size="small" checked={p1Paid} onChange={(_, v) => setP1Paid(v)} color="success" />
+                <Switch
+                  size="small"
+                  checked={p1Paid}
+                  onChange={(_, v) => setP1Paid(v)}
+                  color="success"
+                />
               </Box>
             </Box>
 
@@ -332,19 +347,28 @@ export default function AddPairDialog({
                 Jugador 2
               </Typography>
               <Box sx={{ mt: 1, mb: 1.5 }}>
-                <PlayerSelector
-                  label=""
-                  players={players}
-                  isFetching={isFetching}
-                  value={player2}
-                  onChange={p => { setPlayer2(p); setError(null); }}
-                  disabledIds={disabledForP2}
-                  onCreatePlayer={name => handleCreatePlayer(2, name)}
-                />
+                {hasMatches ? (
+                  <Typography variant="body2" fontWeight={600}>{player2?.name}</Typography>
+                ) : (
+                  <PlayerSelector
+                    label=""
+                    players={players}
+                    isFetching={isFetching}
+                    value={player2}
+                    onChange={p => { setPlayer2(p); setError(null); }}
+                    disabledIds={disabledForP2}
+                    onCreatePlayer={name => handleCreatePlayer(2, name)}
+                  />
+                )}
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Inscripción abonada</Typography>
-                <Switch size="small" checked={p2Paid} onChange={(_, v) => setP2Paid(v)} color="success" />
+                <Switch
+                  size="small"
+                  checked={p2Paid}
+                  onChange={(_, v) => setP2Paid(v)}
+                  color="success"
+                />
               </Box>
             </Box>
 
@@ -362,6 +386,7 @@ export default function AddPairDialog({
                 Horario sugerido para primer partido
               </FormLabel>
 
+              {/* Selector de día */}
               <Box sx={{ display: "flex", gap: 1, mb: 1.5 }}>
                 {[date1, date2].map((d, i) => (
                   <Chip
@@ -449,7 +474,7 @@ export default function AddPairDialog({
             fullWidth={fullScreen}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
-            {mutation.isPending ? <CircularProgress size={18} /> : "Agregar pareja"}
+            {mutation.isPending ? <CircularProgress size={18} /> : "Guardar"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -20,6 +20,9 @@ export class ClubProfile {
   @Column({ type: "float", nullable: true })
   longitude!: number;
 
+  @Column({ type: "varchar", nullable: true })
+  phone!: string;
+
   @Column({ type: "text", nullable: true })
   businessHoursJson!: string;
 

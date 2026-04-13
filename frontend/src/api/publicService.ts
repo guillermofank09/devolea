@@ -18,6 +18,7 @@ export interface PublicProfile {
   latitude?: number | null;
   longitude?: number | null;
   logoBase64?: string | null;
+  phone?: string | null;
   businessHours: DaySchedule[];
   showTournaments: boolean;
   showCourts: boolean;
