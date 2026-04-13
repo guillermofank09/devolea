@@ -69,6 +69,15 @@ export class AuthService {
     };
   }
 
+  async changePassword(id: number, currentPassword: string, newPassword: string) {
+    const user = await this.repo.findOneBy({ id });
+    if (!user) throw new Error("NOT_FOUND");
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new Error("WRONG_PASSWORD");
+    user.password = await bcrypt.hash(newPassword, 10);
+    await this.repo.save(user);
+  }
+
   async deleteUser(id: number) {
     await this.repo.delete(id);
   }

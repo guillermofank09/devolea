@@ -58,6 +58,18 @@ export async function apiUpdateUser(
   return data;
 }
 
+export async function apiChangePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await axios.put(
+    `${API}/auth/me/password`,
+    { currentPassword, newPassword },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+
 export async function apiDeleteUser(token: string, id: number): Promise<void> {
   await axios.delete(`${API}/auth/users/${id}`, {
     headers: { Authorization: `Bearer ${token}` },

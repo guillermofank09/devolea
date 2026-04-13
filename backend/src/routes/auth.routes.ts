@@ -1,12 +1,15 @@
 import { Router } from "express";
-import { login, createUser, getUsers, updateUser, deleteUser, initSuperAdmin } from "../controllers/auth.controller";
-import { requireSuperAdmin } from "../middleware/auth.middleware";
+import { login, createUser, getUsers, updateUser, deleteUser, initSuperAdmin, changePassword } from "../controllers/auth.controller";
+import { requireAuth, requireSuperAdmin } from "../middleware/auth.middleware";
 
 const router = Router();
 
 // Public
 router.post("/auth/login", login);
 router.post("/auth/init", initSuperAdmin); // One-time: creates superadmin if no users exist
+
+// Authenticated users
+router.put("/auth/me/password", requireAuth, changePassword);
 
 // Superadmin only
 router.get("/auth/users", requireSuperAdmin, getUsers);

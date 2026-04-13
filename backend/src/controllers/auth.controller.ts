@@ -20,7 +20,7 @@ export async function login(req: Request, res: Response) {
     if (err.message === "INVALID_CREDENTIALS") {
       res.status(401).json({ message: "Usuario o contraseña incorrectos." });
     } else if (err.message === "ACCOUNT_DISABLED") {
-      res.status(403).json({ message: "Tu cuenta está deshabilitada. Contactá con el administrador para poder utilizar el sistema." });
+      res.status(403).json({ message: "Tu cuenta está deshabilitada. Contactá al administrador para poder utilizar el sistema." });
     } else {
       res.status(500).json({ message: "Error al iniciar sesión." });
     }
@@ -68,6 +68,24 @@ export async function updateUser(req: Request, res: Response) {
       res.status(404).json({ message: "Usuario no encontrado." });
     } else {
       res.status(500).json({ message: "Error al actualizar el usuario." });
+    }
+  }
+}
+
+export async function changePassword(req: Request, res: Response) {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ message: "La contraseña actual y la nueva son requeridas." });
+    return;
+  }
+  try {
+    await getService().changePassword(req.authUser!.sub, currentPassword, newPassword);
+    res.json({ message: "Contraseña actualizada correctamente." });
+  } catch (err: any) {
+    if (err.message === "WRONG_PASSWORD") {
+      res.status(401).json({ message: "La contraseña actual es incorrecta." });
+    } else {
+      res.status(500).json({ message: "Error al cambiar la contraseña." });
     }
   }
 }

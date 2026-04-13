@@ -9,6 +9,8 @@ import {
   CircularProgress,
   Divider,
   Grid,
+  IconButton,
+  InputAdornment,
   Snackbar,
   TextField,
   Typography,
@@ -18,13 +20,18 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, saveProfile } from "../../api/profileService";
+import { apiChangePassword } from "../../api/authService";
 import type { ClubProfile, DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
 interface NominatimPlace {
@@ -61,7 +68,112 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Password section ─────────────────────────────────────────────────────────
+function PasswordSection({ token }: { token: string }) {
+  const [current, setCurrent]     = useState("");
+  const [next, setNext]           = useState("");
+  const [confirm, setConfirm]     = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNext, setShowNext]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [success, setSuccess]     = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () => apiChangePassword(token, current, next),
+    onSuccess: () => {
+      setCurrent(""); setNext(""); setConfirm("");
+      setError(null);
+      setSuccess(true);
+    },
+    onError: (e: any) => {
+      setError(e?.response?.data?.message ?? "Error al cambiar la contraseña.");
+    },
+  });
+
+  function handleSave() {
+    setError(null);
+    if (next !== confirm) { setError("Las contraseñas nuevas no coinciden."); return; }
+    if (next.length < 6)  { setError("La nueva contraseña debe tener al menos 6 caracteres."); return; }
+    mutation.mutate();
+  }
+
+  function passField(
+    label: string,
+    value: string,
+    setter: (v: string) => void,
+    show: boolean,
+    setShow: (v: boolean) => void,
+  ) {
+    return (
+      <Box>
+        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+          {label}
+        </Typography>
+        <TextField
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={e => setter(e.target.value)}
+          fullWidth
+          size="small"
+          autoComplete="new-password"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" edge="end" onClick={() => setShow(!show)}>
+                    {show ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Box>
+    );
+  }
+
+  return (
+    <Section icon={<LockOutlinedIcon />} title="Cambiar contraseña">
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          {passField("Contraseña actual", current, setCurrent, showCurrent, setShowCurrent)}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          {passField("Nueva contraseña", next, setNext, showNext, setShowNext)}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          {passField("Confirmar nueva contraseña", confirm, setConfirm, showConfirm, setShowConfirm)}
+        </Grid>
+      </Grid>
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>{error}</Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }} onClose={() => setSuccess(false)}>
+          Contraseña actualizada correctamente.
+        </Alert>
+      )}
+
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+        <Button
+          variant="contained"
+          disabled={!current || !next || !confirm || mutation.isPending}
+          onClick={handleSave}
+          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : <SaveOutlinedIcon />}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
+        >
+          {mutation.isPending ? "Guardando…" : "Cambiar contraseña"}
+        </Button>
+      </Box>
+    </Section>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function Profile() {
+  const { token } = useAuth();
   const qc = useQueryClient();
   const { data, isPending, isError } = useQuery<ClubProfile>({
     queryKey: ["clubProfile"],
@@ -344,6 +456,9 @@ export default function Profile() {
       <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
         <BusinessHoursEditor value={hours} onChange={setHours} />
       </Section>
+
+      {/* ── Password ── */}
+      <PasswordSection token={token!} />
 
       {/* ── Save ── */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
