@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
+import { MoreThanOrEqual } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
+import { Player } from "../entities/Player";
+import { Profesor } from "../entities/Profesor";
+import { Tournament } from "../entities/Tournament";
+import { Court } from "../entities/Court";
+import { Booking } from "../entities/Booking";
+import { ClubProfile } from "../entities/ClubProfile";
 import { AuthService } from "../services/auth.service";
 
 function getService() {
@@ -69,6 +76,61 @@ export async function updateUser(req: Request, res: Response) {
     } else {
       res.status(500).json({ message: "Error al actualizar el usuario." });
     }
+  }
+}
+
+export async function getUserStats(req: Request, res: Response) {
+  const userId = Number(req.params.id);
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+
+  try {
+    const [playerCount, profesorCount, tournamentCount, courts, bookings, profile] = await Promise.all([
+      AppDataSource.getRepository(Player).count({ where: { userId } }),
+      AppDataSource.getRepository(Profesor).count({ where: { userId } }),
+      AppDataSource.getRepository(Tournament).count({ where: { userId, status: "ACTIVE" } }),
+      AppDataSource.getRepository(Court).find({ where: { userId } }),
+      AppDataSource.getRepository(Booking).find({
+        where: { userId, status: "CONFIRMED", startTime: MoreThanOrEqual(since) },
+        relations: ["court"],
+      }),
+      AppDataSource.getRepository(ClubProfile).findOneBy({ userId }),
+    ]);
+
+    // Average open hours/day from business hours profile (default 14h = 8am-10pm)
+    let hoursPerDay = 14;
+    if (profile?.businessHoursJson) {
+      try {
+        const bh: Array<{ isOpen?: boolean; openTime?: string; closeTime?: string }> = JSON.parse(profile.businessHoursJson);
+        const openDays = bh.filter(d => d.isOpen);
+        if (openDays.length > 0) {
+          const total = openDays.reduce((sum, d) => {
+            const [oh, om] = (d.openTime ?? "08:00").split(":").map(Number);
+            const [ch, cm] = (d.closeTime ?? "22:00").split(":").map(Number);
+            return sum + ((ch * 60 + cm) - (oh * 60 + om)) / 60;
+          }, 0);
+          hoursPerDay = total / openDays.length;
+        }
+      } catch { /* keep default */ }
+    }
+
+    const availableHours = hoursPerDay * 30;
+
+    const courtStats = courts.map(court => {
+      const bookedHours = bookings
+        .filter(b => b.court?.id === court.id)
+        .reduce((sum, b) => sum + (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) / 3_600_000, 0);
+      return {
+        id: court.id,
+        name: court.name,
+        bookedHours: Math.round(bookedHours * 10) / 10,
+        occupancyPct: Math.min(100, Math.round((bookedHours / availableHours) * 100)),
+      };
+    });
+
+    res.json({ playerCount, profesorCount, tournamentCount, courts: courtStats });
+  } catch {
+    res.status(500).json({ message: "Error al obtener métricas del usuario." });
   }
 }
 

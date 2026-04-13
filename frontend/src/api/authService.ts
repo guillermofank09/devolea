@@ -58,6 +58,20 @@ export async function apiUpdateUser(
   return data;
 }
 
+export interface UserStats {
+  playerCount: number;
+  profesorCount: number;
+  tournamentCount: number;
+  courts: Array<{ id: number; name: string; bookedHours: number; occupancyPct: number }>;
+}
+
+export async function apiGetUserStats(token: string, userId: number): Promise<UserStats> {
+  const { data } = await axios.get<UserStats>(`${API}/auth/users/${userId}/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
 export async function apiImpersonate(token: string, userId: number): Promise<AuthResponse> {
   const { data } = await axios.post<AuthResponse>(
     `${API}/auth/impersonate/${userId}`,

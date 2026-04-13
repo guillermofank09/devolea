@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, createUser, getUsers, updateUser, deleteUser, initSuperAdmin, changePassword, impersonateUser } from "../controllers/auth.controller";
+import { login, createUser, getUsers, updateUser, deleteUser, initSuperAdmin, changePassword, impersonateUser, getUserStats } from "../controllers/auth.controller";
 import { requireAuth, requireSuperAdmin } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -11,6 +11,7 @@ router.post("/auth/init", initSuperAdmin); // One-time: creates superadmin if no
 // Authenticated users
 router.put("/auth/me/password", requireAuth, changePassword);
 router.post("/auth/impersonate/:id", requireSuperAdmin, impersonateUser);
+router.get("/auth/users/:id/stats", requireSuperAdmin, getUserStats);
 
 // Superadmin only
 router.get("/auth/users", requireSuperAdmin, getUsers);

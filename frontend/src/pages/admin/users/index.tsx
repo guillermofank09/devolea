@@ -24,11 +24,15 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGetUsers, apiCreateUser, apiDeleteUser, apiUpdateUser } from "../../../api/authService";
-import type { AdminUser } from "../../../api/authService";
+import { apiGetUsers, apiCreateUser, apiDeleteUser, apiUpdateUser, apiGetUserStats } from "../../../api/authService";
+import type { AdminUser, UserStats } from "../../../api/authService";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../../../components/common/PageHeader";
@@ -239,6 +243,63 @@ function CreateUserDialog({ open, onClose, token }: { open: boolean; onClose: ()
   );
 }
 
+// ─── User stats metrics ───────────────────────────────────────────────────────
+
+function OccupancyBar({ pct, name }: { pct: number; name: string }) {
+  const color = pct >= 80 ? "#ef5350" : pct >= 50 ? "#F5AD27" : "#66bb6a";
+  return (
+    <Box sx={{ minWidth: 80 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.25 }}>
+        <Typography sx={{ fontSize: "0.65rem", color: "text.secondary", fontWeight: 500 }} noWrap>{name}</Typography>
+        <Typography sx={{ fontSize: "0.65rem", fontWeight: 700, color }}>{pct}%</Typography>
+      </Box>
+      <Box sx={{ height: 5, borderRadius: 3, bgcolor: "grey.100", overflow: "hidden" }}>
+        <Box sx={{ height: "100%", width: `${pct}%`, bgcolor: color, borderRadius: 3, transition: "width 500ms ease" }} />
+      </Box>
+    </Box>
+  );
+}
+
+function UserMetrics({ stats }: { stats: UserStats }) {
+  return (
+    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", gap: { xs: 1.5, md: 3 }, flexWrap: "wrap", alignItems: "flex-start" }}>
+      {/* Counts */}
+      <Box sx={{ display: "flex", gap: 2 }}>
+        {[
+          { icon: <PeopleOutlineIcon sx={{ fontSize: 14 }} />, label: "Jugadores", value: stats.playerCount },
+          { icon: <SchoolOutlinedIcon sx={{ fontSize: 14 }} />, label: "Profesores", value: stats.profesorCount },
+          { icon: <EmojiEventsOutlinedIcon sx={{ fontSize: 14 }} />, label: "Torneos activos", value: stats.tournamentCount },
+        ].map(({ icon, label, value }) => (
+          <Box key={label} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.25, minWidth: 56 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, color: "text.secondary" }}>
+              {icon}
+              <Typography sx={{ fontSize: "0.65rem", color: "text.disabled", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                {label}
+              </Typography>
+            </Box>
+            <Typography variant="h6" fontWeight={800} sx={{ fontSize: "1.1rem", lineHeight: 1 }}>{value}</Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Court occupancy bars */}
+      {stats.courts.length > 0 && (
+        <Box sx={{ flex: 1, minWidth: 180 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.75 }}>
+            <SportsTennisIcon sx={{ fontSize: 13, color: "text.disabled" }} />
+            <Typography sx={{ fontSize: "0.65rem", color: "text.disabled", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Ocupación canchas — últimos 30 días
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            {stats.courts.map(c => <OccupancyBar key={c.id} name={c.name} pct={c.occupancyPct} />)}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 // ─── User row ─────────────────────────────────────────────────────────────────
 
 function UserRow({
@@ -257,6 +318,13 @@ function UserRow({
   const queryClient = useQueryClient();
   const { impersonate } = useAuth();
   const navigate = useNavigate();
+
+  const { data: stats } = useQuery<UserStats>({
+    queryKey: ["userStats", user.id],
+    queryFn: () => apiGetUserStats(token, user.id),
+    enabled: user.role !== "superadmin",
+    staleTime: 60_000,
+  });
 
   const impersonateMutation = useMutation({
     mutationFn: () => impersonate(user.id),
@@ -349,6 +417,9 @@ function UserRow({
               </Box>
             )}
           </Box>
+
+          {/* Stats metrics */}
+          {stats && <UserMetrics stats={stats} />}
         </Box>
 
         {/* Actions */}
