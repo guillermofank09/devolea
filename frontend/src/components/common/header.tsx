@@ -64,7 +64,7 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
         )}
 
         {/* Logo */}
-        <img src={logo} alt="Devolea" className="header-logo" />
+        <img src={logo} alt="Devolea" className="header-logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
 
         {/* Push user menu to the right */}
         <div className="header-spacer" />
