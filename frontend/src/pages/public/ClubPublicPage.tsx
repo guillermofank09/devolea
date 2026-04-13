@@ -408,18 +408,19 @@ function dateKey(d: Date): string {
 }
 
 function CourtCalendar({
-  court, bookings, businessHours, weekDays, selectedDayIdx, hideCourtName,
+  court, bookings, businessHours, days, selectedDayIdx, hideCourtName,
 }: {
   court: PublicCourt;
   bookings: PublicBookingSlot[];
   businessHours: DaySchedule[];
-  weekDays: Date[];
+  days: Date[];
   selectedDayIdx: number;
   hideCourtName?: boolean;
 }) {
-  // Per-day schedule info indexed 0=Mon … 6=Sun (same order as DAYS array)
-  const daySchedules = DAYS.map(dayName => {
-    const schedule = businessHours.find(h => h.day === dayName);
+  // Per-displayed-day schedule, keyed by actual day-of-week
+  const daySchedules = days.map(d => {
+    const dow = (d.getDay() + 6) % 7; // 0=Mon…6=Sun
+    const schedule = businessHours.find(h => h.day === DAYS[dow]);
     const isClosed = schedule != null && schedule.isOpen === false;
     return {
       isClosed,
@@ -428,11 +429,10 @@ function CourtCalendar({
     };
   });
 
-  // Global open/close to determine the row range shown
-  const allOpen  = daySchedules.filter(d => !d.isClosed).map(d => d.openMin!);
-  const allClose = daySchedules.filter(d => !d.isClosed).map(d => d.closeMin!);
-  const globalOpen  = allOpen.length  ? Math.min(...allOpen)  : parseHHMM("08:00");
-  const globalClose = allClose.length ? Math.max(...allClose) : parseHHMM("22:00");
+  // Global open/close range across all business hours for consistent row set
+  const allBH = businessHours.filter(h => h.isOpen !== false);
+  const globalOpen  = allBH.length ? Math.min(...allBH.map(h => parseHHMM(h.openTime  ?? "08:00"))) : parseHHMM("08:00");
+  const globalClose = allBH.length ? Math.max(...allBH.map(h => parseHHMM(h.closeTime ?? "22:00"))) : parseHHMM("22:00");
 
   const slots: number[] = [];
   for (let m = globalOpen; m < globalClose; m += SLOT_MIN) slots.push(m);
@@ -469,37 +469,38 @@ function CourtCalendar({
         </Typography>
       )}
 
-      {/* ── Desktop: full 7-column weekly grid ── */}
+      {/* ── Desktop: 3-column grid ── */}
       <Box sx={{ display: { xs: "none", md: "block" }, overflowX: "auto" }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "44px repeat(7, minmax(38px, 1fr))", minWidth: 340 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: `48px repeat(${days.length}, 1fr)`, minWidth: 320 }}>
           {/* Header row */}
-          <Box sx={{ height: 32 }} />
-          {weekDays.map((day, di) => {
+          <Box sx={{ height: 40 }} />
+          {days.map(day => {
             const dk = dateKey(day);
+            const dow = (day.getDay() + 6) % 7;
             const isToday = dk === todayDk;
             return (
-              <Box key={dk} sx={{ height: 32, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", bgcolor: isToday ? "#e3f2fd" : "transparent", borderRadius: "4px 4px 0 0", borderBottom: "1px solid", borderColor: "divider" }}>
-                <Typography variant="caption" fontWeight={isToday ? 700 : 500} sx={{ fontSize: "0.65rem", lineHeight: 1.2 }}>{DAY_ABBREVS[di]}</Typography>
-                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "text.secondary", lineHeight: 1.1 }}>{day.getDate()}</Typography>
+              <Box key={dk} sx={{ height: 40, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", bgcolor: isToday ? "#e3f2fd" : "transparent", borderRadius: "6px 6px 0 0", borderBottom: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" fontWeight={isToday ? 700 : 500} sx={{ fontSize: "0.75rem", lineHeight: 1.3 }}>{DAY_ABBREVS[dow]}</Typography>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.secondary", lineHeight: 1.2 }}>{day.getDate()}</Typography>
               </Box>
             );
           })}
           {/* Slot rows */}
           {slots.map(slotMin => (
             <Fragment key={slotMin}>
-              <Box sx={{ height: 26, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 0.75, borderRight: "1px solid", borderColor: "divider" }}>
-                <Typography variant="caption" sx={{ fontSize: "0.6rem", color: "text.disabled", whiteSpace: "nowrap" }}>
+              <Box sx={{ height: 34, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" sx={{ fontSize: "0.68rem", color: "text.disabled", whiteSpace: "nowrap" }}>
                   {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
                 </Typography>
               </Box>
-              {weekDays.map((day, di) => {
+              {days.map((day, di) => {
                 const dk = dateKey(day);
                 const { isClosed, openMin, closeMin } = daySchedules[di];
                 const outside = isClosed || openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
                 const isToday = dk === todayDk;
                 return (
-                  <Box key={dk} sx={{ height: 26, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: isToday ? "#bbdefb" : "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                  <Box key={dk} sx={{ height: 34, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: isToday ? "#bbdefb" : "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
                 );
               })}
             </Fragment>
@@ -510,25 +511,25 @@ function CourtCalendar({
       {/* ── Mobile: single-day column (day chosen via chips above) ── */}
       <Box sx={{ display: { xs: "block", md: "none" } }}>
         {(() => {
-          const day = weekDays[selectedDayIdx];
+          const day = days[selectedDayIdx];
           const dk  = dateKey(day);
           const { isClosed, openMin, closeMin } = daySchedules[selectedDayIdx];
           if (isClosed) {
             return <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>Cerrado este día.</Typography>;
           }
           return (
-            <Box sx={{ display: "grid", gridTemplateColumns: "44px 1fr" }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "48px 1fr" }}>
               {slots.map(slotMin => {
                 const outside = openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
                 return (
                   <Fragment key={slotMin}>
-                    <Box sx={{ height: 36, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
-                      <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.disabled", whiteSpace: "nowrap" }}>
+                    <Box sx={{ height: 40, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
+                      <Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.disabled", whiteSpace: "nowrap" }}>
                         {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
                       </Typography>
                     </Box>
-                    <Box sx={{ height: 36, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                    <Box sx={{ height: 40, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
                   </Fragment>
                 );
               })}
@@ -540,18 +541,20 @@ function CourtCalendar({
   );
 }
 
+const WINDOW_SIZE = 3;
+
 function CourtsSection({ username, businessHours }: { username: string; businessHours: DaySchedule[] }) {
-  const todayDayIdx = (new Date().getDay() + 6) % 7; // 0=Mon…6=Sun
-  const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()));
-  const [selectedDayIdx, setSelectedDayIdx] = useState(todayDayIdx);
+  const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
+  const [windowStart, setWindowStart] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+  const [selectedDayIdx, setSelectedDayIdx] = useState(0);
   const [selectedCourtId, setSelectedCourtId] = useState<number | null>(null);
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const from = weekStart.toISOString();
-  const to   = addDays(weekStart, 7).toISOString();
+  const days = Array.from({ length: WINDOW_SIZE }, (_, i) => addDays(windowStart, i));
+  const from = windowStart.toISOString();
+  const to   = addDays(windowStart, WINDOW_SIZE).toISOString();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["publicCourts", username, dateKey(weekStart)],
+    queryKey: ["publicCourts", username, dateKey(windowStart)],
     queryFn:  () => fetchPublicCourts(username, from, to),
     enabled:  !!username,
   });
@@ -563,15 +566,15 @@ function CourtsSection({ username, businessHours }: { username: string; business
     }
   }, [data, selectedCourtId]);
 
-  const shiftWeek = (delta: number) => {
-    setWeekStart(prev => addDays(prev, delta * 7));
+  const shiftWindow = (delta: number) => {
+    setWindowStart(prev => addDays(prev, delta * WINDOW_SIZE));
     setSelectedDayIdx(0);
   };
 
-  const isCurrentWeek = dateKey(weekStart) === dateKey(getMondayOfWeek(new Date()));
-  const fromLabel = weekDays[0].toLocaleDateString("es-AR", { day: "numeric", month: "short" });
-  const toLabel   = weekDays[6].toLocaleDateString("es-AR", { day: "numeric", month: "short" });
-  const todayDk   = dateKey(new Date());
+  const todayDk    = dateKey(todayStart);
+  const isAtToday  = dateKey(windowStart) === todayDk;
+  const fromLabel  = days[0].toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" });
+  const toLabel    = days[WINDOW_SIZE - 1].toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" });
 
   const activeCourt = data?.courts.find(c => c.id === selectedCourtId) ?? data?.courts[0] ?? null;
 
@@ -595,38 +598,46 @@ function CourtsSection({ username, businessHours }: { username: string; business
       </Box>
 
       <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
-        {/* Week navigation */}
+        {/* Day-window navigation */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IconButton size="small" onClick={() => shiftWeek(-1)}><ChevronLeftIcon /></IconButton>
-            <Typography variant="body2" fontWeight={600} sx={{ flex: 1, textAlign: "center" }}>
+            <IconButton size="small" onClick={() => shiftWindow(-1)} disabled={isAtToday} sx={{ opacity: isAtToday ? 0.3 : 1 }}>
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="body2" fontWeight={600} sx={{ flex: 1, textAlign: "center", textTransform: "capitalize" }}>
               {fromLabel} — {toLabel}
             </Typography>
-            <IconButton size="small" onClick={() => shiftWeek(1)}><ChevronRightIcon /></IconButton>
+            <IconButton size="small" onClick={() => shiftWindow(1)}><ChevronRightIcon /></IconButton>
           </Box>
-          {!isCurrentWeek && (
+          {!isAtToday && (
             <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <Chip label="Volver a semana actual" size="small" onClick={() => { setWeekStart(getMondayOfWeek(new Date())); setSelectedDayIdx(todayDayIdx); }} sx={{ fontSize: "0.72rem", cursor: "pointer" }} />
+              <Chip
+                label="Volver a hoy"
+                size="small"
+                onClick={() => { setWindowStart(todayStart); setSelectedDayIdx(0); }}
+                sx={{ fontSize: "0.72rem", cursor: "pointer" }}
+              />
             </Box>
           )}
         </Box>
 
-        {/* Mobile: day selector chips */}
-        <Box sx={{ display: { xs: "flex", md: "none" }, gap: 0.75, overflowX: "auto", pb: 0.5, mb: 2, scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } }}>
-          {weekDays.map((day, di) => {
+        {/* Mobile: 3-day selector chips */}
+        <Box sx={{ display: { xs: "flex", md: "none" }, gap: 0.75, mb: 2 }}>
+          {days.map((day, di) => {
             const dk = dateKey(day);
+            const dow = (day.getDay() + 6) % 7;
             const isToday = dk === todayDk;
             const isSelected = di === selectedDayIdx;
             return (
               <Box
                 key={di}
                 onClick={() => setSelectedDayIdx(di)}
-                sx={{ flexShrink: 0, width: 44, height: 52, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 2, cursor: "pointer", bgcolor: isSelected ? "primary.main" : isToday ? "#e3f2fd" : "grey.100", border: "1px solid", borderColor: isSelected ? "primary.main" : isToday ? "primary.light" : "transparent", transition: "all 150ms ease" }}
+                sx={{ flex: 1, height: 56, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 2, cursor: "pointer", bgcolor: isSelected ? "primary.main" : isToday ? "#e3f2fd" : "grey.100", border: "1px solid", borderColor: isSelected ? "primary.main" : isToday ? "primary.light" : "transparent", transition: "all 150ms ease" }}
               >
-                <Typography sx={{ fontSize: "0.6rem", fontWeight: 600, lineHeight: 1.2, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.secondary", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                  {DAY_ABBREVS[di]}
+                <Typography sx={{ fontSize: "0.62rem", fontWeight: 600, lineHeight: 1.2, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.secondary", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  {DAY_ABBREVS[dow]}
                 </Typography>
-                <Typography sx={{ fontSize: "0.88rem", fontWeight: isSelected || isToday ? 700 : 400, lineHeight: 1.3, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.primary" }}>
+                <Typography sx={{ fontSize: "1rem", fontWeight: isSelected || isToday ? 700 : 400, lineHeight: 1.3, color: isSelected ? "#fff" : isToday ? "primary.main" : "text.primary" }}>
                   {day.getDate()}
                 </Typography>
               </Box>
@@ -654,7 +665,7 @@ function CourtsSection({ username, businessHours }: { username: string; business
               court={activeCourt}
               bookings={data.bookings}
               businessHours={businessHours}
-              weekDays={weekDays}
+              days={days}
               selectedDayIdx={selectedDayIdx}
               hideCourtName
             />
