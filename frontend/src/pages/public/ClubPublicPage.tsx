@@ -806,25 +806,19 @@ const ALL_NAV_ITEMS: PublicNavItem[] = [
   { id: "section-profesores", label: "Profesores", Icon: SchoolOutlinedIcon },
 ];
 
-// ─── public page sidebar (desktop) ───────────────────────────────────────────
+// ─── public page sidebar — nav only (desktop) ────────────────────────────────
 
 interface PublicSidebarProps {
   items: PublicNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
-  clubName: string;
-  address?: string;
-  logoBase64?: string | null;
-  mapUrl: string | null;
-  businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
 }
 
-function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoBase64, mapUrl, businessHours }: PublicSidebarProps) {
-  const navigate = useNavigate();
+function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
   return (
     <Box
       sx={{
-        width: 260,
+        width: 200,
         flexShrink: 0,
         bgcolor: "#111",
         display: { xs: "none", md: "flex" },
@@ -832,55 +826,11 @@ function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoB
         position: "sticky",
         top: 0,
         height: "100vh",
-        overflowY: "auto",
         borderRight: "1px solid rgba(255,255,255,0.06)",
-        scrollbarWidth: "thin",
-        scrollbarColor: "rgba(255,255,255,0.1) transparent",
-        "&::-webkit-scrollbar": { width: 4 },
-        "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.12)", borderRadius: "4px" },
       }}
     >
-      {/* Club identity */}
-      <Box sx={{ px: 2.5, pt: 3, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-        <Box
-          onClick={() => navigate("/")}
-          sx={{ cursor: "pointer", mb: 2, "&:hover": { opacity: 0.85 }, transition: "opacity 150ms ease" }}
-        >
-          {logoBase64 ? (
-            <Box
-              component="img"
-              src={logoBase64}
-              alt="logo"
-              sx={{ width: 72, height: 72, borderRadius: 2.5, objectFit: "contain", border: "1px solid rgba(255,255,255,0.1)", display: "block", bgcolor: "#1a1a1a" }}
-            />
-          ) : (
-            <Box sx={{ width: 72, height: 72, borderRadius: 2.5, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <SportsTennisIcon sx={{ fontSize: 34, color: "#111" }} />
-            </Box>
-          )}
-        </Box>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#e8eaf0", lineHeight: 1.25 }}>
-          {clubName || "Club de Pádel"}
-        </Typography>
-        {address && (
-          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 0.5, mt: 0.75 }}>
-            <LocationOnIcon sx={{ fontSize: 13, color: "#6b7a99", mt: "2px", flexShrink: 0 }} />
-            <Typography variant="caption" sx={{ color: "#6b7a99", lineHeight: 1.4 }}>{address}</Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Map */}
-      {mapUrl && (
-        <Box sx={{ mx: 2, mb: 2, borderRadius: 2, overflow: "hidden", height: 140, flexShrink: 0, border: "1px solid rgba(255,255,255,0.08)" }}>
-          <Box component="iframe" src={mapUrl} title="Ubicación del club" sx={{ width: "100%", height: "100%", border: 0, display: "block" }} loading="lazy" />
-        </Box>
-      )}
-
-      <Box sx={{ mx: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }} />
-
       {/* Section navigation */}
-      <Box sx={{ px: 1.5, py: 2, display: "flex", flexDirection: "column", gap: "3px" }}>
+      <Box sx={{ px: 1.5, pt: 3, pb: 2, display: "flex", flexDirection: "column", gap: "3px" }}>
         {items.map(({ id, label, Icon }) => {
           const active = activeId === id;
           return (
@@ -912,39 +862,113 @@ function PublicPageSidebar({ items, activeId, onSelect, clubName, address, logoB
             >
               <Box
                 sx={{
-                  width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0, borderRadius: "9px",
                   bgcolor: active ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.04)",
                   transition: "background 150ms ease",
                 }}
               >
-                <Icon sx={{ fontSize: 18 }} />
+                <Icon sx={{ fontSize: 17 }} />
               </Box>
               {label}
             </Box>
           );
         })}
       </Box>
+    </Box>
+  );
+}
+
+// ─── club info panel (desktop right) ─────────────────────────────────────────
+
+interface ClubInfoPanelProps {
+  clubName: string;
+  address?: string;
+  logoBase64?: string | null;
+  mapUrl: string | null;
+  businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
+}
+
+function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }: ClubInfoPanelProps) {
+  const navigate = useNavigate();
+  return (
+    <Box
+      sx={{
+        width: 270,
+        flexShrink: 0,
+        display: { xs: "none", md: "flex" },
+        flexDirection: "column",
+        position: "sticky",
+        top: 0,
+        height: "100vh",
+        overflowY: "auto",
+        borderLeft: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
+        scrollbarWidth: "thin",
+        "&::-webkit-scrollbar": { width: 4 },
+        "&::-webkit-scrollbar-thumb": { background: "rgba(0,0,0,0.12)", borderRadius: "4px" },
+      }}
+    >
+      {/* Club identity */}
+      <Box sx={{ px: 3, pt: 3.5, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        <Box
+          onClick={() => navigate("/")}
+          sx={{ cursor: "pointer", mb: 2, "&:hover": { opacity: 0.85 }, transition: "opacity 150ms ease" }}
+        >
+          {logoBase64 ? (
+            <Box
+              component="img"
+              src={logoBase64}
+              alt="logo"
+              sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: "1px solid", borderColor: "divider", display: "block", bgcolor: "grey.50" }}
+            />
+          ) : (
+            <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <SportsTennisIcon sx={{ fontSize: 38, color: "#111" }} />
+            </Box>
+          )}
+        </Box>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.25 }}>
+          {clubName || "Club de Pádel"}
+        </Typography>
+        {address && (
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 0.5, mt: 0.75 }}>
+            <LocationOnIcon sx={{ fontSize: 13, color: "text.secondary", mt: "2px", flexShrink: 0 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>{address}</Typography>
+          </Box>
+        )}
+      </Box>
+
+      {/* Map */}
+      {mapUrl && (
+        <>
+          <Box sx={{ mx: 2.5, borderTop: "1px solid", borderColor: "divider" }} />
+          <Box sx={{ mx: 2.5, my: 2, borderRadius: 2, overflow: "hidden", height: 160, flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+            <Box component="iframe" src={mapUrl} title="Ubicación del club" sx={{ width: "100%", height: "100%", border: 0, display: "block" }} loading="lazy" />
+          </Box>
+        </>
+      )}
 
       {/* Business hours */}
       {businessHours.some(h => h.isOpen) && (
         <>
-          <Box sx={{ mx: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+          <Box sx={{ mx: 2.5, borderTop: "1px solid", borderColor: "divider" }} />
           <Box sx={{ px: 2.5, py: 2.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-              <AccessTimeIcon sx={{ fontSize: 15, color: "#6b7a99" }} />
-              <Typography sx={{ color: "#6b7a99", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem" }}>
+              <AccessTimeIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+              <Typography sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem", color: "text.secondary" }}>
                 Horarios
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.6 }}>
               {DAYS.map(day => {
                 const sched = businessHours.find(h => h.day === day);
                 if (!sched?.isOpen) return null;
                 return (
                   <Box key={day} sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                    <Typography sx={{ color: "#e8eaf0", fontWeight: 600, fontSize: "0.75rem" }}>{day.slice(0, 3)}</Typography>
-                    <Typography sx={{ color: "#6b7a99", fontSize: "0.75rem" }}>{sched.openTime}–{sched.closeTime}</Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.78rem" }}>{day.slice(0, 3)}</Typography>
+                    <Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>{sched.openTime}–{sched.closeTime}</Typography>
                   </Box>
                 );
               })}
@@ -1151,16 +1175,11 @@ export default function ClubPublicPage() {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "grey.50" }}>
 
-      {/* ── Left sidebar (desktop) ── */}
+      {/* ── Left sidebar — nav only (desktop) ── */}
       <PublicPageSidebar
         items={visibleNavItems}
         activeId={activeSection}
         onSelect={handleNavSelect}
-        clubName={profile.clubName}
-        address={profile.address}
-        logoBase64={profile.logoBase64}
-        mapUrl={mapUrl}
-        businessHours={profile.businessHours}
       />
 
       {/* ── Main content ── */}
@@ -1234,6 +1253,15 @@ export default function ClubPublicPage() {
           </Box>
         </Box>
       </Box>
+
+      {/* ── Right panel — club info (desktop) ── */}
+      <ClubInfoPanel
+        clubName={profile.clubName}
+        address={profile.address}
+        logoBase64={profile.logoBase64}
+        mapUrl={mapUrl}
+        businessHours={profile.businessHours}
+      />
 
       {/* ── Mobile bottom nav ── */}
       <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} />
