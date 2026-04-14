@@ -1,4 +1,4 @@
-import { Repository, Like } from "typeorm";
+import { Repository, ILike } from "typeorm";
 import { Player, PlayerCategory, PlayerSex } from "../entities/Player";
 
 export interface CreatePlayerDto {
@@ -20,7 +20,7 @@ export class PlayerService {
 
   async getAll(userId: number, search?: string): Promise<Player[]> {
     const where: any = { userId };
-    if (search) where.name = Like(`%${search}%`);
+    if (search) where.name = ILike(`%${search}%`);
     return await this.repo.find({ where, order: { name: "ASC" } });
   }
 

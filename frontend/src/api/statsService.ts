@@ -52,6 +52,7 @@ export interface ProfesorBillingEntry {
   name: string;
   ownRate: number | null;
   effectiveRate: number;
+  classHourlyRate: number;
   monthlyClasses: number;
   monthlyHours: number;
   monthlyRevenue: number;
@@ -62,5 +63,17 @@ export interface ProfesorBillingEntry {
 
 export async function fetchProfesorStats(): Promise<ProfesorBillingEntry[]> {
   const { data } = await axios.get<ProfesorBillingEntry[]>(`${API}/stats/profesores`);
+  return data;
+}
+
+export interface PlayerCategoryEntry {
+  category: string;
+  masculino: number;
+  femenino: number;
+  total: number;
+}
+
+export async function fetchPlayerStats(): Promise<PlayerCategoryEntry[]> {
+  const { data } = await axios.get<PlayerCategoryEntry[]>(`${API}/stats/players`);
   return data;
 }

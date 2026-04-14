@@ -265,215 +265,221 @@ export default function Profile() {
   }
 
   return (
-    <Box maxWidth={760}>
+    <Box>
       <PageHeader title="Gestión de Perfil" subtitle="Información del club y configuración general" />
 
-      {/* ── Club info ── */}
-      <Section icon={<StorefrontOutlinedIcon />} title="Información del Club">
-        <Grid container spacing={3} alignItems="flex-start">
-          <Grid size={{ xs: 12, sm: 8 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-              Nombre del club
-            </Typography>
-            <TextField
-              fullWidth
-              placeholder="Ej. Club de Pádel Devolea"
-              value={clubName}
-              onChange={e => setClubName(e.target.value)}
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <PhoneField
-              value={phone}
-              onChange={setPhone}
-              label="Teléfono / WhatsApp"
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-              Logotipo
-            </Typography>
-            <Box
-              component="label"
-              sx={{
-                width: "100%",
-                height: 90,
-                border: "2px dashed",
-                borderColor: "divider",
-                borderRadius: 2,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 0.5,
-                cursor: "pointer",
-                overflow: "hidden",
-                transition: "border-color 150ms",
-                "&:hover": { borderColor: "text.secondary" },
-              }}
-            >
-              {logoBase64 ? (
-                <Box
-                  component="img"
-                  src={logoBase64}
-                  alt="logo"
-                  sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+      <Grid container spacing={3} alignItems="flex-start">
+        {/* ── Left column ── */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          {/* ── Club info ── */}
+          <Section icon={<StorefrontOutlinedIcon />} title="Información del Club">
+            <Grid container spacing={3} alignItems="flex-start">
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                  Nombre del club
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Ej. Club de Pádel Devolea"
+                  value={clubName}
+                  onChange={e => setClubName(e.target.value)}
+                  size="small"
                 />
-              ) : (
-                <>
-                  <UploadIcon sx={{ color: "text.disabled", fontSize: 22 }} />
-                  <Typography variant="caption" color="text.disabled" textAlign="center" lineHeight={1.3}>
-                    Subir imagen
-                  </Typography>
-                </>
-              )}
-              <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
-            </Box>
-            {logoBase64 && (
-              <Button
-                size="small"
-                color="error"
-                onClick={() => setLogoBase64("")}
-                sx={{ textTransform: "none", mt: 0.5, fontSize: "0.72rem" }}
-              >
-                Eliminar logo
-              </Button>
-            )}
-          </Grid>
-        </Grid>
-      </Section>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <PhoneField
+                  value={phone}
+                  onChange={setPhone}
+                  label="Teléfono / WhatsApp"
+                />
+              </Grid>
 
-      {/* ── Location ── */}
-      <Section icon={<LocationOnOutlinedIcon />} title="Ubicación">
-        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-          Dirección del club
-        </Typography>
-
-        {/* ── Embedded map ── */}
-        {lat && lng && (
-          <Box
-            sx={{
-              mb: 2,
-              borderRadius: 2,
-              overflow: "hidden",
-              border: "1.5px solid",
-              borderColor: "divider",
-              height: 220,
-              position: "relative",
-            }}
-          >
-            <iframe
-              title="Ubicación del club"
-              width="100%"
-              height="100%"
-              style={{ border: 0, display: "block" }}
-              src={
-                `https://www.openstreetmap.org/export/embed.html` +
-                `?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}` +
-                `&layer=mapnik&marker=${lat},${lng}`
-              }
-              loading="lazy"
-            />
-            <Box
-              component="a"
-              href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                position: "absolute",
-                bottom: 6,
-                right: 6,
-                bgcolor: "rgba(255,255,255,0.9)",
-                borderRadius: 1,
-                px: 1,
-                py: 0.25,
-                fontSize: "0.65rem",
-                color: "text.secondary",
-                textDecoration: "none",
-                backdropFilter: "blur(4px)",
-                "&:hover": { color: "primary.main" },
-              }}
-            >
-              Ver en OpenStreetMap ↗
-            </Box>
-          </Box>
-        )}
-
-        <Autocomplete
-          freeSolo
-          options={addrOptions}
-          getOptionLabel={opt => (typeof opt === "string" ? opt : opt.display_name)}
-          loading={addrLoading}
-          value={addrValue}
-          inputValue={addrInput}
-          filterOptions={x => x}   // disable built-in filter — Nominatim handles it
-          onInputChange={(_, val, reason) => {
-            setAddrInput(val);
-            if (reason === "input") {
-              // clear coordinates when user is typing a new address
-              setAddress(val);
-              setLat(null);
-              setLng(null);
-              setAddrValue(null);
-            }
-          }}
-          onChange={(_, opt) => {
-            if (!opt || typeof opt === "string") return;
-            setAddrValue(opt);
-            setAddress(opt.display_name);
-            setAddrInput(opt.display_name);
-            setLat(parseFloat(opt.lat));
-            setLng(parseFloat(opt.lon));
-          }}
-          renderInput={params => (
-            <TextField
-              {...params}
-              placeholder="Buscá la dirección del club…"
-              size="small"
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  endAdornment: (
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                  Logotipo
+                </Typography>
+                <Box
+                  component="label"
+                  sx={{
+                    width: "100%",
+                    height: 90,
+                    border: "2px dashed",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.5,
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    transition: "border-color 150ms",
+                    "&:hover": { borderColor: "text.secondary" },
+                  }}
+                >
+                  {logoBase64 ? (
+                    <Box
+                      component="img"
+                      src={logoBase64}
+                      alt="logo"
+                      sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+                    />
+                  ) : (
                     <>
-                      {addrLoading && <CircularProgress size={16} sx={{ mr: 1 }} />}
-                      {params.InputProps.endAdornment}
+                      <UploadIcon sx={{ color: "text.disabled", fontSize: 22 }} />
+                      <Typography variant="caption" color="text.disabled" textAlign="center" lineHeight={1.3}>
+                        Subir imagen
+                      </Typography>
                     </>
-                  ),
-                },
-                formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
-              }}
-              helperText={
-                lat && lng
-                  ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`
-                  : "Escribí para buscar con OpenStreetMap (Nominatim)"
-              }
-            />
-          )}
-          renderOption={(props, option) => (
-            <li {...props} key={option.place_id}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start", py: 0.25 }}>
-                <LocationOnOutlinedIcon sx={{ fontSize: 15, mt: 0.3, color: "text.secondary", flexShrink: 0 }} />
-                <Typography variant="body2" sx={{ lineHeight: 1.4 }}>{option.display_name}</Typography>
+                  )}
+                  <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
+                </Box>
+                {logoBase64 && (
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => setLogoBase64("")}
+                    sx={{ textTransform: "none", mt: 0.5, fontSize: "0.72rem" }}
+                  >
+                    Eliminar logo
+                  </Button>
+                )}
+              </Grid>
+            </Grid>
+          </Section>
+          {/* ── Business hours ── */}
+          <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
+            <BusinessHoursEditor value={hours} onChange={setHours} />
+          </Section>
+
+        </Grid>
+
+        {/* ── Right column ── */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          {/* ── Location ── */}
+          <Section icon={<LocationOnOutlinedIcon />} title="Ubicación">
+            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+              Dirección del club
+            </Typography>
+
+            {lat && lng && (
+              <Box
+                sx={{
+                  mb: 2,
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  border: "1.5px solid",
+                  borderColor: "divider",
+                  height: 220,
+                  position: "relative",
+                }}
+              >
+                <iframe
+                  title="Ubicación del club"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: "block" }}
+                  src={
+                    `https://www.openstreetmap.org/export/embed.html` +
+                    `?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}` +
+                    `&layer=mapnik&marker=${lat},${lng}`
+                  }
+                  loading="lazy"
+                />
+                <Box
+                  component="a"
+                  href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    position: "absolute",
+                    bottom: 6,
+                    right: 6,
+                    bgcolor: "rgba(255,255,255,0.9)",
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.25,
+                    fontSize: "0.65rem",
+                    color: "text.secondary",
+                    textDecoration: "none",
+                    backdropFilter: "blur(4px)",
+                    "&:hover": { color: "primary.main" },
+                  }}
+                >
+                  Ver en OpenStreetMap ↗
+                </Box>
               </Box>
-            </li>
-          )}
-        />
-      </Section>
+            )}
 
-      {/* ── Business hours ── */}
-      <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
-        <BusinessHoursEditor value={hours} onChange={setHours} />
-      </Section>
+            <Autocomplete
+              freeSolo
+              options={addrOptions}
+              getOptionLabel={opt => (typeof opt === "string" ? opt : opt.display_name)}
+              loading={addrLoading}
+              value={addrValue}
+              inputValue={addrInput}
+              filterOptions={x => x}
+              onInputChange={(_, val, reason) => {
+                setAddrInput(val);
+                if (reason === "input") {
+                  setAddress(val);
+                  setLat(null);
+                  setLng(null);
+                  setAddrValue(null);
+                }
+              }}
+              onChange={(_, opt) => {
+                if (!opt || typeof opt === "string") return;
+                setAddrValue(opt);
+                setAddress(opt.display_name);
+                setAddrInput(opt.display_name);
+                setLat(parseFloat(opt.lat));
+                setLng(parseFloat(opt.lon));
+              }}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  placeholder="Buscá la dirección del club…"
+                  size="small"
+                  slotProps={{
+                    input: {
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {addrLoading && <CircularProgress size={16} sx={{ mr: 1 }} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    },
+                    formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
+                  }}
+                  helperText={
+                    lat && lng
+                      ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`
+                      : "Escribí para buscar con OpenStreetMap (Nominatim)"
+                  }
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props} key={option.place_id}>
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start", py: 0.25 }}>
+                    <LocationOnOutlinedIcon sx={{ fontSize: 15, mt: 0.3, color: "text.secondary", flexShrink: 0 }} />
+                    <Typography variant="body2" sx={{ lineHeight: 1.4 }}>{option.display_name}</Typography>
+                  </Box>
+                </li>
+              )}
+            />
+          </Section>
+          {/* ── Password ── */}
+          <PasswordSection token={token!} />
 
-      {/* ── Password ── */}
-      <PasswordSection token={token!} />
+        </Grid>
+      </Grid>
 
-      {/* ── Save ── */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+      {/* ── Floating save button ── */}
+      <Box sx={{ position: "fixed", bottom: 28, right: 28, zIndex: 1200, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
         {mutation.isError && (
-          <Typography variant="body2" color="error" alignSelf="center">
+          <Typography variant="caption" color="error" sx={{ bgcolor: "background.paper", px: 1.5, py: 0.5, borderRadius: 2, boxShadow: 2 }}>
             Error al guardar. Intentá de nuevo.
           </Typography>
         )}
@@ -483,7 +489,7 @@ export default function Profile() {
           startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : <SaveOutlinedIcon />}
           disabled={mutation.isPending}
           onClick={handleSave}
-          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 4 }}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 4, boxShadow: 4 }}
         >
           {mutation.isPending ? "Guardando…" : "Guardar cambios"}
         </Button>

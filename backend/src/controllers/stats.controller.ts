@@ -5,6 +5,7 @@ import { AppSettings } from "../entities/AppSettings";
 import { ClubProfile } from "../entities/ClubProfile";
 import { Court } from "../entities/Court";
 import { Profesor } from "../entities/Profesor";
+import { Player } from "../entities/Player";
 import { StatsService } from "../services/stats.service";
 
 function getService() {
@@ -13,7 +14,8 @@ function getService() {
     AppDataSource.getRepository(AppSettings),
     AppDataSource.getRepository(ClubProfile),
     AppDataSource.getRepository(Court),
-    AppDataSource.getRepository(Profesor)
+    AppDataSource.getRepository(Profesor),
+    AppDataSource.getRepository(Player)
   );
 }
 
@@ -26,5 +28,11 @@ export async function getRevenue(req: Request, res: Response) {
 export async function getProfesorStats(req: Request, res: Response) {
   const userId = req.authUser!.sub;
   const stats = await getService().getProfesorStats(userId);
+  res.json(stats);
+}
+
+export async function getPlayerStats(req: Request, res: Response) {
+  const userId = req.authUser!.sub;
+  const stats = await getService().getPlayerStats(userId);
   res.json(stats);
 }

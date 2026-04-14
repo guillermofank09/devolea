@@ -14,6 +14,9 @@ export class Profesor {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   hourlyRate?: number;
 
+  @Column({ type: "varchar", nullable: true })
+  sex?: "MASCULINO" | "FEMENINO";
+
   @Column({
     type: "text",
     nullable: true,

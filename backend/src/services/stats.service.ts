@@ -4,6 +4,7 @@ import { AppSettings } from "../entities/AppSettings";
 import { ClubProfile } from "../entities/ClubProfile";
 import { Court } from "../entities/Court";
 import { Profesor } from "../entities/Profesor";
+import { Player } from "../entities/Player";
 
 export interface RevenueEntry {
   label: string;
@@ -99,12 +100,24 @@ export interface ProfesorBillingEntry {
   name: string;
   ownRate: number | null;
   effectiveRate: number;
+  classHourlyRate: number;
   monthlyClasses: number;
   monthlyHours: number;
   monthlyRevenue: number;
   allTimeClasses: number;
   allTimeHours: number;
   allTimeRevenue: number;
+}
+
+// ── Player stats ──────────────────────────────────────────────────────────────
+
+const CATEGORY_ORDER = ["PRIMERA","SEGUNDA","TERCERA","CUARTA","QUINTA","SEXTA","SEPTIMA","SIN_CATEGORIA"] as const;
+
+export interface PlayerCategoryEntry {
+  category: string;
+  masculino: number;
+  femenino: number;
+  total: number;
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -115,7 +128,8 @@ export class StatsService {
     private settingsRepo: Repository<AppSettings>,
     private profileRepo: Repository<ClubProfile>,
     private courtRepo: Repository<Court>,
-    private profesorRepo: Repository<Profesor>
+    private profesorRepo: Repository<Profesor>,
+    private playerRepo: Repository<Player>
   ) {}
 
   async getRevenue(userId: number): Promise<RevenueStats> {
@@ -321,8 +335,20 @@ export class StatsService {
           }
         }
 
-        return { profesorId: p.id, name: p.name, ownRate, effectiveRate, monthlyClasses, monthlyHours, monthlyRevenue, allTimeClasses, allTimeHours, allTimeRevenue };
+        return { profesorId: p.id, name: p.name, ownRate, effectiveRate, classHourlyRate, monthlyClasses, monthlyHours, monthlyRevenue, allTimeClasses, allTimeHours, allTimeRevenue };
       })
       .sort((a, b) => b.monthlyRevenue - a.monthlyRevenue);
+  }
+
+  async getPlayerStats(userId: number): Promise<PlayerCategoryEntry[]> {
+    const players = await this.playerRepo.find({ where: { userId } });
+    return CATEGORY_ORDER
+      .map((cat) => ({
+        category: cat,
+        masculino: players.filter((p) => p.category === cat && p.sex === "MASCULINO").length,
+        femenino:  players.filter((p) => p.category === cat && p.sex === "FEMENINO").length,
+        total:     players.filter((p) => p.category === cat).length,
+      }))
+      .filter((e) => e.total > 0);
   }
 }

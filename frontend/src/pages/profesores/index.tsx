@@ -5,8 +5,11 @@ import {
   Button,
   CircularProgress,
   Fab,
+  FormControl,
   InputAdornment,
+  MenuItem,
   OutlinedInput,
+  Select,
   Typography,
   useMediaQuery,
   useTheme,
@@ -18,15 +21,18 @@ import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfesores, deleteProfesor } from "../../api/profesorService";
 import TableSkeleton from "../../components/common/TableSkeleton";
-import type { Profesor } from "../../types/Profesor";
+import type { Profesor, ProfesorSex } from "../../types/Profesor";
 import ProfesorTable from "./ProfesorTable";
 import AddEditProfesor from "./AddEditProfesor";
 import ProfesorScheduleModal from "./ProfesorScheduleModal";
 import DeleteConfirmation from "../courts/DeleteCourt";
 import PageHeader from "../../components/common/PageHeader";
 
+const selectSx = { borderRadius: 2, backgroundColor: "white" };
+
 export default function Profesores() {
   const [search, setSearch] = useState("");
+  const [sexFilter, setSexFilter] = useState<ProfesorSex | "">("");
   const [addEditOpen, setAddEditOpen] = useState(false);
   const [selected, setSelected] = useState<Profesor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Profesor | null>(null);
@@ -53,8 +59,27 @@ export default function Profesores() {
   const handleEdit = (p: Profesor) => { setSelected(p); setAddEditOpen(true); };
   const handleCloseForm = () => { setAddEditOpen(false); setSelected(null); };
 
+  const filtered = (data ?? []).filter((p) =>
+    sexFilter === "" || p.sex === sexFilter
+  );
+
+  const sexSelect = (
+    <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 130 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
+      <Select
+        value={sexFilter}
+        displayEmpty
+        onChange={(e) => setSexFilter(e.target.value as ProfesorSex | "")}
+        renderValue={(val) => val ? (val === "MASCULINO" ? "Masculino" : "Femenino") : "Sexo"}
+      >
+        <MenuItem value="">Todos</MenuItem>
+        <MenuItem value="MASCULINO">Masculino</MenuItem>
+        <MenuItem value="FEMENINO">Femenino</MenuItem>
+      </Select>
+    </FormControl>
+  );
+
   const desktopAction = (
-    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
       <OutlinedInput
         size="small"
         value={search}
@@ -70,8 +95,9 @@ export default function Profesores() {
             </InputAdornment>
           ) : null
         }
-        sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 220 }}
+        sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 200 }}
       />
+      {sexSelect}
       <Button
         variant="contained"
         startIcon={<AddIcon />}
@@ -91,8 +117,9 @@ export default function Profesores() {
         action={isMobile ? undefined : desktopAction}
       />
 
+      {/* Mobile: search + filter */}
       {isMobile && (
-        <Box sx={{ mb: 2.5, mt: -2 }}>
+        <Box sx={{ mb: 2, mt: -2, display: "flex", flexDirection: "column", gap: 1.5 }}>
           <OutlinedInput
             size="small"
             fullWidth
@@ -111,6 +138,9 @@ export default function Profesores() {
             }
             sx={{ borderRadius: 2, backgroundColor: "white" }}
           />
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {sexSelect}
+          </Box>
         </Box>
       )}
 
@@ -137,14 +167,27 @@ export default function Profesores() {
       {error && <Alert severity="error">{String(error)}</Alert>}
       {data && (
         <>
-          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
             <Typography variant="body2" color="text.secondary">
-              {data.length} {data.length === 1 ? "profesor" : "profesores"}
+              {filtered.length} {filtered.length === 1 ? "profesor" : "profesores"}
+              {filtered.length !== data.length && (
+                <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
+              )}
             </Typography>
             {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+            {sexFilter !== "" && (
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                onClick={() => setSexFilter("")}
+                sx={{ cursor: "pointer", "&:hover": { color: "text.secondary" } }}
+              >
+                Limpiar filtro
+              </Typography>
+            )}
           </Box>
           <ProfesorTable
-            profesores={data}
+            profesores={filtered}
             onEdit={handleEdit}
             onDelete={(p) => setDeleteTarget(p)}
             onSchedule={(p) => setScheduleProfesor(p)}

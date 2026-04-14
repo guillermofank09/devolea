@@ -1,10 +1,11 @@
-import { Repository, Like } from "typeorm";
+import { Repository, ILike } from "typeorm";
 import { Profesor } from "../entities/Profesor";
 
 export interface CreateProfesorDto {
   name: string;
   phone?: string;
   hourlyRate?: number;
+  sex?: "MASCULINO" | "FEMENINO";
   schedule?: object[];
 }
 
@@ -18,7 +19,7 @@ export class ProfesorService {
 
   async getAll(userId: number, search?: string): Promise<Profesor[]> {
     const where: any = { userId };
-    if (search) where.name = Like(`%${search}%`);
+    if (search) where.name = ILike(`%${search}%`);
     return await this.repo.find({ where, order: { name: "ASC" } });
   }
 

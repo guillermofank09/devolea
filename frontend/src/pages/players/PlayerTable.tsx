@@ -24,7 +24,7 @@ import type { Player, PlayerCategory } from "../../types/Player";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
 
-const CATEGORY_LABEL: Record<PlayerCategory, string> = {
+export const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA:       "1ra",
   SEGUNDA:       "2da",
   TERCERA:       "3ra",
@@ -35,7 +35,7 @@ const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   SIN_CATEGORIA: "S/C",
 };
 
-const CATEGORY_FULL: Record<PlayerCategory, string> = {
+export const CATEGORY_FULL: Record<PlayerCategory, string> = {
   PRIMERA:       "1ra Categoría",
   SEGUNDA:       "2da Categoría",
   TERCERA:       "3ra Categoría",
@@ -46,18 +46,12 @@ const CATEGORY_FULL: Record<PlayerCategory, string> = {
   SIN_CATEGORIA: "Sin Categoría",
 };
 
-const CATEGORY_ORDER: Record<PlayerCategory, number> = {
-  PRIMERA:       1,
-  SEGUNDA:       2,
-  TERCERA:       3,
-  CUARTA:        4,
-  QUINTA:        5,
-  SEXTA:         6,
-  SEPTIMA:       7,
-  SIN_CATEGORIA: 8,
+export const CATEGORY_ORDER: Record<PlayerCategory, number> = {
+  PRIMERA: 1, SEGUNDA: 2, TERCERA: 3, CUARTA: 4,
+  QUINTA: 5, SEXTA: 6, SEPTIMA: 7, SIN_CATEGORIA: 8,
 };
 
-const CATEGORY_COLOR: Record<
+export const CATEGORY_COLOR: Record<
   PlayerCategory,
   "error" | "warning" | "success" | "info" | "default" | "primary" | "secondary"
 > = {

@@ -11,6 +11,8 @@ import {
   FormLabel,
   InputAdornment,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
@@ -24,7 +26,7 @@ import PhoneField from "../../components/common/PhoneField";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
-const EMPTY: ProfesorFormData = { name: "", phone: "" };
+const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "" };
 
 interface Props {
   open: boolean;
@@ -44,7 +46,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
 
   useEffect(() => {
     if (profesor) {
-      setForm({ name: profesor.name, phone: profesor.phone ?? "" });
+      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
@@ -59,6 +61,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
     mutationFn: (data: ProfesorFormData) => {
       const payload = {
         ...data,
+        sex: data.sex || undefined,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
         schedule,
       };
@@ -115,6 +118,38 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               onChange={(val) => setForm(p => ({ ...p, phone: val }))}
               disabled={mutation.isPending}
             />
+
+            <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
+              <ToggleButtonGroup
+                value={form.sex || null}
+                exclusive
+                onChange={(_, val) => setForm(p => ({ ...p, sex: val ?? "" }))}
+                size="small"
+                fullWidth
+                disabled={mutation.isPending}
+                sx={{
+                  height: 40,
+                  "& .MuiToggleButton-root": {
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    transition: "all 0.15s",
+                  },
+                  "& .MuiToggleButton-root.Mui-selected": {
+                    bgcolor: "#F5AD27",
+                    color: "#111",
+                    borderColor: "#F5AD27",
+                    "&:hover": { bgcolor: "#e09b18" },
+                  },
+                }}
+              >
+                <ToggleButton value="MASCULINO">Masculino</ToggleButton>
+                <ToggleButton value="FEMENINO">Femenino</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
 
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
