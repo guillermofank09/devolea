@@ -17,6 +17,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -888,6 +889,7 @@ interface PublicNavItem {
 }
 
 const ALL_NAV_ITEMS: PublicNavItem[] = [
+  { id: "section-club",       label: "Club",       Icon: StorefrontIcon },
   { id: "section-torneos",    label: "Torneos",    Icon: EmojiEventsIcon },
   { id: "section-canchas",    label: "Canchas",    Icon: SportsTennisIcon },
   { id: "section-profesores", label: "Profesores", Icon: SchoolOutlinedIcon },
@@ -902,6 +904,7 @@ interface PublicSidebarProps {
 }
 
 function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
+  const desktopItems = items.filter(item => item.id !== "section-club");
   return (
     <Box
       sx={{
@@ -918,7 +921,7 @@ function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
     >
       {/* Section navigation */}
       <Box sx={{ px: 1.5, pt: 3, pb: 2, display: "flex", flexDirection: "column", gap: "3px" }}>
-        {items.map(({ id, label, Icon }) => {
+        {desktopItems.map(({ id, label, Icon }) => {
           const active = activeId === id;
           return (
             <Box
@@ -1123,6 +1126,75 @@ function MobileBottomNav({ items, activeId, onSelect }: { items: PublicNavItem[]
   );
 }
 
+// ─── mobile club info section ────────────────────────────────────────────────
+
+function MobileClubInfoSection({ address, mapUrl, businessHours, phone }: {
+  address?: string;
+  mapUrl: string | null;
+  businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
+  phone?: string | null;
+}) {
+  const DIVIDER = "rgba(255,255,255,0.08)";
+  const MUTED   = "#6b7a99";
+  const TEXT    = "#e8eaf0";
+  return (
+    <Box sx={{ borderRadius: 3, overflow: "hidden", bgcolor: "#111111", border: `1px solid ${DIVIDER}` }}>
+      {/* Map */}
+      {mapUrl && (
+        <Box sx={{ height: 200, borderBottom: `1px solid ${DIVIDER}` }}>
+          <Box component="iframe" src={mapUrl} title="Ubicación del club" sx={{ width: "100%", height: "100%", border: 0, display: "block" }} loading="lazy" />
+        </Box>
+      )}
+
+      {/* Address */}
+      {address && (
+        <Box sx={{ px: 2.5, py: 1.75, display: "flex", alignItems: "center", gap: 1.25, borderBottom: `1px solid ${DIVIDER}` }}>
+          <LocationOnIcon sx={{ fontSize: 17, color: MUTED, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: "0.88rem", color: TEXT, lineHeight: 1.4 }}>{address}</Typography>
+        </Box>
+      )}
+
+      {/* Phone / WhatsApp */}
+      {phone && (
+        <Box
+          component="a"
+          href={`https://wa.me/${phone.replace(/\D/g, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ px: 2.5, py: 1.75, display: "flex", alignItems: "center", gap: 1.25, borderBottom: `1px solid ${DIVIDER}`, textDecoration: "none" }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 17, color: "#25d366", flexShrink: 0 }} />
+          <Typography sx={{ fontSize: "0.88rem", color: "#25d366" }}>{phone}</Typography>
+        </Box>
+      )}
+
+      {/* Business hours */}
+      {businessHours.some(h => h.isOpen) && (
+        <Box sx={{ px: 2.5, py: 2.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <AccessTimeIcon sx={{ fontSize: 15, color: MUTED }} />
+            <Typography sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem", color: MUTED }}>
+              Horarios
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            {DAYS.map(day => {
+              const sched = businessHours.find(h => h.day === day);
+              if (!sched?.isOpen) return null;
+              return (
+                <Box key={day} sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: TEXT }}>{day}</Typography>
+                  <Typography sx={{ fontSize: "0.85rem", color: MUTED }}>{sched.openTime}–{sched.closeTime}</Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 // ─── mobile club header ───────────────────────────────────────────────────────
 
 function MobileClubHeader({ clubName, address, logoBase64 }: { clubName: string; address?: string; logoBase64?: string | null }) {
@@ -1237,10 +1309,10 @@ export default function ClubPublicPage() {
   // On sub-routes navigate to the section URL; on full page scroll
   function handleNavSelect(id: string) {
     if (subSection) {
-      if (id === "section-torneos")    navigate(`/${username}/torneos`);
+      if (id === "section-torneos")         navigate(`/${username}/torneos`);
       else if (id === "section-canchas")    navigate(`/${username}/canchas`);
       else if (id === "section-profesores") navigate(`/${username}/profesores`);
-      else navigate(`/${username}`);
+      else                                  navigate(`/${username}`);
     } else {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1287,6 +1359,24 @@ export default function ClubPublicPage() {
         <Box sx={{ flex: 1, px: { xs: 1.5, md: 4 }, py: { xs: 2, md: 4 }, pb: { xs: "calc(72px + env(safe-area-inset-bottom, 0px))", md: 4 } }}>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 3, md: 5 } }}>
+
+            {/* Club info — mobile only */}
+            {!subSection && (
+              <Box id="section-club" sx={{ display: { xs: "block", md: "none" }, scrollMarginTop: "16px" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                  <Box sx={{ width: 30, height: 30, borderRadius: 2, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <StorefrontIcon sx={{ fontSize: 17, color: "#111" }} />
+                  </Box>
+                  <Typography variant="h6" fontWeight={800} sx={{ fontSize: "1.1rem" }}>Información del club</Typography>
+                </Box>
+                <MobileClubInfoSection
+                  address={profile.address}
+                  mapUrl={mapUrl}
+                  businessHours={profile.businessHours}
+                  phone={profile.phone}
+                />
+              </Box>
+            )}
 
             {/* Torneos */}
             {(!subSection || subSection === "torneos") && (profile.showTournaments ?? true) && (
