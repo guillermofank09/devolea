@@ -96,20 +96,42 @@ function makeProfesor(i) {
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
-async function request(method, path, body, token) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
+const https = require("https");
+const http  = require("http");
+
+function request(method, path, body, token) {
+  return new Promise((resolve, reject) => {
+    const url     = new URL(`${BASE_URL}${path}`);
+    const lib     = url.protocol === "https:" ? https : http;
+    const payload = body ? JSON.stringify(body) : null;
+    const options = {
+      hostname: url.hostname,
+      port:     url.port || (url.protocol === "https:" ? 443 : 80),
+      path:     url.pathname + url.search,
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(payload ? { "Content-Length": Buffer.byteLength(payload) } : {}),
+        ...(token  ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    };
+    const req = lib.request(options, (res) => {
+      let data = "";
+      res.on("data", chunk => { data += chunk; });
+      res.on("end", () => {
+        let json;
+        try { json = JSON.parse(data); } catch { json = { raw: data }; }
+        if (res.statusCode >= 400) {
+          reject(new Error(`${method} ${path} → ${res.statusCode}: ${JSON.stringify(json)}`));
+        } else {
+          resolve(json);
+        }
+      });
+    });
+    req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
   });
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch { json = { raw: text }; }
-  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${JSON.stringify(json)}`);
-  return json;
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
