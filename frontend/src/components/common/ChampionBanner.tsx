@@ -74,20 +74,6 @@ export default function ChampionBanner({ champion, sex }: Props) {
           />
         </Box>
 
-        {/* "del torneo" */}
-        <Typography
-          sx={{
-            zIndex: 1,
-            fontSize: "0.6rem",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.22em",
-            color: "text.disabled",
-          }}
-        >
-          del torneo
-        </Typography>
-
         {/* Title */}
         <Typography
           sx={{
@@ -100,6 +86,20 @@ export default function ChampionBanner({ champion, sex }: Props) {
           }}
         >
           {title}
+        </Typography>
+
+        {/* "del torneo" */}
+        <Typography
+          sx={{
+            zIndex: 1,
+            fontSize: "0.6rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.22em",
+            color: "text.disabled",
+          }}
+        >
+          del torneo
         </Typography>
 
         {/* Divider */}
