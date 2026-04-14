@@ -23,15 +23,15 @@ const get = (flag, def) => {
 const has = (flag) => args.includes(flag);
 
 const BASE_URL   = get("--url", "http://localhost:3001");
-const EMAIL      = get("--user", "");
+const USERNAME   = get("--user", "");
 const PASSWORD   = get("--pass", "");
 const N_PLAYERS  = parseInt(get("--players", "40"), 10);
 const N_PROF     = parseInt(get("--profesores", "5"), 10);
 const DRY        = has("--dry");
 
-if (!EMAIL || !PASSWORD) {
+if (!USERNAME || !PASSWORD) {
   console.error("❌  Falta --user y/o --pass\n");
-  console.error("Uso: node seed.js --url http://localhost:3001 --user EMAIL --pass PASSWORD");
+  console.error("Uso: node seed.js --url http://localhost:3001 --user USERNAME --pass PASSWORD");
   process.exit(1);
 }
 
@@ -139,7 +139,7 @@ function request(method, path, body, token) {
 async function main() {
   console.log(`\n🎾  Devolea seed script`);
   console.log(`   Backend : ${BASE_URL}`);
-  console.log(`   Club    : ${EMAIL}`);
+  console.log(`   Club    : ${USERNAME}`);
   console.log(`   Jugadores a crear : ${N_PLAYERS}`);
   console.log(`   Profesores a crear: ${N_PROF}`);
   if (DRY) console.log("   Modo    : DRY RUN (no se insertan datos)\n");
@@ -149,7 +149,7 @@ async function main() {
   process.stdout.write("🔐  Autenticando... ");
   let token;
   if (!DRY) {
-    const auth = await request("POST", "/api/auth/login", { email: EMAIL, password: PASSWORD });
+    const auth = await request("POST", "/api/auth/login", { username: USERNAME, password: PASSWORD });
     token = auth.token;
     console.log("OK");
   } else {
