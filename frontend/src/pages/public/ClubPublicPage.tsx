@@ -404,7 +404,7 @@ function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number
   const dateLabel = day.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const hours = String(Math.floor(slotMin / 60)).padStart(2, "0");
   const mins  = String(slotMin % 60).padStart(2, "0");
-  const msg = `Hola! Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins}`;
+  const msg = `Hola! Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins} hs.`;
   return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -978,6 +978,9 @@ interface ClubInfoPanelProps {
 
 function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }: ClubInfoPanelProps) {
   const navigate = useNavigate();
+  const DIVIDER = "rgba(255,255,255,0.08)";
+  const MUTED   = "#6b7a99";
+  const TEXT    = "#e8eaf0";
   return (
     <Box
       sx={{
@@ -989,12 +992,13 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
         top: 0,
         height: "100vh",
         overflowY: "auto",
-        borderLeft: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
+        borderLeft: `1px solid ${DIVIDER}`,
+        bgcolor: "#111111",
         scrollbarWidth: "thin",
+        scrollbarColor: "rgba(255,255,255,0.10) transparent",
         "&::-webkit-scrollbar": { width: 4 },
-        "&::-webkit-scrollbar-thumb": { background: "rgba(0,0,0,0.12)", borderRadius: "4px" },
+        "&::-webkit-scrollbar-track": { background: "transparent" },
+        "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.10)", borderRadius: "4px" },
       }}
     >
       {/* Club identity */}
@@ -1008,7 +1012,7 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
               component="img"
               src={logoBase64}
               alt="logo"
-              sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: "1px solid", borderColor: "divider", display: "block", bgcolor: "grey.50" }}
+              sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: `1px solid ${DIVIDER}`, display: "block", bgcolor: "rgba(255,255,255,0.04)" }}
             />
           ) : (
             <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: "#F5AD27", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1016,13 +1020,13 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
             </Box>
           )}
         </Box>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.25 }}>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.25, color: TEXT }}>
           {clubName || "Club de Pádel"}
         </Typography>
         {address && (
           <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 0.5, mt: 0.75 }}>
-            <LocationOnIcon sx={{ fontSize: 13, color: "text.secondary", mt: "2px", flexShrink: 0 }} />
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>{address}</Typography>
+            <LocationOnIcon sx={{ fontSize: 13, color: MUTED, mt: "2px", flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: MUTED, lineHeight: 1.4 }}>{address}</Typography>
           </Box>
         )}
       </Box>
@@ -1030,8 +1034,8 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
       {/* Map */}
       {mapUrl && (
         <>
-          <Box sx={{ mx: 2.5, borderTop: "1px solid", borderColor: "divider" }} />
-          <Box sx={{ mx: 2.5, my: 2, borderRadius: 2, overflow: "hidden", height: 160, flexShrink: 0, border: "1px solid", borderColor: "divider" }}>
+          <Box sx={{ mx: 2.5, borderTop: `1px solid ${DIVIDER}` }} />
+          <Box sx={{ mx: 2.5, my: 2, borderRadius: 2, overflow: "hidden", height: 160, flexShrink: 0, border: `1px solid ${DIVIDER}` }}>
             <Box component="iframe" src={mapUrl} title="Ubicación del club" sx={{ width: "100%", height: "100%", border: 0, display: "block" }} loading="lazy" />
           </Box>
         </>
@@ -1040,11 +1044,11 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
       {/* Business hours */}
       {businessHours.some(h => h.isOpen) && (
         <>
-          <Box sx={{ mx: 2.5, borderTop: "1px solid", borderColor: "divider" }} />
+          <Box sx={{ mx: 2.5, borderTop: `1px solid ${DIVIDER}` }} />
           <Box sx={{ px: 2.5, py: 2.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-              <AccessTimeIcon sx={{ fontSize: 15, color: "text.secondary" }} />
-              <Typography sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem", color: "text.secondary" }}>
+              <AccessTimeIcon sx={{ fontSize: 15, color: MUTED }} />
+              <Typography sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem", color: MUTED }}>
                 Horarios
               </Typography>
             </Box>
@@ -1054,8 +1058,8 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours }:
                 if (!sched?.isOpen) return null;
                 return (
                   <Box key={day} sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.78rem" }}>{day.slice(0, 3)}</Typography>
-                    <Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>{sched.openTime}–{sched.closeTime}</Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.78rem", color: TEXT }}>{day.slice(0, 3)}</Typography>
+                    <Typography sx={{ fontSize: "0.78rem", color: MUTED }}>{sched.openTime}–{sched.closeTime}</Typography>
                   </Box>
                 );
               })}
