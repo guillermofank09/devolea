@@ -165,52 +165,62 @@ function ReadOnlyBracket({ matches, sex }: { matches: TournamentMatch[]; sex?: s
     champion = fm.pair1?.id === fm.winnerId ? (fm.pair1 ?? null) : (fm.pair2 ?? null);
   }
 
+  const bracketContent = (
+    <>
+      <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
+        {allRoundNums.map((round, ri) => (
+          <Box key={round} sx={{ width: MATCH_W, flexShrink: 0, textAlign: "center", mr: ri < allRoundNums.length - 1 ? `${CONN_W}px` : 0 }}>
+            <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1.2, fontSize: "0.68rem" }}>
+              {getRoundLabel(round, totalRounds)}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+      <Box sx={{ position: "relative", width: totalW, height: totalH, minWidth: totalW }}>
+        <svg style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}>
+          {connectors}
+        </svg>
+        {allRoundNums.map((round, ri) =>
+          unifiedByRound[round].map((slot, mi) => {
+            const cy = posMap.get(`${round}-${mi}`)!;
+            const isVirt = "virtual" in slot;
+            return (
+              <Box key={isVirt ? `v-${round}-${mi}` : (slot as TournamentMatch).id} sx={{ position: "absolute", top: cy - MATCH_H / 2, left: ri * (MATCH_W + CONN_W), width: MATCH_W, height: MATCH_H }}>
+                {isVirt ? <EmptyCard /> : <PublicMatchCard match={slot as TournamentMatch} />}
+              </Box>
+            );
+          })
+        )}
+      </Box>
+    </>
+  );
+
   return (
-    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: "flex-start" }}>
-
-      {/* Bracket — horizontally scrollable */}
-      <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
-        <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
-          {allRoundNums.map((round, ri) => (
-            <Box key={round} sx={{ width: MATCH_W, flexShrink: 0, textAlign: "center", mr: ri < allRoundNums.length - 1 ? `${CONN_W}px` : 0 }}>
-              <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1.2, fontSize: "0.68rem" }}>
-                {getRoundLabel(round, totalRounds)}
-              </Typography>
-            </Box>
-          ))}
+    <>
+      {/* Mobile: bracket scrolls freely, banner stacks below at screen width */}
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        <Box sx={{ overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
+          {bracketContent}
         </Box>
-        <Box sx={{ position: "relative", width: totalW, height: totalH, minWidth: totalW }}>
-          <svg style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}>
-            {connectors}
-          </svg>
-          {allRoundNums.map((round, ri) =>
-            unifiedByRound[round].map((slot, mi) => {
-              const cy = posMap.get(`${round}-${mi}`)!;
-              const isVirt = "virtual" in slot;
-              return (
-                <Box key={isVirt ? `v-${round}-${mi}` : (slot as TournamentMatch).id} sx={{ position: "absolute", top: cy - MATCH_H / 2, left: ri * (MATCH_W + CONN_W), width: MATCH_W, height: MATCH_H }}>
-                  {isVirt ? <EmptyCard /> : <PublicMatchCard match={slot as TournamentMatch} />}
-                </Box>
-              );
-            })
-          )}
-        </Box>
-
+        {champion && (
+          <Box sx={{ mt: 2 }}>
+            <ChampionBanner champion={champion} sex={sex} compact />
+          </Box>
+        )}
       </Box>
 
-      {/* Champion banner — desktop: beside bracket | mobile: below (full screen width) */}
-      {champion && (
-        <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: 220, pt: 4 }}>
-          <ChampionBanner champion={champion} sex={sex} />
+      {/* Desktop: bracket + banner side by side */}
+      <Box sx={{ display: { xs: "none", md: "flex" }, flexDirection: "row", gap: 3, alignItems: "flex-start" }}>
+        <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto", pb: 2 }}>
+          {bracketContent}
         </Box>
-      )}
-      {champion && (
-        <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
-          <ChampionBanner champion={champion} sex={sex} compact />
-        </Box>
-      )}
-
-    </Box>
+        {champion && (
+          <Box sx={{ flexShrink: 0, width: 220, pt: 4 }}>
+            <ChampionBanner champion={champion} sex={sex} />
+          </Box>
+        )}
+      </Box>
+    </>
   );
 }
 
