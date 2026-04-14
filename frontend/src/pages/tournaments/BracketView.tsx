@@ -170,68 +170,84 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
   }
 
   return (
-    <Box sx={{ width: "100%", overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
-      {/* Round column headers */}
-      <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
-        {allRoundNumbers.map((round, rIdx) => (
-          <Box
-            key={round}
-            sx={{
-              width: MATCH_W, flexShrink: 0, textAlign: "center",
-              mr: rIdx < allRoundNumbers.length - 1 ? `${CONN_W}px` : 0,
-            }}
-          >
-            <Typography
-              variant="caption" fontWeight={800} color="text.secondary"
-              sx={{ textTransform: "uppercase", letterSpacing: 1.2, fontSize: "0.68rem" }}
+    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: "flex-start" }}>
+
+      {/* Bracket — horizontally scrollable */}
+      <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto", pb: 2, WebkitOverflowScrolling: "touch" }}>
+        {/* Round column headers */}
+        <Box sx={{ display: "flex", mb: 2, minWidth: totalW }}>
+          {allRoundNumbers.map((round, rIdx) => (
+            <Box
+              key={round}
+              sx={{
+                width: MATCH_W, flexShrink: 0, textAlign: "center",
+                mr: rIdx < allRoundNumbers.length - 1 ? `${CONN_W}px` : 0,
+              }}
             >
-              {getRoundLabel(round, totalRoundsExpected)}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
-      {/* Bracket canvas */}
-      <Box sx={{ position: "relative", width: totalW, height: totalH, minWidth: totalW }}>
-        <svg style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}>
-          {connectors}
-        </svg>
-
-        {allRoundNumbers.map((round, rIdx) =>
-          unifiedByRound[round].map((slot, mIdx) => {
-            const cy = posMap.get(`${round}-${mIdx}`)!;
-            return (
-              <Box
-                key={isVirtual(slot) ? `v-${round}-${mIdx}` : slot.id}
-                sx={{
-                  position: "absolute",
-                  top: cy - MATCH_H / 2,
-                  left: rIdx * (MATCH_W + CONN_W),
-                  width: MATCH_W,
-                  height: MATCH_H,
-                }}
+              <Typography
+                variant="caption" fontWeight={800} color="text.secondary"
+                sx={{ textTransform: "uppercase", letterSpacing: 1.2, fontSize: "0.68rem" }}
               >
-                {isVirtual(slot) ? (
-                  <PlaceholderCard
-                    onClick={() => onVirtualMatchClick(slot.round, slot.matchNumber)}
-                  />
-                ) : isPlaceholder(slot) ? (
-                  <PlaceholderCard
-                    scheduledAt={slot.scheduledAt ?? undefined}
-                    courtName={slot.court?.name}
-                    onClick={() => onEditMatch(slot)}
-                  />
-                ) : (
-                  <BracketMatchCard match={slot} onEdit={() => onEditMatch(slot)} />
-                )}
-              </Box>
-            );
-          })
+                {getRoundLabel(round, totalRoundsExpected)}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Bracket canvas */}
+        <Box sx={{ position: "relative", width: totalW, height: totalH, minWidth: totalW }}>
+          <svg style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}>
+            {connectors}
+          </svg>
+
+          {allRoundNumbers.map((round, rIdx) =>
+            unifiedByRound[round].map((slot, mIdx) => {
+              const cy = posMap.get(`${round}-${mIdx}`)!;
+              return (
+                <Box
+                  key={isVirtual(slot) ? `v-${round}-${mIdx}` : slot.id}
+                  sx={{
+                    position: "absolute",
+                    top: cy - MATCH_H / 2,
+                    left: rIdx * (MATCH_W + CONN_W),
+                    width: MATCH_W,
+                    height: MATCH_H,
+                  }}
+                >
+                  {isVirtual(slot) ? (
+                    <PlaceholderCard
+                      onClick={() => onVirtualMatchClick(slot.round, slot.matchNumber)}
+                    />
+                  ) : isPlaceholder(slot) ? (
+                    <PlaceholderCard
+                      scheduledAt={slot.scheduledAt ?? undefined}
+                      courtName={slot.court?.name}
+                      onClick={() => onEditMatch(slot)}
+                    />
+                  ) : (
+                    <BracketMatchCard match={slot} onEdit={() => onEditMatch(slot)} />
+                  )}
+                </Box>
+              );
+            })
+          )}
+        </Box>
+
+        {/* Champion banner — below on mobile */}
+        {champion && (
+          <Box sx={{ display: { xs: "block", md: "none" }, mt: 3 }}>
+            <ChampionBanner champion={champion} sex={sex} />
+          </Box>
         )}
       </Box>
 
-      {/* Champion banner */}
-      {champion && <ChampionBanner champion={champion} sex={sex} />}
+      {/* Champion banner — beside bracket on desktop */}
+      {champion && (
+        <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: 220, pt: 4 }}>
+          <ChampionBanner champion={champion} sex={sex} />
+        </Box>
+      )}
+
     </Box>
   );
 }
