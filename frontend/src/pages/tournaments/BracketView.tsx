@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import type { TournamentMatch, Pair } from "../../types/Tournament";
+import ChampionBanner from "../../components/common/ChampionBanner";
 
 const MATCH_H = 84;
 const MATCH_W = 220;
@@ -12,6 +13,7 @@ interface Props {
   matches: TournamentMatch[];
   onEditMatch: (m: TournamentMatch) => void;
   onVirtualMatchClick: (round: number, matchNumber: number) => void;
+  sex?: string | null;
 }
 
 // Virtual slot: a future match that has no DB record yet
@@ -47,7 +49,7 @@ function getRoundLabel(roundNumber: number, totalRounds: number): string {
   return `Ronda ${roundNumber}`;
 }
 
-export default function BracketView({ matches, onEditMatch, onVirtualMatchClick }: Props) {
+export default function BracketView({ matches, onEditMatch, onVirtualMatchClick, sex }: Props) {
   // Group real matches by round
   const matchesByRound: Record<number, TournamentMatch[]> = {};
   matches.forEach(m => {
@@ -229,21 +231,7 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick 
       </Box>
 
       {/* Champion banner */}
-      {champion && (
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-          <Box sx={{ display: "inline-flex", alignItems: "center", gap: 2, px: 3, py: 1.5, bgcolor: "#fffbeb", border: "2px solid #f59e0b", borderRadius: 3 }}>
-            <EmojiEventsIcon sx={{ color: "#f59e0b", fontSize: 36 }} />
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: 1.2, display: "block" }}>
-                Campeón del Torneo
-              </Typography>
-              <Typography variant="subtitle1" fontWeight={800} lineHeight={1.3}>
-                {champion.player1.name} / {champion.player2.name}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      )}
+      {champion && <ChampionBanner champion={champion} sex={sex} />}
     </Box>
   );
 }

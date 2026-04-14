@@ -414,6 +414,7 @@ export default function TournamentDetail() {
                 matches={bracketMatches}
                 onEditMatch={m => setEditMatch(m)}
                 onVirtualMatchClick={handleVirtualMatchClick}
+                sex={data.sex}
               />
               {repechajeMatches.length > 0 && (
                 <Box sx={{ mt: 3 }}>

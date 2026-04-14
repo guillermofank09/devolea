@@ -28,6 +28,7 @@ import type { DaySchedule } from "../../types/ClubProfile";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
 import type { PublicBookingSlot, PublicCourt, PublicProfesor } from "../../api/publicService";
 import PageLoader from "../../components/common/PageLoader";
+import ChampionBanner from "../../components/common/ChampionBanner";
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ const CONN_W = 48;
 const GAP_1 = 16;
 const STROKE = "#d0d0d0";
 
-function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
+function ReadOnlyBracket({ matches, sex }: { matches: TournamentMatch[]; sex?: string | null }) {
   const bracketMatches = matches.filter(m => !m.isRepechage);
 
   const matchesByRound: Record<number, TournamentMatch[]> = {};
@@ -191,17 +192,7 @@ function ReadOnlyBracket({ matches }: { matches: TournamentMatch[] }) {
           })
         )}
       </Box>
-      {champion && (
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-          <Box sx={{ display: "inline-flex", alignItems: "center", gap: 2, px: 3, py: 1.5, bgcolor: "#fffbeb", border: "2px solid #f59e0b", borderRadius: 3 }}>
-            <EmojiEventsIcon sx={{ color: "#f59e0b", fontSize: 36 }} />
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: 1.2, display: "block" }}>Campeón</Typography>
-              <Typography variant="subtitle1" fontWeight={800} lineHeight={1.3}>{champion.player1.name} / {champion.player2.name}</Typography>
-            </Box>
-          </Box>
-        </Box>
-      )}
+      {champion && <ChampionBanner champion={champion} sex={sex} />}
     </Box>
   );
 }
@@ -372,7 +363,7 @@ function TournamentCard({ username, tournament, gradientIndex }: { username: str
         )}
         {!isLoading && data && hasMatches && (
           isBracket
-            ? <ReadOnlyBracket matches={data.matches} />
+            ? <ReadOnlyBracket matches={data.matches} sex={data.sex} />
             : <RoundRobinList matches={data.matches} />
         )}
       </Box>
