@@ -196,18 +196,17 @@ function ReadOnlyBracket({ matches, sex }: { matches: TournamentMatch[]; sex?: s
           )}
         </Box>
 
-        {/* Champion banner — below on mobile */}
-        {champion && (
-          <Box sx={{ display: { xs: "block", md: "none" }, mt: 3 }}>
-            <ChampionBanner champion={champion} sex={sex} />
-          </Box>
-        )}
       </Box>
 
-      {/* Champion banner — beside bracket on desktop */}
+      {/* Champion banner — desktop: beside bracket | mobile: below (full screen width) */}
       {champion && (
         <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: 220, pt: 4 }}>
           <ChampionBanner champion={champion} sex={sex} />
+        </Box>
+      )}
+      {champion && (
+        <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
+          <ChampionBanner champion={champion} sex={sex} compact />
         </Box>
       )}
 

@@ -5,9 +5,10 @@ import type { Pair } from "../../types/Tournament";
 interface Props {
   champion: Pair;
   sex?: string | null;
+  compact?: boolean;
 }
 
-export default function ChampionBanner({ champion, sex }: Props) {
+export default function ChampionBanner({ champion, sex, compact }: Props) {
   const title = sex === "FEMENINO" ? "Campeonas" : "Campeones";
 
   return (
@@ -25,11 +26,12 @@ export default function ChampionBanner({ champion, sex }: Props) {
         sx={{
           position: "relative",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: compact ? "row" : "column",
           alignItems: "center",
-          gap: 1,
-          px: 3,
-          py: 3,
+          justifyContent: compact ? "center" : undefined,
+          gap: compact ? 1.5 : 1,
+          px: compact ? 2 : 3,
+          py: compact ? 1.5 : 3,
           borderRadius: 3,
           bgcolor: "#fffbeb",
           border: "2px solid #F5AD27",
@@ -68,59 +70,48 @@ export default function ChampionBanner({ champion, sex }: Props) {
         >
           <EmojiEventsIcon
             sx={{
-              fontSize: { xs: 52, md: 60 },
+              fontSize: compact ? 36 : { xs: 52, md: 60 },
               color: "#F5AD27",
               filter: "drop-shadow(0 2px 8px rgba(245,173,39,0.55))",
             }}
           />
         </Box>
 
-        {/* Title */}
-        <Typography
-          sx={{
-            zIndex: 1,
-            fontSize: { xs: "1.65rem", md: "1.9rem" },
-            fontWeight: 900,
-            lineHeight: 1,
-            color: "#111",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {title}
-        </Typography>
+        {/* Text group */}
+        <Box sx={{ zIndex: 1, display: "flex", flexDirection: "column", alignItems: compact ? "flex-start" : "center", gap: 0.4 }}>
+          {!compact && (
+            <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", color: "text.disabled" }}>
+              del torneo
+            </Typography>
+          )}
 
-        {/* "del torneo" */}
-        <Typography
-          sx={{
-            zIndex: 1,
-            fontSize: "0.6rem",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.22em",
-            color: "text.disabled",
-          }}
-        >
-          del torneo
-        </Typography>
+          <Typography
+            sx={{
+              fontSize: compact ? "1.1rem" : { xs: "1.65rem", md: "1.9rem" },
+              fontWeight: 900,
+              lineHeight: 1,
+              color: "#111",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {title}
+          </Typography>
 
-        {/* Divider */}
-        <Box sx={{ zIndex: 1, width: 40, height: 2, borderRadius: 1, bgcolor: "#F5AD27", mt: 0.25 }} />
+          {!compact && <Box sx={{ width: 40, height: 2, borderRadius: 1, bgcolor: "#F5AD27", mt: 0.25, mb: 0.25 }} />}
 
-        {/* Player names */}
-        <Typography
-          sx={{
-            zIndex: 1,
-            fontSize: { xs: "0.85rem", md: "0.9rem" },
-            fontWeight: 700,
-            color: "text.secondary",
-            textAlign: "center",
-            lineHeight: 1.4,
-          }}
-        >
-          {champion.player1.name}
-          <Box component="span" sx={{ mx: 0.75, color: "#F5AD27", fontWeight: 900 }}>/</Box>
-          {champion.player2.name}
-        </Typography>
+          <Typography
+            sx={{
+              fontSize: compact ? "0.78rem" : { xs: "0.85rem", md: "0.9rem" },
+              fontWeight: 700,
+              color: "text.secondary",
+              lineHeight: 1.4,
+            }}
+          >
+            {champion.player1.name}
+            <Box component="span" sx={{ mx: 0.5, color: "#F5AD27", fontWeight: 900 }}>/</Box>
+            {champion.player2.name}
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
