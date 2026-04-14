@@ -13,6 +13,7 @@ export default function ChampionBanner({ champion, sex }: Props) {
   return (
     <Box
       sx={{
+        width: "100%",
         animation: "cbFadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both",
         "@keyframes cbFadeUp": {
           from: { opacity: 0, transform: "translateY(20px)" },
