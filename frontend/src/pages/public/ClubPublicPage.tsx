@@ -3,7 +3,6 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Box,
-  Button,
   Chip,
   IconButton,
   InputAdornment,
@@ -401,8 +400,16 @@ function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number): string {
+  const dateLabel = day.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const hours = String(Math.floor(slotMin / 60)).padStart(2, "0");
+  const mins  = String(slotMin % 60).padStart(2, "0");
+  const msg = `Hola! Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins}`;
+  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+}
+
 function CourtCalendar({
-  court, bookings, businessHours, days, selectedDayIdx, hideCourtName,
+  court, bookings, businessHours, days, selectedDayIdx, hideCourtName, clubPhone,
 }: {
   court: PublicCourt;
   bookings: PublicBookingSlot[];
@@ -410,6 +417,7 @@ function CourtCalendar({
   days: Date[];
   selectedDayIdx: number;
   hideCourtName?: boolean;
+  clubPhone?: string | null;
 }) {
   // Per-displayed-day schedule, keyed by actual day-of-week
   const daySchedules = days.map(d => {
@@ -482,7 +490,7 @@ function CourtCalendar({
           {/* Slot rows */}
           {slots.map(slotMin => (
             <Fragment key={slotMin}>
-              <Box sx={{ height: 34, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
+              <Box sx={{ height: 52, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
                 <Typography variant="caption" sx={{ fontSize: "0.68rem", color: "text.disabled", whiteSpace: "nowrap" }}>
                   {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
                 </Typography>
@@ -493,8 +501,26 @@ function CourtCalendar({
                 const outside = isClosed || openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
                 const isToday = dk === todayDk;
+                const clickable = clubPhone && !outside && !occupied;
                 return (
-                  <Box key={dk} sx={{ height: 34, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: isToday ? "#bbdefb" : "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                  <Box
+                    key={dk}
+                    component={clickable ? "a" : "div"}
+                    href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
+                    target={clickable ? "_blank" : undefined}
+                    rel={clickable ? "noopener noreferrer" : undefined}
+                    sx={{
+                      height: 52,
+                      bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9",
+                      border: "0.5px solid",
+                      borderColor: isToday ? "#bbdefb" : "divider",
+                      backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined,
+                      cursor: clickable ? "pointer" : "default",
+                      textDecoration: "none",
+                      transition: "filter 0.12s",
+                      "&:hover": clickable ? { filter: "brightness(0.92)" } : undefined,
+                    }}
+                  />
                 );
               })}
             </Fragment>
@@ -516,14 +542,32 @@ function CourtCalendar({
               {slots.map(slotMin => {
                 const outside = openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
+                const clickable = clubPhone && !outside && !occupied;
                 return (
                   <Fragment key={slotMin}>
-                    <Box sx={{ height: 40, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
+                    <Box sx={{ height: 56, display: "flex", alignItems: "center", justifyContent: "flex-end", pr: 1, borderRight: "1px solid", borderColor: "divider" }}>
                       <Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.disabled", whiteSpace: "nowrap" }}>
                         {`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}
                       </Typography>
                     </Box>
-                    <Box sx={{ height: 40, bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9", border: "0.5px solid", borderColor: "divider", backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined }} />
+                    <Box
+                      component={clickable ? "a" : "div"}
+                      href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
+                      target={clickable ? "_blank" : undefined}
+                      rel={clickable ? "noopener noreferrer" : undefined}
+                      sx={{
+                        height: 56,
+                        bgcolor: outside ? "#f5f5f5" : occupied ? "#ffcdd2" : "#f1f8e9",
+                        border: "0.5px solid",
+                        borderColor: "divider",
+                        backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)" : undefined,
+                        cursor: clickable ? "pointer" : "default",
+                        textDecoration: "none",
+                        display: "block",
+                        transition: "filter 0.12s",
+                        "&:hover": clickable ? { filter: "brightness(0.92)" } : undefined,
+                      }}
+                    />
                   </Fragment>
                 );
               })}
@@ -662,41 +706,26 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
               days={days}
               selectedDayIdx={selectedDayIdx}
               hideCourtName
+              clubPhone={clubPhone}
             />
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, mt: 1, flexWrap: "wrap" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f1f8e9", border: "0.5px solid #c8e6c9" }} />
-                  <Typography variant="caption" color="text.secondary">Disponible</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#ffcdd2", border: "0.5px solid #ef9a9a" }} />
-                  <Typography variant="caption" color="text.secondary">Reservado</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f5f5f5", border: "0.5px solid #e0e0e0" }} />
-                  <Typography variant="caption" color="text.secondary">Fuera de horario</Typography>
-                </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f1f8e9", border: "0.5px solid #c8e6c9" }} />
+                <Typography variant="caption" color="text.secondary">Disponible</Typography>
               </Box>
-              {clubPhone && activeCourt && (() => {
-                const selectedDay = days[selectedDayIdx];
-                const dateLabel = selectedDay.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
-                const msg = `Hola! Quisiera reservar la ${activeCourt.name} para el ${dateLabel}`;
-                const waUrl = `https://wa.me/${clubPhone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
-                return (
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<WhatsAppIcon />}
-                    href={waUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ flexShrink: 0, textTransform: "none" }}
-                  >
-                    Reservar cancha
-                  </Button>
-                );
-              })()}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#ffcdd2", border: "0.5px solid #ef9a9a" }} />
+                <Typography variant="caption" color="text.secondary">Reservado</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: "#f5f5f5", border: "0.5px solid #e0e0e0" }} />
+                <Typography variant="caption" color="text.secondary">Fuera de horario</Typography>
+              </Box>
+              {clubPhone && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                  Tocá un horario disponible para reservar por WhatsApp
+                </Typography>
+              )}
             </Box>
           </>
         )}
