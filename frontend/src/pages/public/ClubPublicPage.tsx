@@ -616,11 +616,47 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
 
   const activeCourt = data?.courts.find(c => c.id === selectedCourtId) ?? data?.courts[0] ?? null;
 
+  const availableCourtsCount = useMemo(() => {
+    if (!data) return 0;
+    const selectedDay = days[selectedDayIdx];
+    const dk = dateKey(selectedDay);
+    const dow = (selectedDay.getDay() + 6) % 7;
+    const schedule = businessHours.find(h => h.day === DAYS[dow]);
+    if (schedule?.isOpen === false) return 0;
+    const openMin  = parseHHMM(schedule?.openTime  ?? "08:00");
+    const closeMin = parseHHMM(schedule?.closeTime ?? "22:00");
+    const totalSlots = Math.max(0, Math.floor((closeMin - openMin) / SLOT_MIN));
+    // count occupied slots per court for this day
+    const occupiedByCourtId = new Map<number, number>();
+    data.bookings.forEach(b => {
+      const start = new Date(b.startTime);
+      if (dateKey(start) !== dk) return;
+      const end = new Date(b.endTime);
+      const startMin = start.getHours() * 60 + start.getMinutes();
+      const endMin   = end.getHours()   * 60 + end.getMinutes();
+      let count = 0;
+      for (let m = Math.floor(startMin / SLOT_MIN) * SLOT_MIN; m < endMin; m += SLOT_MIN) count++;
+      occupiedByCourtId.set(b.courtId, (occupiedByCourtId.get(b.courtId) ?? 0) + count);
+    });
+    return data.courts.filter(c =>
+      c.status !== "NOT AVAILABLE" && (occupiedByCourtId.get(c.id) ?? 0) < totalSlots
+    ).length;
+  }, [data, days, selectedDayIdx, businessHours]);
+
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
       <Box sx={{ px: { xs: 2, md: 3 }, py: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
         <CalendarTodayIcon sx={{ color: "text.secondary", fontSize: 20 }} />
         <Typography variant="h6" fontWeight={800} sx={{ flex: 1, minWidth: 0, fontSize: { xs: "1rem", md: "1.25rem" } }}>Disponibilidad de canchas</Typography>
+        {!isLoading && data && (
+          <Chip
+            label={`${availableCourtsCount} disponible${availableCourtsCount !== 1 ? "s" : ""}`}
+            size="small"
+            color={availableCourtsCount > 0 ? "success" : "default"}
+            variant="outlined"
+            sx={{ fontWeight: 600, fontSize: "0.75rem" }}
+          />
+        )}
         {!isLoading && data && data.courts.length > 1 && (
           <Select
             size="small"
