@@ -15,5 +15,5 @@ export interface Profesor {
 export interface ProfesorFormData {
   name: string;
   phone: string;
-  sex: ProfesorSex | "";
+  sex?: ProfesorSex | "";
 }

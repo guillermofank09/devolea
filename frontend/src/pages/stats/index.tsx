@@ -30,7 +30,7 @@ import ProfesorBillingCard from "./ProfesorBillingCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRevenue, fetchProfesorStats, fetchPlayerStats } from "../../api/statsService";
 import PageLoader from "../../components/common/PageLoader";
-import type { RevenueEntry, CourtOccupancy, OccupancySummary, PlayerCategoryEntry } from "../../api/statsService";
+import type { CourtOccupancy, OccupancySummary, PlayerCategoryEntry } from "../../api/statsService";
 import PageHeader from "../../components/common/PageHeader";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
