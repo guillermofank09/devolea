@@ -8,11 +8,11 @@ function getService() {
 }
 
 export const createProfesor = async (req: Request, res: Response) => {
-  const { name, phone, hourlyRate, schedule } = req.body;
+  const { name, phone, hourlyRate, sex, schedule } = req.body;
   if (!name) { res.status(400).json({ error: "El nombre es requerido" }); return; }
   const userId = req.authUser!.sub;
   try {
-    const profesor = await getService().create({ name, phone, hourlyRate: hourlyRate != null ? Number(hourlyRate) : undefined, schedule }, userId);
+    const profesor = await getService().create({ name, phone, hourlyRate: hourlyRate != null ? Number(hourlyRate) : undefined, sex, schedule }, userId);
     res.status(201).json(profesor);
   } catch {
     res.status(500).json({ error: "Error al crear el profesor" });
@@ -40,9 +40,9 @@ export const getProfesorById = async (req: Request, res: Response) => {
 };
 
 export const updateProfesor = async (req: Request, res: Response) => {
-  const { name, phone, hourlyRate, schedule } = req.body;
+  const { name, phone, hourlyRate, sex, schedule } = req.body;
   try {
-    const profesor = await getService().update(Number(req.params.id), { name, phone, hourlyRate: hourlyRate != null ? Number(hourlyRate) : undefined, schedule });
+    const profesor = await getService().update(Number(req.params.id), { name, phone, hourlyRate: hourlyRate != null ? Number(hourlyRate) : undefined, sex, schedule });
     if (!profesor) { res.status(404).json({ error: "Profesor no encontrado" }); return; }
     res.json(profesor);
   } catch {
