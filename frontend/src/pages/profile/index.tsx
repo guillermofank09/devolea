@@ -25,6 +25,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, saveProfile } from "../../api/profileService";
+import { uploadImage } from "../../api/uploadService";
 import { apiChangePassword } from "../../api/authService";
 import type { ClubProfile, DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
@@ -193,7 +194,8 @@ export default function Profile() {
 
   // ── form state ──
   const [clubName, setClubName]     = useState("");
-  const [logoBase64, setLogoBase64] = useState("");
+  const [logoUrl, setLogoUrl]       = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
   const [address, setAddress]       = useState("");
   const [phone, setPhone]           = useState("");
   const [lat, setLat]               = useState<number | null>(null);
@@ -211,7 +213,7 @@ export default function Profile() {
   useEffect(() => {
     if (!data) return;
     setClubName(data.clubName ?? "");
-    setLogoBase64(data.logoBase64 ?? "");
+    setLogoUrl(data.logoUrl ?? data.logoBase64 ?? ""); // prefer new URL, fall back to legacy base64
     setAddress(data.address ?? "");
     setPhone(data.phone ?? "");
     setAddrInput(data.address ?? "");
@@ -238,17 +240,22 @@ export default function Profile() {
   }, [addrInput]);
 
   // ── logo upload ──
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setLogoBase64(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    e.target.value = "";
+    setLogoUploading(true);
+    try {
+      const url = await uploadImage(file, "logos");
+      setLogoUrl(url);
+    } finally {
+      setLogoUploading(false);
+    }
   }
 
   // ── save ──
   function handleSave() {
-    mutation.mutate({ clubName, logoBase64, address, phone, latitude: lat, longitude: lng, businessHours: hours });
+    mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours });
   }
 
   if (isPending) return <PageLoader />;
@@ -311,16 +318,18 @@ export default function Profile() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 0.5,
-                    cursor: "pointer",
+                    cursor: logoUploading ? "default" : "pointer",
                     overflow: "hidden",
                     transition: "border-color 150ms",
-                    "&:hover": { borderColor: "text.secondary" },
+                    "&:hover": logoUploading ? {} : { borderColor: "text.secondary" },
                   }}
                 >
-                  {logoBase64 ? (
+                  {logoUploading ? (
+                    <CircularProgress size={24} />
+                  ) : logoUrl ? (
                     <Box
                       component="img"
-                      src={logoBase64}
+                      src={logoUrl}
                       alt="logo"
                       sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
                     />
@@ -332,13 +341,13 @@ export default function Profile() {
                       </Typography>
                     </>
                   )}
-                  <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
+                  <input type="file" accept="image/*" hidden disabled={logoUploading} onChange={handleLogoChange} />
                 </Box>
-                {logoBase64 && (
+                {logoUrl && !logoUploading && (
                   <Button
                     size="small"
                     color="error"
-                    onClick={() => setLogoBase64("")}
+                    onClick={() => setLogoUrl("")}
                     sx={{ textTransform: "none", mt: 0.5, fontSize: "0.72rem" }}
                   >
                     Eliminar logo

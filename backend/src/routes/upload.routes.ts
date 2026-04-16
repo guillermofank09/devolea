@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { upload, uploadAvatar } from "../controllers/upload.controller";
+import { upload, uploadImage } from "../controllers/upload.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.post("/upload/avatar", requireAuth, upload.single("file"), uploadAvatar);
+// POST /api/upload/image?folder=avatars|logos|...
+router.post("/upload/image", requireAuth, upload.single("file"), uploadImage);
+
+// Keep legacy path for backwards compatibility
+router.post("/upload/avatar", requireAuth, upload.single("file"), uploadImage);
 
 export default router;

@@ -11,6 +11,9 @@ export class ClubProfile {
   @Column({ type: "text", nullable: true })
   logoBase64!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  logoUrl!: string;
+
   @Column({ nullable: true })
   address!: string;
 

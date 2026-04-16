@@ -906,13 +906,13 @@ function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
 interface ClubInfoPanelProps {
   clubName: string;
   address?: string;
-  logoBase64?: string | null;
+  logoSrc?: string | null;
   mapUrl: string | null;
   businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
   phone?: string | null;
 }
 
-function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours, phone }: ClubInfoPanelProps) {
+function ClubInfoPanel({ clubName, address, logoSrc, mapUrl, businessHours, phone }: ClubInfoPanelProps) {
   const navigate = useNavigate();
   return (
     <Box
@@ -937,8 +937,8 @@ function ClubInfoPanel({ clubName, address, logoBase64, mapUrl, businessHours, p
           onClick={() => navigate("/")}
           sx={{ cursor: "pointer", mb: 2.5, transition: "transform 0.2s", "&:hover": { transform: "scale(1.05)" } }}
         >
-          {logoBase64 ? (
-            <Box component="img" src={logoBase64} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: `2px solid ${COLORS.border}`, bgcolor: "rgba(255,255,255,0.03)", p: 0.75 }} />
+          {logoSrc ? (
+            <Box component="img" src={logoSrc} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: `2px solid ${COLORS.border}`, bgcolor: "rgba(255,255,255,0.03)", p: 0.75 }} />
           ) : (
             <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <SportsTennisIcon sx={{ fontSize: 40, color: COLORS.panelBg }} />
@@ -1163,8 +1163,8 @@ export default function ClubPublicPage() {
                 <Box sx={{ borderRadius: 4, overflow: "hidden", background: `linear-gradient(160deg, #0f172a 0%, #1e293b 60%, #0f2744 100%)` }}>
                   {/* Identity */}
                   <Box sx={{ px: 3, pt: 4, pb: 3, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    {profile.logoBase64 ? (
-                      <Box component="img" src={profile.logoBase64} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", mb: 2.5, border: `2px solid rgba(255,255,255,0.12)`, bgcolor: "rgba(255,255,255,0.04)", p: 0.75 }} />
+                    {(profile.logoUrl || profile.logoBase64) ? (
+                      <Box component="img" src={profile.logoUrl || profile.logoBase64} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", mb: 2.5, border: `2px solid rgba(255,255,255,0.12)`, bgcolor: "rgba(255,255,255,0.04)", p: 0.75 }} />
                     ) : (
                       <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", mb: 2.5 }}>
                         <SportsTennisIcon sx={{ fontSize: 40, color: COLORS.panelBg }} />
@@ -1282,7 +1282,7 @@ export default function ClubPublicPage() {
         </Box>
       </Box>
 
-      <ClubInfoPanel clubName={profile.clubName} address={profile.address} logoBase64={profile.logoBase64} mapUrl={mapUrl} businessHours={profile.businessHours} phone={profile.phone} />
+      <ClubInfoPanel clubName={profile.clubName} address={profile.address} logoSrc={profile.logoUrl || profile.logoBase64} mapUrl={mapUrl} businessHours={profile.businessHours} phone={profile.phone} />
       <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} />
 
     </Box>

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import { uploadAvatar } from "../../api/uploadService";
+import { uploadImage } from "../../api/uploadService";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 interface Props {
@@ -22,7 +22,7 @@ export default function AvatarUpload({ name, value, onChange, disabled, size = 7
     e.target.value = "";
     setUploading(true);
     try {
-      const url = await uploadAvatar(file);
+      const url = await uploadImage(file, "avatars");
       onChange(url);
     } finally {
       setUploading(false);

@@ -8,7 +8,8 @@ export interface DaySchedule {
 export interface ClubProfile {
   id?: number;
   clubName: string;
-  logoBase64?: string;
+  logoBase64?: string;  // legacy — kept for backward compat
+  logoUrl?: string;     // new: URL in Vercel Blob or local uploads
   address: string;
   phone?: string;
   latitude?: number | null;

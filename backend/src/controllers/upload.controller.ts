@@ -12,27 +12,30 @@ export const upload = multer({
   },
 });
 
-export async function uploadAvatar(req: Request, res: Response) {
+// folder: "avatars" | "logos" | etc.
+export async function uploadImage(req: Request, res: Response) {
   const file = req.file;
   if (!file) {
     res.status(400).json({ error: "No se recibió ningún archivo" });
     return;
   }
 
+  const folder = (req.query.folder as string) || "images";
+  const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
+  const filename = `${Date.now()}${ext}`;
+
   try {
     let url: string;
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    const filename = `${Date.now()}${ext}`;
 
     if (process.env.VERCEL) {
       const { put } = await import("@vercel/blob");
-      const blob = await put(`avatars/${filename}`, file.buffer, { access: "public" });
+      const blob = await put(`${folder}/${filename}`, file.buffer, { access: "public" });
       url = blob.url;
     } else {
-      const uploadsDir = path.join(__dirname, "../../uploads/avatars");
+      const uploadsDir = path.join(__dirname, `../../uploads/${folder}`);
       if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
       fs.writeFileSync(path.join(uploadsDir, filename), file.buffer);
-      url = `${req.protocol}://${req.get("host")}/uploads/avatars/${filename}`;
+      url = `${req.protocol}://${req.get("host")}/uploads/${folder}/${filename}`;
     }
 
     res.json({ url });
