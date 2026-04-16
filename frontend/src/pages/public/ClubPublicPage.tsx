@@ -1052,45 +1052,6 @@ function MobileBottomNav({ items, activeId, onSelect }: { items: PublicNavItem[]
   );
 }
 
-function MobileClubHeader({ clubName, address, logoBase64, phone }: { clubName: string; address?: string; logoBase64?: string | null; phone?: string | null }) {
-  const navigate = useNavigate();
-  return (
-    <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, px: 2, py: 1.5, bgcolor: COLORS.panelBg, borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 0, zIndex: 50 }}>
-      <Box onClick={() => navigate("/")} sx={{ cursor: "pointer", flexShrink: 0 }}>
-        {logoBase64 ? (
-          <Box component="img" src={logoBase64} alt="logo" sx={{ width: 38, height: 38, borderRadius: 1.5, objectFit: "contain", border: `1px solid ${COLORS.border}`, p: 0.4, bgcolor: "rgba(255,255,255,0.03)", display: "block" }} />
-        ) : (
-          <Box sx={{ width: 38, height: 38, borderRadius: 1.5, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <SportsTennisIcon sx={{ fontSize: 20, color: COLORS.panelBg }} />
-          </Box>
-        )}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontWeight={800} sx={{ color: "#fff", lineHeight: 1.2, fontSize: "0.95rem" }} noWrap>
-          {clubName}
-        </Typography>
-        {address && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, mt: 0.1 }}>
-            <LocationOnIcon sx={{ fontSize: 11, color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
-            <Typography sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", lineHeight: 1 }} noWrap>{address}</Typography>
-          </Box>
-        )}
-      </Box>
-      {phone && (
-        <Box
-          component="a"
-          href={`https://wa.me/${phone.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ flexShrink: 0, width: 36, height: 36, borderRadius: 2, bgcolor: "#16a34a", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "opacity 0.15s", "&:hover": { opacity: 0.85 } }}
-        >
-          <WhatsAppIcon sx={{ fontSize: 18, color: "#fff" }} />
-        </Box>
-      )}
-    </Box>
-  );
-}
-
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function ClubPublicPage() {
