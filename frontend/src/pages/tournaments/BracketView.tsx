@@ -383,7 +383,7 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit }: { match: Tour
   );
 }
 
-function PairRow({ label, isWinner, isLoser, isBye }: { label: string; isWinner: boolean; isLoser: boolean; isBye: boolean }) {
+function PairRow({ label, isWinner, isLoser, isBye }: { label: string; isWinner: boolean; isLoser: boolean; isBye: boolean; score: string }) {
   return (
     <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 2, gap: 1, bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
       <Typography
