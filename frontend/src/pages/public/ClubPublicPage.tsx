@@ -223,7 +223,7 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
       </Box>
 
       {/* Fixture */}
-      <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
         {isLoading && <PageLoader />}
         {!isLoading && data && !hasMatches && (
           <Box sx={{ textAlign: "center", py: 2 }}>
@@ -245,9 +245,12 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
           </Box>
         )}
         {!isLoading && data && hasMatches && (
-          isBracket
-            ? <BracketView matches={data.matches} sex={data.sex} readOnly />
-            : <RoundRobinList matches={data.matches} />
+          <Box sx={{ overflowX: "auto", overflowY: "auto", WebkitOverflowScrolling: "touch", mx: { xs: -2, md: 0 }, px: { xs: 2, md: 0 } }}>
+            {isBracket
+              ? <BracketView matches={data.matches} sex={data.sex} readOnly />
+              : <RoundRobinList matches={data.matches} />
+            }
+          </Box>
         )}
       </Box>
     </Paper>
@@ -705,9 +708,7 @@ function ProfesorCard({ profesor }: { profesor: PublicProfesor }) {
         overflow: "hidden",
         transition: "box-shadow 0.2s",
         "&:hover": { boxShadow: "0 4px 16px rgba(0,0,0,0.08)" },
-        // mobile: fixed width for horizontal scroll
-        width: { xs: 220, sm: "auto" },
-        flexShrink: 0,
+        width: "100%",
       }}
     >
       {/* Top accent */}
@@ -809,16 +810,7 @@ function ProfesoresSection({ username }: { username: string }) {
 
       {!isLoading && filtered.length > 0 && (
         <>
-          {/* Mobile: horizontal scroll */}
-          <Box sx={{ display: { xs: "flex", sm: "none" }, gap: 2, overflowX: "auto", pb: 1.5, mx: -2, px: 2, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}>
-            {filtered.map(p => (
-              <Box key={p.id} sx={{ scrollSnapAlign: "start" }}>
-                <ProfesorCard profesor={p} />
-              </Box>
-            ))}
-          </Box>
-          {/* Desktop: grid */}
-          <Box sx={{ display: { xs: "none", sm: "grid" }, gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 2.5 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(auto-fill, minmax(240px, 1fr))" }, gap: 2 }}>
             {filtered.map(p => <ProfesorCard key={p.id} profesor={p} />)}
           </Box>
         </>
@@ -1198,7 +1190,6 @@ export default function ClubPublicPage() {
 
       <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
 
-        <MobileClubHeader clubName={profile.clubName} address={profile.address} logoBase64={profile.logoBase64} phone={profile.phone} />
 
         <Box sx={{ flex: 1, px: { xs: 2, md: 5 }, py: { xs: 2.5, md: 5 }, pb: { xs: "calc(72px + env(safe-area-inset-bottom, 12px))", md: 5 }, maxWidth: 1100, mx: "auto", width: "100%" }}>
 
