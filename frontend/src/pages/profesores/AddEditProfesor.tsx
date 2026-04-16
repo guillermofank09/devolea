@@ -26,6 +26,8 @@ import PhoneField from "../../components/common/PhoneField";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABEL } from "../../constants/sports";
 
 const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "" };
 
@@ -36,8 +38,12 @@ interface Props {
 }
 
 export default function AddEditProfesor({ open, onClose, profesor }: Props) {
+  const { user } = useAuth();
+  const clubSports = user?.sports ?? ["PADEL"];
+
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
   const [hourlyRateStr, setHourlyRateStr] = useState("");
+  const [sport, setSport] = useState<string>(clubSports[0] ?? "PADEL");
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
@@ -49,10 +55,12 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
     if (profesor) {
       setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
+      setSport(profesor.sport ?? clubSports[0] ?? "PADEL");
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
       setForm(EMPTY);
       setHourlyRateStr("");
+      setSport(clubSports[0] ?? "PADEL");
       setSchedule(DEFAULT_HOURS);
     }
     setError(null);
@@ -65,6 +73,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
         sex: data.sex || undefined,
         avatarUrl: data.avatarUrl || undefined,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
+        sport,
         schedule,
       };
       return isEditing ? updateProfesor(profesor!.id, payload) : createProfesor(payload);
@@ -162,6 +171,42 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 <ToggleButton value="FEMENINO">Femenino</ToggleButton>
               </ToggleButtonGroup>
             </Box>
+
+            {clubSports.length > 1 && (
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                <ToggleButtonGroup
+                  exclusive
+                  value={sport}
+                  onChange={(_, v) => { if (v) setSport(v); }}
+                  size="small"
+                  disabled={mutation.isPending}
+                  sx={{ flexWrap: "wrap", gap: 0.5 }}
+                >
+                  {clubSports.map(s => (
+                    <ToggleButton
+                      key={s}
+                      value={s}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.8rem",
+                        borderRadius: "8px !important",
+                        border: "1.5px solid !important",
+                        px: 1.5,
+                        "&.Mui-selected": {
+                          bgcolor: "rgba(245,173,39,0.15)",
+                          borderColor: "#F5AD27 !important",
+                          color: "#b07d00",
+                        },
+                      }}
+                    >
+                      {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </Box>
+            )}
 
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>

@@ -8,6 +8,7 @@ const API_URL = `${API_BASE}/api/profesores`;
 export interface ProfesorPayload extends ProfesorFormData {
   hourlyRate?: number;
   schedule?: DaySchedule[];
+  sport?: string;
 }
 
 export async function fetchProfesores(search?: string): Promise<Profesor[]> {
