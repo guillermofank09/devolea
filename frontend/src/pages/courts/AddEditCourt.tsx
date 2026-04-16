@@ -143,25 +143,23 @@ const AddEditCourt = ({
                 />
               </Box>
 
-              {sports.length > 1 && (
-                <Box>
-                  <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
-                  <ToggleButtonGroup
-                    exclusive
-                    value={sport}
-                    onChange={(_, v) => { if (v) handleSportChange(v); }}
-                    size="small"
-                    disabled={mutation.isPending}
-                    sx={{ flexWrap: "wrap", gap: 0.5 }}
-                  >
-                    {sports.map(s => (
-                      <ToggleButton key={s} value={s} sx={TOGGLE_BTN_SX}>
-                        {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
-                      </ToggleButton>
-                    ))}
-                  </ToggleButtonGroup>
-                </Box>
-              )}
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                <ToggleButtonGroup
+                  exclusive
+                  value={sport}
+                  onChange={(_, v) => { if (v) handleSportChange(v); }}
+                  size="small"
+                  disabled={mutation.isPending || sports.length === 1}
+                  sx={{ flexWrap: "wrap", gap: 0.5 }}
+                >
+                  {sports.map(s => (
+                    <ToggleButton key={s} value={s} sx={TOGGLE_BTN_SX}>
+                      {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </Box>
 
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Tipo</FormLabel>
