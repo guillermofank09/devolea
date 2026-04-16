@@ -27,6 +27,10 @@ import { fetchSettings, saveSettings } from "../../api/settingsService";
 import type { AppSettings } from "../../types/AppSettings";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
+import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABEL } from "../../constants/sports";
+
+const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({
@@ -54,6 +58,9 @@ function Section({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Settings() {
+  const { user } = useAuth();
+  const clubSports = user?.sports ?? ["PADEL"];
+  const sportsWithClass = clubSports.filter(s => SPORTS_WITH_CLASS.includes(s));
   const qc = useQueryClient();
 
   const { data, isPending, isError } = useQuery<AppSettings>({
@@ -73,6 +80,8 @@ export default function Settings() {
 
   const [hourlyRate, setHourlyRate] = useState<string>("");
   const [classHourlyRate, setClassHourlyRate] = useState<string>("");
+  const [sportPrices, setSportPrices] = useState<Record<string, number>>({});
+  const [sportClassPrices, setSportClassPrices] = useState<Record<string, number>>({});
   const [showTournaments, setShowTournaments] = useState<boolean>(true);
   const [showCourts, setShowCourts] = useState<boolean>(true);
   const [showProfesores, setShowProfesores] = useState<boolean>(true);
@@ -86,6 +95,8 @@ export default function Settings() {
     const classRate = Number(data.classHourlyRate);
     setHourlyRate(rate > 0 ? String(rate) : "");
     setClassHourlyRate(classRate > 0 ? String(classRate) : "");
+    setSportPrices(data.sportPrices ?? {});
+    setSportClassPrices(data.sportClassPrices ?? {});
     setShowTournaments(data.showTournaments ?? true);
     setShowCourts(data.showCourts ?? true);
     setShowProfesores(data.showProfesores ?? true);
@@ -97,6 +108,8 @@ export default function Settings() {
     mutation.mutate({
       hourlyRate: Number(hourlyRate) || 0,
       classHourlyRate: Number(classHourlyRate) || 0,
+      sportPrices,
+      sportClassPrices,
       showTournaments,
       showCourts,
       showProfesores,
@@ -106,14 +119,6 @@ export default function Settings() {
     });
   }
 
-  function makePriceHandler(setter: (v: string) => void) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-        setter(raw.replace(/^0+(\d)/, "$1"));
-      }
-    };
-  }
 
   if (isPending) return <PageLoader />;
 
@@ -137,47 +142,88 @@ export default function Settings() {
         <Grid size={{ xs: 12, md: 6 }}>
           {/* ── Precios ── */}
           <Section icon={<MonetizationOnOutlinedIcon />} title="Precios">
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+
+              {/* Precio de cancha por deporte */}
               <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                  Precio por hora (general)
+                <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
+                  sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
+                  Precio por hora de cancha
                 </Typography>
-                <TextField
-                  type="text"
-                  inputMode="decimal"
-                  size="small"
-                  value={hourlyRate}
-                  onChange={makePriceHandler(setHourlyRate)}
-                  placeholder="0"
-                  inputProps={{ min: 0, step: 0.5 }}
-                  slotProps={{
-                    input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                    formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
-                  }}
-                  helperText="Se aplica a reservas de jugadores"
-                  sx={{ width: { xs: "100%", sm: 200 } }}
-                />
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {clubSports.map(sport => (
+                    <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
+                        {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                      </Typography>
+                      <TextField
+                        type="text"
+                        inputMode="decimal"
+                        size="small"
+                        placeholder="0"
+                        value={sportPrices[sport] != null ? String(sportPrices[sport]) : ""}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                            const val = raw.replace(/^0+(\d)/, "$1");
+                            setSportPrices(prev => {
+                              const next = { ...prev };
+                              if (val === "") { delete next[sport]; } else { next[sport] = Number(val); }
+                              return next;
+                            });
+                          }
+                        }}
+                        slotProps={{
+                          input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                        }}
+                        sx={{ width: { xs: "100%", sm: 160 } }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                  Precio por hora (clase con profesor)
-                </Typography>
-                <TextField
-                  type="text"
-                  inputMode="decimal"
-                  size="small"
-                  value={classHourlyRate}
-                  onChange={makePriceHandler(setClassHourlyRate)}
-                  placeholder="0"
-                  inputProps={{ min: 0, step: 0.5 }}
-                  slotProps={{
-                    input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                    formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
-                  }}
-                  helperText="Se aplica cuando se reserva una clase con profesor"
-                  sx={{ width: { xs: "100%", sm: 200 } }}
-                />
-              </Box>
+
+              {/* Precio de clase con profesor (solo PADEL, TENIS, FUTBOL) */}
+              {sportsWithClass.length > 0 && (
+                <Box>
+                  <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
+                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
+                    Precio por hora (clase con profesor)
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    {sportsWithClass.map(sport => (
+                      <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
+                          {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                        </Typography>
+                        <TextField
+                          type="text"
+                          inputMode="decimal"
+                          size="small"
+                          placeholder="0"
+                          value={sportClassPrices[sport] != null ? String(sportClassPrices[sport]) : ""}
+                          onChange={e => {
+                            const raw = e.target.value;
+                            if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                              const val = raw.replace(/^0+(\d)/, "$1");
+                              setSportClassPrices(prev => {
+                                const next = { ...prev };
+                                if (val === "") { delete next[sport]; } else { next[sport] = Number(val); }
+                                return next;
+                              });
+                            }
+                          }}
+                          slotProps={{
+                            input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                          }}
+                          sx={{ width: { xs: "100%", sm: 160 } }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
             </Box>
           </Section>
 

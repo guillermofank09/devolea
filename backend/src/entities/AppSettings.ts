@@ -29,6 +29,12 @@ export class AppSettings {
   @Column({ type: "int", default: 3 })
   tournamentSetsCount!: number;
 
+  @Column({ type: "text", nullable: true })
+  sportPricesJson?: string;
+
+  @Column({ type: "text", nullable: true })
+  sportClassPricesJson?: string;
+
   @Column({ nullable: true })
   userId?: number;
 }

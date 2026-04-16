@@ -10,11 +10,7 @@ function parseProfile(raw: any): ClubProfile {
   if (raw.businessHoursJson) {
     try { businessHours = JSON.parse(raw.businessHoursJson); } catch { /* ignore */ }
   }
-  let sportPrices: Record<string, number> = {};
-  if (raw.sportPricesJson) {
-    try { sportPrices = JSON.parse(raw.sportPricesJson); } catch { /* ignore */ }
-  }
-  return { ...raw, businessHours, sportPrices };
+  return { ...raw, businessHours };
 }
 
 export async function fetchProfile(): Promise<ClubProfile> {
@@ -26,7 +22,6 @@ export async function saveProfile(profile: ClubProfile): Promise<ClubProfile> {
   const payload = {
     ...profile,
     businessHoursJson: JSON.stringify(profile.businessHours ?? DEFAULT_HOURS),
-    sportPricesJson: JSON.stringify(profile.sportPrices ?? {}),
   };
   const { data } = await axios.put(`${BASE}/profile`, payload);
   return parseProfile(data);
