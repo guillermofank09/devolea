@@ -366,43 +366,6 @@ export default function Profile() {
             <BusinessHoursEditor value={hours} onChange={setHours} />
           </Section>
 
-          {/* ── Sport prices ── */}
-          <Section icon={<AttachMoneyOutlinedIcon />} title="Precios por deporte">
-            <Grid container spacing={2}>
-              {clubSports.map(sport => (
-                <Grid key={sport} size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                    {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="number"
-                    placeholder="0"
-                    value={sportPrices[sport] ?? ""}
-                    onChange={e => {
-                      const val = e.target.value === "" ? undefined : Number(e.target.value);
-                      setSportPrices(prev => {
-                        const next = { ...prev };
-                        if (val === undefined) { delete next[sport]; } else { next[sport] = val; }
-                        return next;
-                      });
-                    }}
-                    slotProps={{
-                      input: {
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                        inputProps: { min: 0, step: 100 },
-                      },
-                    }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-            <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1.5 }}>
-              Precio por hora de cancha. Se utiliza como referencia en reservas.
-            </Typography>
-          </Section>
-
         </Grid>
 
         {/* ── Right column ── */}
@@ -521,6 +484,43 @@ export default function Profile() {
               )}
             />
           </Section>
+          {/* ── Sport prices ── */}
+          <Section icon={<AttachMoneyOutlinedIcon />} title="Precios por deporte">
+            <Grid container spacing={2}>
+              {clubSports.map(sport => (
+                <Grid key={sport} size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                    {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    placeholder="0"
+                    value={sportPrices[sport] ?? ""}
+                    onChange={e => {
+                      const val = e.target.value === "" ? undefined : Number(e.target.value);
+                      setSportPrices(prev => {
+                        const next = { ...prev };
+                        if (val === undefined) { delete next[sport]; } else { next[sport] = val; }
+                        return next;
+                      });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        inputProps: { min: 0, step: 100 },
+                      },
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1.5 }}>
+              Precio por hora de cancha. Se utiliza como referencia en reservas.
+            </Typography>
+          </Section>
+
           {/* ── Password ── */}
           <PasswordSection token={token!} />
 
