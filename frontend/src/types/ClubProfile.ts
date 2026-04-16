@@ -16,6 +16,8 @@ export interface ClubProfile {
   longitude?: number | null;
   businessHoursJson?: string;
   businessHours?: DaySchedule[];
+  sportPricesJson?: string;
+  sportPrices?: Record<string, number>;
 }
 
 export const DEFAULT_HOURS: DaySchedule[] = [

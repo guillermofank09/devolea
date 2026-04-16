@@ -21,6 +21,7 @@ import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +35,7 @@ import PageLoader from "../../components/common/PageLoader";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 import PhoneField from "../../components/common/PhoneField";
 import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABEL } from "../../constants/sports";
 
 // ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
 interface NominatimPlace {
@@ -175,7 +177,8 @@ function PasswordSection({ token }: { token: string }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Profile() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const clubSports = user?.sports ?? ["PADEL"];
   const qc = useQueryClient();
   const { data, isPending, isError } = useQuery<ClubProfile>({
     queryKey: ["clubProfile"],
@@ -201,6 +204,7 @@ export default function Profile() {
   const [lat, setLat]               = useState<number | null>(null);
   const [lng, setLng]               = useState<number | null>(null);
   const [hours, setHours]           = useState<DaySchedule[]>(DEFAULT_HOURS);
+  const [sportPrices, setSportPrices] = useState<Record<string, number>>({});
   const [snack, setSnack]           = useState(false);
 
   // ── address autocomplete state ──
@@ -220,6 +224,7 @@ export default function Profile() {
     setLat(data.latitude ?? null);
     setLng(data.longitude ?? null);
     setHours(data.businessHours?.length ? data.businessHours : DEFAULT_HOURS);
+    setSportPrices(data.sportPrices ?? {});
   }, [data]);
 
   // debounced Nominatim search
@@ -255,7 +260,7 @@ export default function Profile() {
 
   // ── save ──
   function handleSave() {
-    mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours });
+    mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours, sportPrices });
   }
 
   if (isPending) return <PageLoader />;
@@ -359,6 +364,43 @@ export default function Profile() {
           {/* ── Business hours ── */}
           <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
             <BusinessHoursEditor value={hours} onChange={setHours} />
+          </Section>
+
+          {/* ── Sport prices ── */}
+          <Section icon={<AttachMoneyOutlinedIcon />} title="Precios por deporte">
+            <Grid container spacing={2}>
+              {clubSports.map(sport => (
+                <Grid key={sport} size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                    {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    placeholder="0"
+                    value={sportPrices[sport] ?? ""}
+                    onChange={e => {
+                      const val = e.target.value === "" ? undefined : Number(e.target.value);
+                      setSportPrices(prev => {
+                        const next = { ...prev };
+                        if (val === undefined) { delete next[sport]; } else { next[sport] = val; }
+                        return next;
+                      });
+                    }}
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        inputProps: { min: 0, step: 100 },
+                      },
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1.5 }}>
+              Precio por hora de cancha. Se utiliza como referencia en reservas.
+            </Typography>
           </Section>
 
         </Grid>
