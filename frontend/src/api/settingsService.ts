@@ -11,7 +11,9 @@ function parseSettings(raw: any): AppSettings {
   if (raw.sportPricesJson) { try { sportPrices = JSON.parse(raw.sportPricesJson); } catch { /* ignore */ } }
   if (raw.sportClassPricesJson) { try { sportClassPrices = JSON.parse(raw.sportClassPricesJson); } catch { /* ignore */ } }
   if (raw.tournamentDurationsJson) { try { tournamentDurations = JSON.parse(raw.tournamentDurationsJson); } catch { /* ignore */ } }
-  return { ...raw, sportPrices, sportClassPrices, tournamentDurations };
+  let tournamentSets: Record<string, number> = {};
+  if (raw.tournamentSetsJson) { try { tournamentSets = JSON.parse(raw.tournamentSetsJson); } catch { /* ignore */ } }
+  return { ...raw, sportPrices, sportClassPrices, tournamentDurations, tournamentSets };
 }
 
 export async function fetchSettings(): Promise<AppSettings> {
@@ -25,6 +27,7 @@ export async function saveSettings(s: AppSettings): Promise<AppSettings> {
     sportPricesJson: JSON.stringify(s.sportPrices ?? {}),
     sportClassPricesJson: JSON.stringify(s.sportClassPrices ?? {}),
     tournamentDurationsJson: JSON.stringify(s.tournamentDurations ?? {}),
+    tournamentSetsJson: JSON.stringify(s.tournamentSets ?? {}),
   };
   const { data } = await axios.put(`${BASE}/settings`, payload);
   return parseSettings(data);

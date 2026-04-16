@@ -31,6 +31,7 @@ import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
 const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
+const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({
@@ -88,6 +89,7 @@ export default function Settings() {
   const [tournamentMatchDuration, setTournamentMatchDuration] = useState<string>("60");
   const [tournamentDurations, setTournamentDurations] = useState<Record<string, number>>({});
   const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
+  const [tournamentSets, setTournamentSets] = useState<Record<string, number>>({});
   const [snack, setSnack] = useState(false);
 
   useEffect(() => {
@@ -104,6 +106,7 @@ export default function Settings() {
     setTournamentMatchDuration(String(data.tournamentMatchDuration ?? 60));
     setTournamentDurations(data.tournamentDurations ?? {});
     setTournamentSetsCount(data.tournamentSetsCount ?? 3);
+    setTournamentSets(data.tournamentSets ?? {});
   }, [data]);
 
   function handleSave() {
@@ -118,6 +121,7 @@ export default function Settings() {
       tournamentMatchDuration: Number(tournamentMatchDuration) || 60,
       tournamentDurations,
       tournamentSetsCount,
+      tournamentSets,
       shareSchedules: false
     });
   }
@@ -232,66 +236,75 @@ export default function Settings() {
 
           {/* ── Torneos ── */}
           <Section icon={<EmojiEventsOutlinedIcon />} title="Torneos">
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <Box>
-                <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+              {/* Header row */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ minWidth: 80 }} />
+                <Typography variant="caption" color="text.disabled" fontWeight={700}
+                  sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem", width: 130 }}>
+                  Duración
+                </Typography>
+                <Typography variant="caption" color="text.disabled" fontWeight={700}
                   sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
-                  Duración de partidos
+                  Sets
                 </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  {clubSports.map(sport => (
-                    <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
-                        {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                      </Typography>
-                      <TextField
-                        type="text"
-                        inputMode="numeric"
+              </Box>
+
+              {clubSports.map(sport => {
+                const hasSets = SPORTS_WITH_SETS.includes(sport);
+                return (
+                  <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2, py: 0.5 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
+                      {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                    </Typography>
+                    <TextField
+                      type="text"
+                      inputMode="numeric"
+                      size="small"
+                      placeholder="60"
+                      value={tournamentDurations[sport] != null ? String(tournamentDurations[sport]) : ""}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "" || /^\d+$/.test(v)) {
+                          setTournamentDurations(prev => {
+                            const next = { ...prev };
+                            if (v === "") { delete next[sport]; } else { next[sport] = Number(v); }
+                            return next;
+                          });
+                        }
+                      }}
+                      slotProps={{
+                        input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                      }}
+                      sx={{ width: 130 }}
+                    />
+                    {hasSets ? (
+                      <ToggleButtonGroup
+                        value={tournamentSets[sport] ?? 3}
+                        exclusive
+                        onChange={(_, val) => {
+                          if (val !== null)
+                            setTournamentSets(prev => ({ ...prev, [sport]: val }));
+                        }}
                         size="small"
-                        placeholder="60"
-                        value={tournamentDurations[sport] != null ? String(tournamentDurations[sport]) : ""}
-                        onChange={e => {
-                          const v = e.target.value;
-                          if (v === "" || /^\d+$/.test(v)) {
-                            setTournamentDurations(prev => {
-                              const next = { ...prev };
-                              if (v === "") { delete next[sport]; } else { next[sport] = Number(v); }
-                              return next;
-                            });
-                          }
+                        sx={{
+                          "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 1.5, fontSize: "0.78rem" },
+                          "& .MuiToggleButton-root.Mui-selected": {
+                            bgcolor: "#F5AD27", color: "#111",
+                            "&:hover": { bgcolor: "#e09b18" },
+                          },
                         }}
-                        slotProps={{
-                          input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
-                        }}
-                        sx={{ width: { xs: "100%", sm: 150 } }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                  Cantidad de sets
-                </Typography>
-                <ToggleButtonGroup
-                  value={tournamentSetsCount}
-                  exclusive
-                  onChange={(_, val) => { if (val !== null) setTournamentSetsCount(val); }}
-                  size="small"
-                  sx={{
-                    "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 2 },
-                    "& .MuiToggleButton-root.Mui-selected": {
-                      bgcolor: "#F5AD27",
-                      color: "#111",
-                      "&:hover": { bgcolor: "#e09b18" },
-                    },
-                  }}
-                >
-                  <ToggleButton value={1}>Mejor de 1</ToggleButton>
-                  <ToggleButton value={3}>Mejor de 3</ToggleButton>
-                  <ToggleButton value={5}>Mejor de 5</ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
+                      >
+                        <ToggleButton value={1}>1</ToggleButton>
+                        <ToggleButton value={3}>3</ToggleButton>
+                        <ToggleButton value={5}>5</ToggleButton>
+                      </ToggleButtonGroup>
+                    ) : (
+                      <Typography variant="body2" color="text.disabled" sx={{ pl: 0.5 }}>—</Typography>
+                    )}
+                  </Box>
+                );
+              })}
             </Box>
           </Section>
         </Grid>

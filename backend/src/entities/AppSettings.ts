@@ -38,6 +38,9 @@ export class AppSettings {
   @Column({ type: "text", nullable: true })
   tournamentDurationsJson?: string;
 
+  @Column({ type: "text", nullable: true })
+  tournamentSetsJson?: string;
+
   @Column({ nullable: true })
   userId?: number;
 }

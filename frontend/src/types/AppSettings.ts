@@ -14,4 +14,6 @@ export interface AppSettings {
   sportClassPrices?: Record<string, number>;
   tournamentDurationsJson?: string;
   tournamentDurations?: Record<string, number>;
+  tournamentSetsJson?: string;
+  tournamentSets?: Record<string, number>;
 }
