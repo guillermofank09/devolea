@@ -86,6 +86,7 @@ export default function Settings() {
   const [showCourts, setShowCourts] = useState<boolean>(true);
   const [showProfesores, setShowProfesores] = useState<boolean>(true);
   const [tournamentMatchDuration, setTournamentMatchDuration] = useState<string>("60");
+  const [tournamentDurations, setTournamentDurations] = useState<Record<string, number>>({});
   const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
   const [snack, setSnack] = useState(false);
 
@@ -101,6 +102,7 @@ export default function Settings() {
     setShowCourts(data.showCourts ?? true);
     setShowProfesores(data.showProfesores ?? true);
     setTournamentMatchDuration(String(data.tournamentMatchDuration ?? 60));
+    setTournamentDurations(data.tournamentDurations ?? {});
     setTournamentSetsCount(data.tournamentSetsCount ?? 3);
   }, [data]);
 
@@ -114,6 +116,7 @@ export default function Settings() {
       showCourts,
       showProfesores,
       tournamentMatchDuration: Number(tournamentMatchDuration) || 60,
+      tournamentDurations,
       tournamentSetsCount,
       shareSchedules: false
     });
@@ -231,26 +234,40 @@ export default function Settings() {
           <Section icon={<EmojiEventsOutlinedIcon />} title="Torneos">
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+                <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
+                  sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
                   Duración de partidos
                 </Typography>
-                <TextField
-                  type="text"
-                  inputMode="numeric"
-                  size="small"
-                  value={tournamentMatchDuration}
-                  onChange={e => {
-                    const v = e.target.value;
-                    if (v === "" || /^\d+$/.test(v)) setTournamentMatchDuration(v);
-                  }}
-                  placeholder="60"
-                  slotProps={{
-                    input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
-                    formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
-                  }}
-                  helperText="Tiempo por partido de torneo"
-                  sx={{ width: { xs: "100%", sm: 200 } }}
-                />
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {clubSports.map(sport => (
+                    <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
+                        {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                      </Typography>
+                      <TextField
+                        type="text"
+                        inputMode="numeric"
+                        size="small"
+                        placeholder="60"
+                        value={tournamentDurations[sport] != null ? String(tournamentDurations[sport]) : ""}
+                        onChange={e => {
+                          const v = e.target.value;
+                          if (v === "" || /^\d+$/.test(v)) {
+                            setTournamentDurations(prev => {
+                              const next = { ...prev };
+                              if (v === "") { delete next[sport]; } else { next[sport] = Number(v); }
+                              return next;
+                            });
+                          }
+                        }}
+                        slotProps={{
+                          input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                        }}
+                        sx={{ width: { xs: "100%", sm: 150 } }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
