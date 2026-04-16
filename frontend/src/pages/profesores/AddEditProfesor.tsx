@@ -39,7 +39,8 @@ interface Props {
 
 export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const { user } = useAuth();
-  const clubSports = user?.sports ?? ["PADEL"];
+  const PROFESOR_SPORTS = ["PADEL", "TENIS", "FUTBOL"];
+  const clubSports = (user?.sports ?? ["PADEL"]).filter(s => PROFESOR_SPORTS.includes(s));
 
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
   const [hourlyRateStr, setHourlyRateStr] = useState("");
