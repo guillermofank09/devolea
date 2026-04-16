@@ -243,7 +243,7 @@ const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                           <Typography variant="body2" fontWeight={600}>{pair.player1.name}</Typography>
                           {pair.player1InscriptionPaid && (
-                            <Chip label="✓" size="small" color="success" sx={{ height: 16, fontSize: "0.65rem", fontWeight: 700, "& .MuiChip-label": { px: 0.5 } }} />
+                            <Typography component="span" sx={{ fontSize: "0.8rem", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>$</Typography>
                           )}
                         </Box>
                       }
@@ -251,7 +251,7 @@ const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                           <Typography variant="caption" color="text.secondary">{pair.player2.name}</Typography>
                           {pair.player2InscriptionPaid && (
-                            <Chip label="✓" size="small" color="success" sx={{ height: 16, fontSize: "0.65rem", fontWeight: 700, "& .MuiChip-label": { px: 0.5 } }} />
+                            <Typography component="span" sx={{ fontSize: "0.8rem", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>$</Typography>
                           )}
                         </Box>
                       }

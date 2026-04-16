@@ -35,13 +35,13 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function createUser(req: Request, res: Response) {
-  const { username, name, password } = req.body;
+  const { username, name, password, sports } = req.body;
   if (!username || !name || !password) {
     res.status(400).json({ message: "Todos los campos son requeridos." });
     return;
   }
   try {
-    const result = await getService().createUser(username, name, password);
+    const result = await getService().createUser(username, name, password, "user", Array.isArray(sports) && sports.length ? sports : ["PADEL"]);
     res.status(201).json(result);
   } catch (err: any) {
     if (err.message === "USERNAME_TAKEN") {
@@ -61,13 +61,14 @@ export async function getUsers(_req: Request, res: Response) {
 }
 
 export async function updateUser(req: Request, res: Response) {
-  const { name, password, isActive, lastPaymentDate } = req.body;
+  const { name, password, isActive, lastPaymentDate, sports } = req.body;
   try {
-    const dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null } = {};
+    const dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; sports?: string[] } = {};
     if (name !== undefined) dto.name = name;
     if (password !== undefined) dto.password = password;
     if (isActive !== undefined) dto.isActive = isActive;
     if ("lastPaymentDate" in req.body) dto.lastPaymentDate = lastPaymentDate ?? null;
+    if (Array.isArray(sports)) dto.sports = sports;
     const user = await getService().updateUser(Number(req.params.id), dto);
     res.json(user);
   } catch (err: any) {

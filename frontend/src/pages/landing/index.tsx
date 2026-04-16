@@ -100,7 +100,7 @@ export default function Landing() {
             <span className="lp-hero-light">más fácilmente</span>
           </h1>
           <p className="lp-hero-sub">
-            Todo lo que necesitás para administrar tu complejo de pádel en un solo lugar.
+            Todo lo que necesitás para administrar tu complejo deportivo en un solo lugar.
             Reservas, torneos, jugadores y estadísticas.
           </p>
           <div className="lp-hero-cta">
@@ -130,7 +130,7 @@ export default function Landing() {
             <p className="lp-eyebrow">Funcionalidades</p>
             <h2 className="lp-section-title">Todo lo que necesita tu complejo</h2>
             <p className="lp-section-sub">
-              Diseñado específicamente para la gestión de canchas de pádel y tenis.
+              Diseñado específicamente para la gestión de canchas y torneos deportivos.
             </p>
           </div>
 
@@ -207,7 +207,7 @@ export default function Landing() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <p className="lp-footer-text">
-            © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas de Pádel y Torneos
+            © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas y Torneos
           </p>
         </div>
       </footer>

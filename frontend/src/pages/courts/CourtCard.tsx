@@ -19,6 +19,7 @@ import WbSunnyIcon from "@mui/icons-material/WbSunny";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Court } from "../../types/Court";
 import { deleteCourt } from "../../api/courtService";
+import { SPORT_LABEL } from "../../constants/sports";
 import CourtStatusDialog from "./CourtStatusDialog";
 import DeleteCourt from "./DeleteCourt";
 
@@ -37,9 +38,15 @@ const STATUS_CONFIG: Record<
   "NOT AVAILABLE": { label: "No Disponible", borderColor: "#9e9e9e", chipColor: "default" },
 };
 
-const TYPE_CONFIG: Record<Court["type"], { label: string; icon: React.ReactNode }> = {
+const TYPE_CONFIG: Partial<Record<Court["type"], { label: string; icon: React.ReactNode }>> = {
   TECHADA:     { label: "Techada · Iluminada",     icon: <RoofingIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
   DESCUBIERTA: { label: "Descubierta · Iluminada", icon: <WbSunnyIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  FUTBOL5:     { label: "Fútbol 5",   icon: <WbSunnyIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  FUTBOL7:     { label: "Fútbol 7",   icon: <WbSunnyIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  FUTBOL9:     { label: "Fútbol 9",   icon: <WbSunnyIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  FUTBOL11:    { label: "Fútbol 11",  icon: <WbSunnyIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  CEMENTO:     { label: "Cemento",    icon: <RoofingIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
+  PARQUET:     { label: "Parquet",    icon: <RoofingIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
 };
 
 export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
@@ -47,7 +54,7 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { name, status, type } = court;
+  const { name, status, type, sport } = court;
   const { label, borderColor, chipColor } = STATUS_CONFIG[status] ?? STATUS_CONFIG["AVAILABLE"];
   const typeInfo = TYPE_CONFIG[type];
 
@@ -85,12 +92,21 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
             />
           </Box>
 
-          {/* Court type */}
-          <Box sx={{ display: "flex", alignItems: "center", mt: 0.5, color: "text.secondary" }}>
-            {typeInfo?.icon}
-            <Typography variant="caption" color="text.secondary">
-              {typeInfo?.label ?? type}
-            </Typography>
+          {/* Court type + sport */}
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary" }}>
+              {typeInfo?.icon}
+              <Typography variant="caption" color="text.secondary">
+                {typeInfo?.label ?? type}
+              </Typography>
+            </Box>
+            {sport && (
+              <Chip
+                label={SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                size="small"
+                sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700, bgcolor: "rgba(245,173,39,0.12)", color: "#b07d00" }}
+              />
+            )}
           </Box>
 
           {/* Hourly rate */}

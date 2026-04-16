@@ -42,6 +42,9 @@ import DeleteDialog from "../../../components/common/DeleteDialog";
 import PageLoader from "../../../components/common/PageLoader";
 import FormLabel from "@mui/material/FormLabel";
 import { FORM_LABEL_SX } from "../../../styles/formStyles";
+import { SPORTS, SPORT_LABEL } from "../../../constants/sports";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -250,13 +253,14 @@ function CreateUserDialog({ open, onClose, token }: { open: boolean; onClose: ()
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [sports, setSports] = useState<string[]>(["PADEL"]);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () => apiCreateUser(token, { username, name, password }),
+    mutationFn: () => apiCreateUser(token, { username, name, password, sports }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
       handleClose();
@@ -265,7 +269,7 @@ function CreateUserDialog({ open, onClose, token }: { open: boolean; onClose: ()
   });
 
   function handleClose() {
-    setUsername(""); setName(""); setPassword(""); setShowPass(false); setError(null);
+    setUsername(""); setName(""); setPassword(""); setShowPass(false); setSports(["PADEL"]); setError(null);
     onClose();
   }
 
@@ -302,6 +306,57 @@ function CreateUserDialog({ open, onClose, token }: { open: boolean; onClose: ()
                 },
               }}
             />
+          </Box>
+          <Box>
+            <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
+            <Box sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+              mt: 0.5,
+              overflow: "hidden",
+            }}>
+              {SPORTS.map((s, idx) => {
+                const checked = sports.includes(s.value);
+                return (
+                  <Box
+                    key={s.value}
+                    onClick={() => {
+                      if (checked && sports.length === 1) return;
+                      setSports(checked ? sports.filter(v => v !== s.value) : [...sports, s.value]);
+                    }}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      px: 1.5,
+                      py: 0.5,
+                      cursor: "pointer",
+                      borderTop: idx > 0 ? "1px solid" : "none",
+                      borderColor: "divider",
+                      bgcolor: checked ? "rgba(245,173,39,0.08)" : "transparent",
+                      "&:hover": { bgcolor: checked ? "rgba(245,173,39,0.14)" : "action.hover" },
+                      transition: "background-color 150ms ease",
+                    }}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      size="small"
+                      disableRipple
+                      tabIndex={-1}
+                      sx={{
+                        p: 0.5,
+                        mr: 1,
+                        color: "text.disabled",
+                        "&.Mui-checked": { color: "#F5AD27" },
+                      }}
+                    />
+                    <Typography variant="body2" fontWeight={checked ? 700 : 400} sx={{ color: checked ? "#b07d00" : "text.primary" }}>
+                      {s.label}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
           {error && <Typography variant="body2" color="error">{error}</Typography>}
         </Box>
@@ -466,10 +521,20 @@ function UserRow({
             />
           </Box>
 
-          {/* Username */}
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-            @{user.username}
-          </Typography>
+          {/* Username + sports */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+              @{user.username}
+            </Typography>
+            {user.role !== "superadmin" && user.sports?.map(s => (
+              <Chip
+                key={s}
+                label={SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                size="small"
+                sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700, bgcolor: "rgba(245,173,39,0.10)", color: "#b07d00" }}
+              />
+            ))}
+          </Box>
 
           {/* Payment dates */}
           <Box sx={{ display: "flex", gap: 2, mt: 0.5, flexWrap: "wrap" }}>

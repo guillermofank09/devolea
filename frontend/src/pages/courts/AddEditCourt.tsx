@@ -11,6 +11,8 @@ import {
   MenuItem,
   Select,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
@@ -20,6 +22,35 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCourt } from "../../api/courtService";
 import type { Court, CourtType, CreateCourt } from "../../types/Court";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABEL } from "../../constants/sports";
+
+// Types available per sport
+const COURT_TYPES_BY_SPORT: Record<string, { value: CourtType; label: string }[]> = {
+  PADEL:   [{ value: "TECHADA", label: "Techada · Iluminada" }, { value: "DESCUBIERTA", label: "Descubierta · Iluminada" }],
+  TENIS:   [{ value: "TECHADA", label: "Techada · Iluminada" }, { value: "DESCUBIERTA", label: "Descubierta · Iluminada" }],
+  FUTBOL:  [{ value: "FUTBOL5", label: "Fútbol 5" }, { value: "FUTBOL7", label: "Fútbol 7" }, { value: "FUTBOL9", label: "Fútbol 9" }, { value: "FUTBOL11", label: "Fútbol 11" }],
+  VOLEY:   [{ value: "CEMENTO", label: "Cemento" }, { value: "PARQUET", label: "Parquet" }],
+  BASQUET: [{ value: "CEMENTO", label: "Cemento" }, { value: "PARQUET", label: "Parquet" }],
+};
+
+function defaultType(sport: string): CourtType {
+  return COURT_TYPES_BY_SPORT[sport]?.[0]?.value ?? "TECHADA";
+}
+
+const TOGGLE_BTN_SX = {
+  textTransform: "none",
+  fontWeight: 600,
+  fontSize: "0.8rem",
+  borderRadius: "8px !important",
+  border: "1.5px solid !important",
+  px: 1.5,
+  "&.Mui-selected": {
+    bgcolor: "rgba(245,173,39,0.15)",
+    borderColor: "#F5AD27 !important",
+    color: "#b07d00",
+  },
+} as const;
 
 const AddEditCourt = ({
   isEditing = false,
@@ -30,8 +61,12 @@ const AddEditCourt = ({
   courtNumber?: number;
   compact?: boolean;
 }) => {
+  const { user } = useAuth();
+  const sports = user?.sports ?? ["PADEL"];
+
   const [name, setName] = useState(`Cancha ${courtNumber}`);
-  const [type, setCourtType] = useState<CourtType>("TECHADA");
+  const [sport, setSport] = useState<string>(sports[0] ?? "PADEL");
+  const [type, setCourtType] = useState<CourtType>(defaultType(sports[0] ?? "PADEL"));
   const [open, setOpen] = useState(isEditing);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -39,6 +74,13 @@ const AddEditCourt = ({
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  function handleSportChange(newSport: string) {
+    setSport(newSport);
+    setCourtType(defaultType(newSport));
+  }
+
+  const typeOptions = COURT_TYPES_BY_SPORT[sport] ?? COURT_TYPES_BY_SPORT.PADEL;
 
   const mutation = useMutation<Court, { message: string }, CreateCourt>({
     mutationFn: createCourt,
@@ -50,7 +92,7 @@ const AddEditCourt = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    mutation.mutate({ name, type });
+    mutation.mutate({ name, type, sport });
   };
 
   return (
@@ -101,6 +143,26 @@ const AddEditCourt = ({
                 />
               </Box>
 
+              {sports.length > 1 && (
+                <Box>
+                  <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                  <ToggleButtonGroup
+                    exclusive
+                    value={sport}
+                    onChange={(_, v) => { if (v) handleSportChange(v); }}
+                    size="small"
+                    disabled={mutation.isPending}
+                    sx={{ flexWrap: "wrap", gap: 0.5 }}
+                  >
+                    {sports.map(s => (
+                      <ToggleButton key={s} value={s} sx={TOGGLE_BTN_SX}>
+                        {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                </Box>
+              )}
+
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Tipo</FormLabel>
                 <Select
@@ -111,8 +173,9 @@ const AddEditCourt = ({
                   disabled={mutation.isPending}
                   sx={{ height: 40, fontSize: "0.875rem" }}
                 >
-                  <MenuItem value="TECHADA">Techada · Iluminada</MenuItem>
-                  <MenuItem value="DESCUBIERTA">Descubierta · Iluminada</MenuItem>
+                  {typeOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))}
                 </Select>
               </Box>
 

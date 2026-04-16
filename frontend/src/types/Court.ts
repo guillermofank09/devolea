@@ -1,5 +1,5 @@
 export type CourtStatus = "AVAILABLE" | "IN USE" | "NOT AVAILABLE";
-export type CourtType = "TECHADA" | "DESCUBIERTA"
+export type CourtType = "TECHADA" | "DESCUBIERTA" | "FUTBOL5" | "FUTBOL7" | "FUTBOL9" | "FUTBOL11" | "CEMENTO" | "PARQUET"
 export type TimeSlotStatus = "AVAILABLE" | "BOOKED" | "SELECTED";
 
 export interface Court {
@@ -7,6 +7,7 @@ export interface Court {
   name: string;
   status: CourtStatus;
   type: CourtType;
+  sport?: string;
   avalability: DayAvailability[]
 }
 
@@ -23,4 +24,5 @@ export interface DayAvailability {
 export interface CreateCourt {
   name: string;
   type: CourtType;
+  sport?: string;
 }

@@ -8,10 +8,10 @@ function getService() {
 }
 
 export const createCourt = async (req: Request, res: Response) => {
-  const { name, type } = req.body;
+  const { name, type, sport } = req.body;
   const userId = req.authUser!.sub;
   try {
-    const doc = await getService().create(name, type, userId);
+    const doc = await getService().create(name, type, userId, sport || "PADEL");
     res.json(doc);
   } catch {
     res.status(500).json({ error: "Error al crear la cancha" });
@@ -39,12 +39,13 @@ export const getCourtById = async (req: Request, res: Response) => {
 };
 
 export const updateCourt = async (req: Request, res: Response) => {
-  const { name, type, status } = req.body;
+  const { name, type, status, sport } = req.body;
   try {
     const updated = await getService().update(Number(req.params.id), {
       ...(name !== undefined && { name }),
       ...(type !== undefined && { type }),
       ...(status !== undefined && { status }),
+      ...(sport !== undefined && { sport }),
     });
     if (!updated) return res.status(404).json({ error: "Cancha no encontrada" });
     res.json(updated);

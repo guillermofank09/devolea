@@ -78,14 +78,14 @@
 }
 
 .sb-item.active {
-  background: var(--sb-active-bg);
-  color: var(--sb-accent-dark);
+  background: transparent;
+  color: var(--sb-accent);
   font-weight: 700;
 }
 
 .sb-item.active:hover {
-  background: #e09b18;
-  color: var(--sb-accent-dark);
+  background: var(--sb-hover);
+  color: var(--sb-accent);
 }
 
 /* ─── Icon ─────────────────────────────────────────────────────────────────── */
@@ -107,8 +107,8 @@
 }
 
 .sb-item.active .sb-item-icon {
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--sb-accent-dark);
+  background: rgba(245, 173, 39, 0.12);
+  color: var(--sb-accent);
 }
 
 /* ─── Label ─────────────────────────────────────────────────────────────────── */
@@ -172,8 +172,8 @@
 }
 
 .sidebar.collapsed .sb-item.active .sb-item-icon {
-  background: var(--sb-active-bg);
-  color: var(--sb-accent-dark);
+  background: rgba(245, 173, 39, 0.12);
+  color: var(--sb-accent);
 }
 
 .sidebar.collapsed .sb-item.active {

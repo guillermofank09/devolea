@@ -9,6 +9,19 @@ const JWT_EXPIRES_IN = "7d";
 export class AuthService {
   constructor(private repo: Repository<User>) {}
 
+  private toUserDto(user: User) {
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      lastPaymentDate: user.lastPaymentDate ?? null,
+      sports: user.sports ?? ["PADEL"],
+      createdAt: user.createdAt,
+    };
+  }
+
   async login(username: string, password: string) {
     const user = await this.repo.findOneBy({ username });
     if (!user) throw new Error("INVALID_CREDENTIALS");
@@ -16,57 +29,34 @@ export class AuthService {
     if (!valid) throw new Error("INVALID_CREDENTIALS");
     if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
     const token = this.signToken(user);
-    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
+    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role, sports: user.sports ?? ["PADEL"] } };
   }
 
-  async createUser(username: string, name: string, password: string, role: "user" | "superadmin" = "user") {
+  async createUser(username: string, name: string, password: string, role: "user" | "superadmin" = "user", sports: string[] = ["PADEL"]) {
     const existing = await this.repo.findOneBy({ username });
     if (existing) throw new Error("USERNAME_TAKEN");
     const hashed = await bcrypt.hash(password, 10);
-    const user = this.repo.create({ username, name, password: hashed, role });
+    const user = this.repo.create({ username, name, password: hashed, role, sports });
     await this.repo.save(user);
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      isActive: user.isActive,
-      lastPaymentDate: user.lastPaymentDate ?? null,
-      createdAt: user.createdAt,
-    };
+    return this.toUserDto(user);
   }
 
   async getUsers() {
     const users = await this.repo.find({ order: { createdAt: "ASC" } });
-    return users.map(u => ({
-      id: u.id,
-      username: u.username,
-      name: u.name,
-      role: u.role,
-      isActive: u.isActive,
-      lastPaymentDate: u.lastPaymentDate ?? null,
-      createdAt: u.createdAt,
-    }));
+    return users.map(u => this.toUserDto(u));
   }
 
-  async updateUser(id: number, dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null }) {
+  async updateUser(id: number, dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; sports?: string[] }) {
     const update: Partial<User> = {};
     if (dto.name !== undefined) update.name = dto.name;
     if (dto.password) update.password = await bcrypt.hash(dto.password, 10);
     if (dto.isActive !== undefined) update.isActive = dto.isActive;
     if ("lastPaymentDate" in dto) update.lastPaymentDate = dto.lastPaymentDate ?? null;
+    if (dto.sports !== undefined) update.sports = dto.sports;
     await this.repo.update(id, update);
     const user = await this.repo.findOneBy({ id });
     if (!user) throw new Error("NOT_FOUND");
-    return {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      isActive: user.isActive,
-      lastPaymentDate: user.lastPaymentDate ?? null,
-      createdAt: user.createdAt,
-    };
+    return this.toUserDto(user);
   }
 
   async impersonateUser(targetId: number) {
@@ -74,7 +64,7 @@ export class AuthService {
     if (!user) throw new Error("NOT_FOUND");
     if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
     const token = this.signToken(user);
-    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role } };
+    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role, sports: user.sports ?? ["PADEL"] } };
   }
 
   async changePassword(id: number, currentPassword: string, newPassword: string) {

@@ -6,8 +6,8 @@ import { AppDataSource } from "../data-source";
 export class CourtService {
   constructor(private repo: Repository<Court>) {}
 
-  async create(name: string, type: CourtType, userId: number): Promise<Court> {
-    const doc = this.repo.create({ name, status: "AVAILABLE", type, userId });
+  async create(name: string, type: CourtType, userId: number, sport = "PADEL"): Promise<Court> {
+    const doc = this.repo.create({ name, status: "AVAILABLE", type, sport, userId });
     return await this.repo.save(doc);
   }
 
@@ -40,7 +40,7 @@ export class CourtService {
     return await this.repo.findOneBy({ id });
   }
 
-  async update(id: number, data: Partial<Pick<Court, "name" | "type" | "status">>): Promise<Court | null> {
+  async update(id: number, data: Partial<Pick<Court, "name" | "type" | "status" | "sport">>): Promise<Court | null> {
     await this.repo.update(id, data);
     return await this.repo.findOneBy({ id });
   }

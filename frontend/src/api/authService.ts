@@ -8,6 +8,7 @@ export interface AuthUser {
   username: string;
   name: string;
   role: "superadmin" | "user";
+  sports: string[];
 }
 
 export interface AuthResponse {
@@ -22,6 +23,7 @@ export interface AdminUser {
   role: "superadmin" | "user";
   isActive: boolean;
   lastPaymentDate: string | null;
+  sports: string[];
   createdAt: string;
 }
 
@@ -39,7 +41,7 @@ export async function apiGetUsers(token: string): Promise<AdminUser[]> {
 
 export async function apiCreateUser(
   token: string,
-  payload: { username: string; name: string; password: string }
+  payload: { username: string; name: string; password: string; sports: string[] }
 ): Promise<AdminUser> {
   const { data } = await axios.post<AdminUser>(`${API}/auth/users`, payload, {
     headers: { Authorization: `Bearer ${token}` },
@@ -50,7 +52,7 @@ export async function apiCreateUser(
 export async function apiUpdateUser(
   token: string,
   id: number,
-  payload: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null }
+  payload: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; sports?: string[] }
 ): Promise<AdminUser> {
   const { data } = await axios.put<AdminUser>(`${API}/auth/users/${id}`, payload, {
     headers: { Authorization: `Bearer ${token}` },
