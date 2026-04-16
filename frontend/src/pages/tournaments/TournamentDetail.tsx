@@ -146,7 +146,7 @@ const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
   // Active matches: rounds with at least one assigned pair (excludes future placeholders)
   const activeMatches = data.matches.filter(m => m.pair1 !== null || m.pair2 !== null);
   const maxRound = activeMatches.length > 0 ? Math.max(...activeMatches.map(m => m.round)) : 0;
-  const currentRoundMatches = activeMatches.filter(m => m.round === maxRound);
+
 // Repechage: show trigger button when all round-1 regular matches are done and opponent not yet assigned
   const round1Regular = data.matches.filter(m => m.round === 1 && !m.isRepechage);
   const round1Done = round1Regular.length > 0 && round1Regular.every(m => m.status !== "PENDING");
