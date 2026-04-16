@@ -42,9 +42,15 @@ const STATUS_COLOR: Record<Court["status"], "success" | "default" | "error"> = {
   "NOT AVAILABLE": "default",
 };
 
-const TYPE_LABEL: Record<Court["type"], string> = {
-  TECHADA: "Techada",
+const TYPE_LABEL: Partial<Record<Court["type"], string>> = {
+  TECHADA:     "Techada",
   DESCUBIERTA: "Descubierta",
+  FUTBOL5:     "Fútbol 5",
+  FUTBOL7:     "Fútbol 7",
+  FUTBOL9:     "Fútbol 9",
+  FUTBOL11:    "Fútbol 11",
+  CEMENTO:     "Cemento",
+  PARQUET:     "Parquet",
 };
 
 const formatTime = (d: Date) =>

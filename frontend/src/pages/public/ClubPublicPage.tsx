@@ -1164,7 +1164,7 @@ export default function ClubPublicPage() {
                   {/* Identity */}
                   <Box sx={{ px: 3, pt: 4, pb: 3, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
                     {(profile.logoUrl || profile.logoBase64) ? (
-                      <Box component="img" src={profile.logoUrl || profile.logoBase64} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", mb: 2.5, border: `2px solid rgba(255,255,255,0.12)`, bgcolor: "rgba(255,255,255,0.04)", p: 0.75 }} />
+                      <Box component="img" src={profile.logoUrl || profile.logoBase64 || undefined} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", mb: 2.5, border: `2px solid rgba(255,255,255,0.12)`, bgcolor: "rgba(255,255,255,0.04)", p: 0.75 }} />
                     ) : (
                       <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", mb: 2.5 }}>
                         <SportsTennisIcon sx={{ fontSize: 40, color: COLORS.panelBg }} />

@@ -44,7 +44,6 @@ import FormLabel from "@mui/material/FormLabel";
 import { FORM_LABEL_SX } from "../../../styles/formStyles";
 import { SPORTS, SPORT_LABEL } from "../../../constants/sports";
 import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
