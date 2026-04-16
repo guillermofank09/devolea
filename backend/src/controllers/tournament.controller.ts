@@ -4,7 +4,14 @@ import { Tournament } from "../entities/Tournament";
 import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
 import { Booking } from "../entities/Booking";
+import { AppSettings } from "../entities/AppSettings";
 import { TournamentService } from "../services/tournament.service";
+
+async function resolveMatchDuration(userId: number, fromBody?: number): Promise<number> {
+  if (fromBody != null) return fromBody;
+  const settings = await AppDataSource.getRepository(AppSettings).findOneBy({ userId });
+  return settings?.tournamentMatchDuration ?? 60;
+}
 
 function getService() {
   return new TournamentService(
@@ -68,18 +75,27 @@ export const updatePair = async (req: Request, res: Response) => {
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
+export const resetMatches = async (req: Request, res: Response) => {
+  try { await getService().resetMatches(Number(req.params.id)); res.json({ message: "Cruces eliminados" }); }
+  catch (e: any) { res.status(500).json({ error: e.message }); }
+};
+
 export const generateMatches = async (req: Request, res: Response) => {
-  const { startTime, courtIds, matchDuration } = req.body;
+  const { startTime, courtIds, matchDuration, format } = req.body;
   if (!startTime) return res.status(400).json({ error: "startTime requerido" });
-  try { res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), Array.isArray(courtIds) ? courtIds.map(Number) : [], matchDuration ?? 90)); }
-  catch (e: any) { res.status(400).json({ error: e.message }); }
+  try {
+    const duration = await resolveMatchDuration(req.authUser!.sub, matchDuration);
+    res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), Array.isArray(courtIds) ? courtIds.map(Number) : [], duration, format));
+  } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
 export const nextRound = async (req: Request, res: Response) => {
   const { startTime, matchDuration } = req.body;
   if (!startTime) return res.status(400).json({ error: "startTime requerido" });
-  try { res.json(await getService().nextRound(Number(req.params.id), new Date(startTime), matchDuration ?? 90)); }
-  catch (e: any) { res.status(400).json({ error: e.message }); }
+  try {
+    const duration = await resolveMatchDuration(req.authUser!.sub, matchDuration);
+    res.json(await getService().nextRound(Number(req.params.id), new Date(startTime), duration));
+  } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
 export const createPlaceholderMatch = async (req: Request, res: Response) => {

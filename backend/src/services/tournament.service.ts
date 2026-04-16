@@ -1,4 +1,4 @@
-import { Between, Repository } from "typeorm";
+import { Between, Not, IsNull, Repository } from "typeorm";
 import { Tournament, TournamentFormat } from "../entities/Tournament";
 import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
@@ -119,14 +119,21 @@ export class TournamentService {
     await this.pRepo.delete(pairId);
   }
 
-  async generateMatches(tournamentId: number, startTime: Date, courtIds: number[] = [], matchDuration = 90): Promise<TournamentMatch[]> {
+  async resetMatches(tournamentId: number): Promise<void> {
+    await this.mRepo.delete({ tournament: { id: tournamentId } });
+    await this.tRepo.update(tournamentId, { format: null as any, status: "DRAFT" });
+  }
+
+  async generateMatches(tournamentId: number, startTime: Date, courtIds: number[] = [], matchDuration = 90, formatOverride?: string): Promise<TournamentMatch[]> {
     const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
     if (matchCount > 0) throw new Error("Los cruces ya fueron generados");
 
     const pairs = await this.pRepo.find({ where: { tournament: { id: tournamentId } } });
     if (pairs.length < 2) throw new Error("Se necesitan al menos 2 parejas para generar cruces");
 
-    const format: TournamentFormat = pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
+    const format: TournamentFormat = formatOverride === "ROUND_ROBIN" || formatOverride === "BRACKET"
+      ? formatOverride
+      : pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
     // Load bookings for each court on the tournament day for greedy scheduling
@@ -176,6 +183,57 @@ export class TournamentService {
       return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
     };
 
+    // Parse a pair's preferred times as sorted millisecond timestamps.
+    // Returns an empty array when no preference is set (= fully available).
+    const getPref = (pair: Pair): number[] => {
+      if (!pair.preferredStartTimes) return [];
+      try {
+        const times: string[] = JSON.parse(pair.preferredStartTimes);
+        return times
+          .map(t => new Date(t).getTime())
+          .filter(n => !isNaN(n))
+          .sort((a, b) => a - b);
+      } catch { return []; }
+    };
+
+    // Try to schedule a match at a preferred time.
+    // Returns a slot when a valid preferred time with a free court is found, otherwise null.
+    const getPreferredSlot = (pref1: number[], pref2: number[]): { court: any; scheduledAt: Date } | null => {
+      if (courtIds.length === 0) return null;
+
+      // Determine candidate times:
+      // empty = fully available, so defer to the other pair's preferences
+      let candidates: number[];
+      if (pref1.length === 0 && pref2.length === 0) return null; // both fully available → use greedy
+      else if (pref1.length === 0) candidates = [...pref2];
+      else if (pref2.length === 0) candidates = [...pref1];
+      else {
+        // Both have preferences → use the intersection (same minute)
+        candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000));
+      }
+
+      if (candidates.length === 0) return null; // no common preferred time → fall back to greedy
+
+      candidates.sort((a, b) => a - b);
+
+      // Try each candidate in order, looking for any free court at that time
+      for (const tMs of candidates) {
+        for (const cId of courtIds) {
+          const freeFrom = advancePastBookings(cId, tMs);
+          // Court must be free exactly at tMs (no booking conflict) and not occupied by a previously scheduled match
+          if (freeFrom === tMs && (nextFreeAt.get(cId) ?? 0) <= tMs) {
+            nextFreeAt.set(cId, tMs + matchDuration * 60 * 1000);
+            return { court: { id: cId } as any, scheduledAt: new Date(tMs) };
+          }
+        }
+      }
+
+      return null; // preferred times all occupied → fall back to greedy
+    };
+
+    const scheduleMatch = (pair1: Pair, pair2: Pair): { court: any; scheduledAt: Date } | null =>
+      getPreferredSlot(getPref(pair1), getPref(pair2)) ?? getNextSlot();
+
     const toCreate: Partial<TournamentMatch>[] = [];
     const t = { id: tournamentId };
 
@@ -183,7 +241,7 @@ export class TournamentService {
       let matchNum = 1;
       for (let i = 0; i < pairs.length; i++) {
         for (let j = i + 1; j < pairs.length; j++) {
-          const slot = getNextSlot();
+          const slot = scheduleMatch(pairs[i], pairs[j]);
           toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
           if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
         }
@@ -194,7 +252,7 @@ export class TournamentService {
       let matchNum = 1;
       for (let i = 0; i < shuffled.length; i += 2) {
         if (i + 1 < shuffled.length) {
-          const slot = getNextSlot();
+          const slot = scheduleMatch(shuffled[i], shuffled[i + 1]);
           toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
           if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
         } else {
@@ -208,40 +266,35 @@ export class TournamentService {
 
     // For bracket: pre-create placeholder matches for all future rounds
     if (format === "BRACKET") {
-      // Repechage: each BYE team must face the best loser before advancing
-      const byeMatches = savedR1.filter(m => m.status === "BYE");
-      if (byeMatches.length > 0) {
-        let repNum = savedR1.length + 1;
-        const repToCreate: Partial<TournamentMatch>[] = byeMatches.map(bm => ({
-          tournament: t as any,
-          pair1: bm.pair1,
-          pair2: null,
-          court: null,
-          scheduledAt: null,
-          round: 1,
-          matchNumber: repNum++,
-          status: "PENDING",
-          isRepechage: true,
-        }));
-        await this.mRepo.save(repToCreate.map(m => this.mRepo.create(m)));
+      const r1Real = savedR1.filter(m => m.status !== "BYE");
+      const r1ByeCount = savedR1.length - r1Real.length;
+
+      // Round 2: cross matches (winner of A vs loser of B, winner of B vs loser of A)
+      // for each consecutive pair of R1 matches, plus BYEs for unpaired groups and R1 BYE pairs.
+      const r2CrossCount = Math.floor(r1Real.length / 2) * 2;
+      const r2ByeCount = (r1Real.length % 2) + r1ByeCount;
+      const r2Total = r2CrossCount + r2ByeCount;
+
+      if (r2Total > 0) {
+        const r2Placeholders = Array.from({ length: r2Total }, (_, i) =>
+          this.mRepo.create({
+            tournament: t as any, pair1: null, pair2: null, court: null,
+            scheduledAt: null, round: 2, matchNumber: i + 1, status: "PENDING",
+          })
+        );
+        await this.mRepo.save(r2Placeholders);
       }
 
-      // Pre-create placeholder matches for rounds 2, 3, …
+      // Rounds 3, 4, … : standard halving from r2Total
       const placeholders: Partial<TournamentMatch>[] = [];
-      let roundMatchCount = savedR1.length;
-      let roundNum = 2;
+      let roundMatchCount = r2Total;
+      let roundNum = 3;
       while (roundMatchCount > 1) {
         roundMatchCount = Math.ceil(roundMatchCount / 2);
         for (let i = 0; i < roundMatchCount; i++) {
           placeholders.push({
-            tournament: t as any,
-            pair1: null,
-            pair2: null,
-            court: null,
-            scheduledAt: null,
-            round: roundNum,
-            matchNumber: i + 1,
-            status: "PENDING",
+            tournament: t as any, pair1: null, pair2: null, court: null,
+            scheduledAt: null, round: roundNum, matchNumber: i + 1, status: "PENDING",
           });
         }
         roundNum++;
@@ -277,6 +330,74 @@ export class TournamentService {
         ? "Hay partidos de repechaje pendientes de jugar"
         : "Hay partidos pendientes en la ronda actual");
     }
+
+    // ── R1 → R2: cross-group logic (new bracket format, no repechage in R1) ──────
+    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    const isNewBracket = tournament?.format === "BRACKET"
+      && maxRound === 1
+      && !currentRoundMatches.some(m => m.isRepechage);
+
+    if (isNewBracket) {
+      const r1Regular = currentRoundMatches.filter(m => m.status !== "BYE");
+      const r1Byes   = currentRoundMatches.filter(m => m.status === "BYE");
+
+      const nextRoundNum = maxRound + 1;
+      const nextRoundMatches = allMatches
+        .filter(m => m.round === nextRoundNum)
+        .sort((a, b) => a.matchNumber - b.matchNumber);
+
+      if (!nextRoundMatches.length) throw new Error("No se encontraron partidos para la siguiente ronda");
+
+      let time = new Date(startTime);
+      const addDuration = () => { time = new Date(time.getTime() + matchDuration * 60 * 1000); };
+
+      let r2Idx = 0;
+
+      // Paired R1 groups: winner of A vs loser of B, winner of B vs loser of A
+      for (let i = 0; i + 1 < r1Regular.length; i += 2) {
+        const mA = r1Regular[i];
+        const mB = r1Regular[i + 1];
+        const wA = mA.winnerId === mA.pair1?.id ? mA.pair1 : mA.pair2;
+        const lA = mA.winnerId === mA.pair1?.id ? mA.pair2 : mA.pair1;
+        const wB = mB.winnerId === mB.pair1?.id ? mB.pair1 : mB.pair2;
+        const lB = mB.winnerId === mB.pair1?.id ? mB.pair2 : mB.pair1;
+
+        const c1 = nextRoundMatches[r2Idx++];
+        if (c1 && wA && lB) {
+          c1.pair1 = wA; c1.pair2 = lB; c1.status = "PENDING";
+          if (!c1.scheduledAt) { c1.scheduledAt = new Date(time); addDuration(); }
+        }
+
+        const c2 = nextRoundMatches[r2Idx++];
+        if (c2 && wB && lA) {
+          c2.pair1 = wB; c2.pair2 = lA; c2.status = "PENDING";
+          if (!c2.scheduledAt) { c2.scheduledAt = new Date(time); addDuration(); }
+        }
+      }
+
+      // Unpaired R1 match (odd count): winner advances directly as BYE in R2
+      if (r1Regular.length % 2 === 1) {
+        const last = r1Regular[r1Regular.length - 1];
+        const winner = last.winnerId === last.pair1?.id ? last.pair1 : last.pair2;
+        const byeSlot = nextRoundMatches[r2Idx++];
+        if (byeSlot && winner) {
+          byeSlot.pair1 = winner; byeSlot.pair2 = null as any;
+          byeSlot.status = "BYE"; byeSlot.winnerId = winner.id; byeSlot.scheduledAt = null;
+        }
+      }
+
+      // R1 BYE pairs advance as BYE in R2
+      for (const r1Bye of r1Byes) {
+        const byeSlot = nextRoundMatches[r2Idx++];
+        if (byeSlot && r1Bye.pair1) {
+          byeSlot.pair1 = r1Bye.pair1; byeSlot.pair2 = null as any;
+          byeSlot.status = "BYE"; byeSlot.winnerId = r1Bye.pair1.id; byeSlot.scheduledAt = null;
+        }
+      }
+
+      return await this.mRepo.save(nextRoundMatches.slice(0, r2Idx));
+    }
+    // ── End cross-group logic ────────────────────────────────────────────────────
 
     // Build repechage winner map: byeTeamId → repechage match
     const repechajeByByeTeam = new Map<number, TournamentMatch>();
@@ -408,24 +529,21 @@ export class TournamentService {
   }
 
   async getMatchesByCourt(courtId: number): Promise<TournamentMatch[]> {
-    return await this.mRepo
-      .createQueryBuilder("m")
-      .leftJoinAndSelect("m.tournament", "tournament")
-      .leftJoinAndSelect("m.pair1", "pair1")
-      .leftJoinAndSelect("pair1.player1", "p1a")
-      .leftJoinAndSelect("pair1.player2", "p1b")
-      .leftJoinAndSelect("m.pair2", "pair2")
-      .leftJoinAndSelect("pair2.player1", "p2a")
-      .leftJoinAndSelect("pair2.player2", "p2b")
-      .leftJoinAndSelect("m.court", "court")
-      .where("m.courtId = :courtId AND m.scheduledAt IS NOT NULL", { courtId })
-      .orderBy("m.scheduledAt", "ASC")
-      .getMany();
+    return await this.mRepo.find({
+      where: { court: { id: courtId }, scheduledAt: Not(IsNull()) },
+      relations: {
+        tournament: true,
+        pair1: { player1: true, player2: true },
+        pair2: { player1: true, player2: true },
+        court: true,
+      },
+      order: { scheduledAt: "ASC" },
+    });
   }
 
   async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
-    // Load the full entity first so save() never zeros out unrelated columns (round, matchNumber, etc.)
-    const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true } });
+    // Load the full entity including pair relations so propagation has the pair IDs
+    const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true, pair1: true, pair2: true } });
     if (!match) return null;
 
     if (dto.scheduledAt !== undefined) match.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
@@ -440,44 +558,88 @@ export class TournamentService {
 
     await this.mRepo.save(match);
 
-    // Auto-advance bracket to the next round when the current round is fully completed
-    if (dto.status === "COMPLETED" && match.tournament?.id) {
-      this.autoAdvanceIfReady(match.tournament.id).catch(() => {});
+    // Immediately propagate the winner into the next-round placeholder
+    if (dto.winnerId != null && match.tournament?.id) {
+      this.propagateWinnerToNextRound(match).catch(() => {});
     }
 
     // Reload after save to get full relations (especially court)
     return await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true } });
   }
 
-  private async autoAdvanceIfReady(tournamentId: number): Promise<void> {
-    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+  private async propagateWinnerToNextRound(completedMatch: TournamentMatch): Promise<void> {
+    if (!completedMatch.winnerId || !completedMatch.tournament?.id) return;
+
+    const tournament = await this.tRepo.findOneBy({ id: completedMatch.tournament.id });
     if (!tournament || tournament.format !== "BRACKET") return;
 
+    const currentRound = completedMatch.round;
+    const nextRoundNum = currentRound + 1;
+
+    // eager: true on pair1/pair2 means find() auto-loads them
     const allMatches = await this.mRepo.find({
-      where: { tournament: { id: tournamentId } },
+      where: { tournament: { id: completedMatch.tournament.id } },
       order: { round: "ASC", matchNumber: "ASC" },
     });
 
-    // Current active round: highest round that has at least one assigned pair
-    const activeMatches = allMatches.filter(m => m.pair1 !== null || m.pair2 !== null);
-    if (!activeMatches.length) return;
+    const currentRoundMatches = allMatches.filter(m => m.round === currentRound);
+    const nextRoundMatches = allMatches
+      .filter(m => m.round === nextRoundNum)
+      .sort((a, b) => a.matchNumber - b.matchNumber);
 
-    const maxRound = Math.max(...activeMatches.map(m => m.round));
-    const currentRoundMatches = activeMatches.filter(m => m.round === maxRound);
+    if (!nextRoundMatches.length) return; // final round, nothing to propagate
 
-    // All matches in the current round (including repechage) must be finished
-    const allDone = currentRoundMatches.every(m => m.status !== "PENDING");
-    if (!allDone) return;
+    // Skip old-style brackets that used repechage matches
+    if (currentRoundMatches.some(m => m.isRepechage)) return;
 
-    // There must be a next round with placeholder matches ready to receive winners
-    const nextRoundMatches = allMatches.filter(m => m.round === maxRound + 1);
-    if (!nextRoundMatches.length) return;
+    const winnerId = completedMatch.winnerId;
+    const winnerPair = completedMatch.pair1?.id === winnerId ? completedMatch.pair1 : completedMatch.pair2;
+    const loserPair  = completedMatch.pair1?.id === winnerId ? completedMatch.pair2  : completedMatch.pair1;
+    if (!winnerPair) return;
 
-    // Use the first pre-scheduled time from the next round as the fallback startTime,
-    // so unscheduled slots get a sensible default. nextRound() preserves scheduledAt
-    // on matches that already have one set.
-    const refTime = nextRoundMatches.find(m => m.scheduledAt)?.scheduledAt ?? new Date();
+    const toSave: TournamentMatch[] = [];
 
-    await this.nextRound(tournamentId, refTime);
+    if (currentRound === 1) {
+      // Cross-phase R1 → R2:
+      //   real index i (0-based among non-BYE R1 matches)
+      //   winner → R2[i].pair1   loser → R2[cross].pair2  (cross = i^1)
+      const r1Regular = currentRoundMatches
+        .filter(m => m.status !== "BYE")
+        .sort((a, b) => a.matchNumber - b.matchNumber);
+      const realIndex = r1Regular.findIndex(m => m.id === completedMatch.id);
+      if (realIndex === -1) return;
+
+      if (realIndex < nextRoundMatches.length) {
+        const winnerSlot = nextRoundMatches[realIndex];
+        winnerSlot.pair1 = winnerPair as any;
+        toSave.push(winnerSlot);
+      }
+
+      if (loserPair) {
+        const crossIndex = realIndex % 2 === 0 ? realIndex + 1 : realIndex - 1;
+        if (crossIndex >= 0 && crossIndex < nextRoundMatches.length) {
+          const loserSlot = nextRoundMatches[crossIndex];
+          loserSlot.pair2 = loserPair as any;
+          if (!toSave.some(s => s.id === loserSlot.id)) toSave.push(loserSlot);
+        }
+      }
+    } else {
+      // Standard elimination: matchNumber - 1 gives 0-based index
+      const matchIndex = completedMatch.matchNumber - 1;
+      const nextMatchIndex = Math.floor(matchIndex / 2);
+      const isSecond = matchIndex % 2 === 1;
+
+      const nextMatch = nextRoundMatches[nextMatchIndex];
+      if (!nextMatch) return;
+
+      if (!isSecond) {
+        nextMatch.pair1 = winnerPair as any;
+      } else {
+        nextMatch.pair2 = winnerPair as any;
+      }
+      toSave.push(nextMatch);
+    }
+
+    if (toSave.length) await this.mRepo.save(toSave);
   }
 }

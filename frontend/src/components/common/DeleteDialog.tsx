@@ -17,6 +17,7 @@ interface Props {
   title: string;
   description: string;
   loading?: boolean;
+  confirmLabel?: string;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -26,6 +27,7 @@ export default function DeleteDialog({
   title,
   description,
   loading = false,
+  confirmLabel,
   onClose,
   onConfirm,
 }: Props) {
@@ -74,7 +76,7 @@ export default function DeleteDialog({
           startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
           sx={{ textTransform: "none", fontWeight: 700 }}
         >
-          {loading ? "Eliminando…" : "Eliminar"}
+          {loading ? "Procesando…" : (confirmLabel ?? "Eliminar")}
         </Button>
       </DialogActions>
     </Dialog>

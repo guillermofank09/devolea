@@ -7,8 +7,14 @@ import {
   CardActions,
   CardContent,
   Chip,
+  CircularProgress,
+  FormControl,
   Grid,
   IconButton,
+  InputAdornment,
+  MenuItem,
+  OutlinedInput,
+  Select,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -16,12 +22,14 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournaments, deleteTournament } from "../../api/tournamentService";
 import PageLoader from "../../components/common/PageLoader";
 import EmptyState from "../../components/common/EmptyState";
-import type { Tournament, TournamentCategory, TournamentSex, TournamentStatus } from "../../types/Tournament";
+import type { Tournament, TournamentCategory, TournamentSex } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
 import DeleteDialog from "../../components/common/DeleteDialog";
@@ -31,23 +39,27 @@ const CATEGORY_LABEL: Record<TournamentCategory, string> = {
   QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "S/C",
 };
 
-const STATUS_LABEL: Record<TournamentStatus, string> = {
-  DRAFT: "Borrador",
-  ACTIVE: "Activo",
-  COMPLETED: "Finalizado",
-};
-
 const SEX_LABEL: Record<TournamentSex, string> = {
   MASCULINO: "Masculino",
   FEMENINO: "Femenino",
   MIXTO: "Mixto",
 };
 
-const STATUS_COLOR: Record<TournamentStatus, "default" | "success" | "primary"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  COMPLETED: "primary",
-};
+function getDateStatus(startDate: string, endDate: string): { label: string; color: "default" | "success" | "primary" } {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+  if (now < start) return { label: "Diagramado", color: "default" };
+  if (now > end) return { label: "Finalizado", color: "primary" };
+  return { label: "En Curso", color: "success" };
+}
+
+const CATEGORY_ORDER: TournamentCategory[] = [
+  "PRIMERA", "SEGUNDA", "TERCERA", "CUARTA", "QUINTA", "SEXTA", "SEPTIMA", "SIN_CATEGORIA",
+];
+
+const selectSx = { borderRadius: 2, backgroundColor: "white" };
 
 function formatDateRange(start: string, end: string) {
   const fmt = (d: string) =>
@@ -61,12 +73,16 @@ export default function Tournaments() {
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Tournament | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Tournament | null>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<TournamentCategory | "">("");
+  const [sexFilter, setSexFilter] = useState<TournamentSex | "">("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const { isPending, error, data } = useQuery<Tournament[]>({
+  const { isPending, isFetching, error, data } = useQuery<Tournament[]>({
     queryKey: ["tournamentsData"],
     queryFn: fetchTournaments,
+    placeholderData: (prev) => prev,
   });
 
   const deleteMutation = useMutation({
@@ -77,20 +93,85 @@ export default function Tournaments() {
     },
   });
 
+  const availableCategories = data
+    ? CATEGORY_ORDER.filter((cat) => data.some((t) => t.category === cat))
+    : CATEGORY_ORDER;
+
+  const filtered = (data ?? []).filter((t) => {
+    const nameMatch = search === "" || t.name.toLowerCase().includes(search.toLowerCase());
+    const catMatch = categoryFilter === "" || t.category === categoryFilter;
+    const sexMatch = sexFilter === "" || t.sex === sexFilter;
+    return nameMatch && catMatch && sexMatch;
+  });
+
+  const hasActiveFilters = categoryFilter !== "" || sexFilter !== "";
+
+  const categorySelect = (
+    <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 150 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
+      <Select
+        value={categoryFilter}
+        displayEmpty
+        onChange={(e) => setCategoryFilter(e.target.value as TournamentCategory | "")}
+        renderValue={(val) => val ? `Cat. ${CATEGORY_LABEL[val as TournamentCategory]}` : "Categoría"}
+      >
+        <MenuItem value="">Todas</MenuItem>
+        {availableCategories.map((cat) => (
+          <MenuItem key={cat} value={cat}>Cat. {CATEGORY_LABEL[cat]}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+
+  const sexSelect = (
+    <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 130 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
+      <Select
+        value={sexFilter}
+        displayEmpty
+        onChange={(e) => setSexFilter(e.target.value as TournamentSex | "")}
+        renderValue={(val) => val ? SEX_LABEL[val as TournamentSex] : "Sexo"}
+      >
+        <MenuItem value="">Todos</MenuItem>
+        <MenuItem value="MASCULINO">Masculino</MenuItem>
+        <MenuItem value="FEMENINO">Femenino</MenuItem>
+        <MenuItem value="MIXTO">Mixto</MenuItem>
+      </Select>
+    </FormControl>
+  );
+
   const addButton = (
     <Button
       variant="contained"
-      startIcon={isMobile ? undefined : <AddIcon />}
+      startIcon={<AddIcon />}
       onClick={() => setAddOpen(true)}
-      sx={{
-        textTransform: "none",
-        fontWeight: 600,
-        borderRadius: 2,
-        ...(isMobile ? { minWidth: 44, px: 1.5 } : { whiteSpace: "nowrap" }),
-      }}
+      sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2, whiteSpace: "nowrap" }}
     >
-      {isMobile ? <AddIcon /> : "Agregar torneo"}
+      Agregar torneo
     </Button>
+  );
+
+  const desktopAction = (
+    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+      <OutlinedInput
+        size="small"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar torneo..."
+        startAdornment={<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}
+        endAdornment={
+          search ? (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null
+        }
+        sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 200 }}
+      />
+      {categorySelect}
+      {sexSelect}
+      {addButton}
+    </Box>
   );
 
   return (
@@ -98,11 +179,61 @@ export default function Tournaments() {
       <PageHeader
         title="Torneos"
         subtitle="Administrá los torneos del club"
-        action={addButton}
+        action={isMobile ? addButton : desktopAction}
       />
+
+      {/* Mobile: search + filters */}
+      {isMobile && (
+        <Box sx={{ mb: 2, mt: -2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <OutlinedInput
+            size="small"
+            fullWidth
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar torneo..."
+            startAdornment={<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>}
+            endAdornment={
+              search ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearch("")} edge="end" aria-label="Limpiar búsqueda">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }
+            sx={{ borderRadius: 2, backgroundColor: "white" }}
+          />
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {categorySelect}
+            {sexSelect}
+          </Box>
+        </Box>
+      )}
 
       {isPending && <PageLoader />}
       {error && <Alert severity="error">{String(error)}</Alert>}
+
+      {data && (
+        <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Typography variant="body2" color="text.secondary">
+            {filtered.length} {filtered.length === 1 ? "torneo" : "torneos"}
+            {filtered.length !== data.length && (
+              <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
+            )}
+          </Typography>
+          {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+          {hasActiveFilters && (
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              onClick={() => { setCategoryFilter(""); setSexFilter(""); }}
+              sx={{ cursor: "pointer", "&:hover": { color: "text.secondary" } }}
+            >
+              Limpiar filtros
+            </Typography>
+          )}
+        </Box>
+      )}
 
       {data && data.length === 0 && (
         <EmptyState
@@ -120,9 +251,13 @@ export default function Tournaments() {
         />
       )}
 
-      {data && data.length > 0 && (
+      {data && data.length > 0 && filtered.length === 0 && (
+        <EmptyState message="No hay torneos que coincidan con los filtros aplicados." />
+      )}
+
+      {data && filtered.length > 0 && (
         <Grid container spacing={2}>
-          {data.map(tournament => (
+          {filtered.map(tournament => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={tournament.id}>
               <Card
                 sx={{
@@ -171,9 +306,9 @@ export default function Tournaments() {
                       />
                     )}
                     <Chip
-                      label={STATUS_LABEL[tournament.status]}
+                      label={getDateStatus(tournament.startDate, tournament.endDate).label}
                       size="small"
-                      color={STATUS_COLOR[tournament.status]}
+                      color={getDateStatus(tournament.startDate, tournament.endDate).color}
                       sx={{ fontWeight: 600, fontSize: "0.7rem" }}
                     />
                     {tournament.format && (

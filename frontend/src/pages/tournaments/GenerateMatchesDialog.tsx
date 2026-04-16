@@ -14,6 +14,8 @@ import {
   FormGroup,
   FormLabel,
   OutlinedInput,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
@@ -83,6 +85,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
   const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<"BRACKET" | "ROUND_ROBIN">("BRACKET");
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
@@ -93,14 +96,14 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
       setCourtIds([]);
       setStartTime("");
       setError(null);
+      setSelectedFormat("BRACKET");
     }
   }, [open, tournamentStartDate]);
 
-  const format = pairCount <= 4 ? "Round Robin" : "Llaves (Bracket)";
   const formatDesc =
-    pairCount <= 4
-      ? `Con ${pairCount} parejas se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos).`
-      : `Con ${pairCount} parejas se jugará un torneo de eliminación directa. Los cruces de ronda 1 se generan ahora.`;
+    selectedFormat === "ROUND_ROBIN"
+      ? `Con ${pairCount} parejas se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos en total).`
+      : `Con ${pairCount} parejas se jugarán 2 rondas garantizadas: primero los cruces iniciales (Ronda 1) y luego los ganadores enfrentan a los perdedores de los otros grupos (Cruces). Después continúa la eliminación directa.`;
 
   const { data: settings } = useQuery({
     queryKey: ["appSettings"],
@@ -169,6 +172,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
         new Date(startTime).toISOString(),
         courtIds.length > 0 ? courtIds : undefined,
         matchDuration,
+        selectedFormat,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
@@ -185,6 +189,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     setCourtIds([]);
     setStartTime("");
     setError(null);
+    setSelectedFormat("BRACKET");
     onClose();
   };
 
@@ -193,10 +198,23 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
       <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Generar cruces</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
-          <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: "grey.100" }}>
-            <Typography variant="body2" fontWeight={700} mb={0.5}>
-              Formato: {format}
-            </Typography>
+          <Box>
+            <FormLabel sx={FORM_LABEL_SX}>Formato</FormLabel>
+            <ToggleButtonGroup
+              value={selectedFormat}
+              exclusive
+              onChange={(_, v) => { if (v) setSelectedFormat(v); }}
+              size="small"
+              fullWidth
+              sx={{ mb: 1 }}
+            >
+              <ToggleButton value="BRACKET" sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.8rem" }}>
+                Llaves
+              </ToggleButton>
+              <ToggleButton value="ROUND_ROBIN" sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.8rem" }}>
+                Todos contra todos
+              </ToggleButton>
+            </ToggleButtonGroup>
             <Typography variant="body2" color="text.secondary">
               {formatDesc}
             </Typography>

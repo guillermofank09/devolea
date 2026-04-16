@@ -7,30 +7,22 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
-  FormLabel,
   IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
-  TextField,
   Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTournamentById, removePair, triggerNextRound, triggerRepechage } from "../../api/tournamentService";
-import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentStatus } from "../../types/Tournament";
+import { fetchTournamentById, removePair, resetMatches, triggerRepechage } from "../../api/tournamentService";
+import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
 import AddPairDialog from "./AddPairDialog";
@@ -41,13 +33,6 @@ import DeleteDialog from "../../components/common/DeleteDialog";
 import BracketView from "./BracketView";
 import { stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
-import { FORM_LABEL_SX } from "../../styles/formStyles";
-
-const STATUS_LABEL: Record<TournamentStatus, string> = {
-  DRAFT: "Borrador",
-  ACTIVE: "Activo",
-  COMPLETED: "Finalizado",
-};
 
 const SEX_LABEL: Record<string, string> = {
   MASCULINO: "Masculino",
@@ -55,11 +40,15 @@ const SEX_LABEL: Record<string, string> = {
   MIXTO: "Mixto",
 };
 
-const STATUS_COLOR: Record<TournamentStatus, "default" | "success" | "primary"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  COMPLETED: "primary",
-};
+function getDateStatus(startDate: string, endDate: string): { label: string; color: "default" | "success" | "primary" } {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+  if (now < start) return { label: "Diagramado", color: "default" };
+  if (now > end) return { label: "Finalizado", color: "primary" };
+  return { label: "En Curso", color: "success" };
+}
 
 function pairInitials(pair: Pair) {
   return `${pair.player1.name.split(" ")[0][0]}${pair.player2.name.split(" ")[0][0]}`.toUpperCase();
@@ -88,88 +77,6 @@ function MatchStatusChip({ status }: { status: string }) {
   return <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />;
 }
 
-function NextRoundDialog({
-  open,
-  onClose,
-  tournamentId,
-}: {
-  open: boolean;
-  onClose: () => void;
-  tournamentId: number;
-}) {
-  const [startDate, setStartDate] = useState("");
-  const [startTimeVal, setStartTimeVal] = useState("");
-  const startTime = startDate && startTimeVal ? `${startDate}T${startTimeVal}` : "";
-  const [error, setError] = useState<string | null>(null);
-  const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: () => triggerNextRound(tournamentId, new Date(startTime).toISOString()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
-      setStartDate("");
-      setStartTimeVal("");
-      setError(null);
-      onClose();
-    },
-    onError: (e: any) => {
-      setError(e?.response?.data?.error ?? "Error al generar la siguiente ronda");
-    },
-  });
-
-  const handleClose = () => {
-    setStartDate("");
-    setStartTimeVal("");
-    setError(null);
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
-      <DialogTitle>Siguiente ronda</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
-          <Box>
-            <FormLabel sx={FORM_LABEL_SX}>
-              Fecha y hora de inicio
-            </FormLabel>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <TextField
-                size="small"
-                type="date"
-                fullWidth
-                value={startDate}
-                onChange={e => { setStartDate(e.target.value); setError(null); }}
-              />
-              <TextField
-                size="small"
-                type="time"
-                value={startTimeVal}
-                onChange={e => { setStartTimeVal(e.target.value); setError(null); }}
-                sx={{ minWidth: 110, flexShrink: 0 }}
-              />
-            </Box>
-          </Box>
-          {error && <Typography variant="body2" color="error">{error}</Typography>}
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
-        <Button onClick={handleClose} fullWidth={fullScreen} sx={{ textTransform: "none" }}>Cancelar</Button>
-        <Button
-          variant="contained"
-          disabled={!startTime || mutation.isPending}
-          onClick={() => mutation.mutate()}
-          fullWidth={fullScreen}
-          sx={{ textTransform: "none", fontWeight: 600 }}
-        >
-          {mutation.isPending ? <CircularProgress size={18} /> : "Generar ronda"}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
 
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -179,8 +86,8 @@ export default function TournamentDetail() {
   const [addPairOpen, setAddPairOpen] = useState(false);
   const [editPairTarget, setEditPairTarget] = useState<Pair | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [nextRoundOpen, setNextRoundOpen] = useState(false);
-  const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+const [editMatch, setEditMatch] = useState<TournamentMatch | null>(null);
   const [deletePairTarget, setDeletePairTarget] = useState<Pair | null>(null);
 
   const { isPending, error, data } = useQuery<TournamentDetailType>({
@@ -194,6 +101,15 @@ export default function TournamentDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
       setDeletePairTarget(null);
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => resetMatches(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
+      setResetConfirmOpen(false);
+      setGenerateOpen(true);
     },
   });
 
@@ -231,10 +147,7 @@ export default function TournamentDetail() {
   const activeMatches = data.matches.filter(m => m.pair1 !== null || m.pair2 !== null);
   const maxRound = activeMatches.length > 0 ? Math.max(...activeMatches.map(m => m.round)) : 0;
   const currentRoundMatches = activeMatches.filter(m => m.round === maxRound);
-  const currentRoundDone = currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status !== "PENDING");
-  const canNextRound = isBracket && currentRoundDone && currentRoundMatches.filter(m => m.status !== "BYE").length > 0;
-
-  // Repechage: show trigger button when all round-1 regular matches are done and opponent not yet assigned
+// Repechage: show trigger button when all round-1 regular matches are done and opponent not yet assigned
   const round1Regular = data.matches.filter(m => m.round === 1 && !m.isRepechage);
   const round1Done = round1Regular.length > 0 && round1Regular.every(m => m.status !== "PENDING");
   const canTriggerRepechaje = isBracket && round1Done && repechajeMatches.some(m => !m.pair2);
@@ -265,8 +178,8 @@ export default function TournamentDetail() {
               />
             )}
             <Chip
-              label={STATUS_LABEL[data.status]}
-              color={STATUS_COLOR[data.status]}
+              label={getDateStatus(data.startDate, data.endDate).label}
+              color={getDateStatus(data.startDate, data.endDate).color}
               sx={{ fontWeight: 700 }}
             />
           </Box>
@@ -363,15 +276,14 @@ export default function TournamentDetail() {
               {canTriggerRepechaje && (
                 <RepechajeButton tournamentId={Number(id)} />
               )}
-              {canNextRound && (
+              {hasMatches && isBracket && (
                 <Button
                   size="small"
                   variant="contained"
-                  color="secondary"
-                  onClick={() => setNextRoundOpen(true)}
-                  sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}
+                  onClick={() => setResetConfirmOpen(true)}
+                  sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5, bgcolor: "#111", "&:hover": { bgcolor: "#333" } }}
                 >
-                  Siguiente ronda
+                  Regenerar cruces
                 </Button>
               )}
             </Box>
@@ -464,11 +376,6 @@ export default function TournamentDetail() {
         onGenerated={() => {}}
       />
 
-      <NextRoundDialog
-        open={nextRoundOpen}
-        onClose={() => setNextRoundOpen(false)}
-        tournamentId={Number(id)}
-      />
 
       {editMatch && (
         <EditMatchDialog
@@ -488,6 +395,16 @@ export default function TournamentDetail() {
         loading={removePairMutation.isPending}
         onClose={() => setDeletePairTarget(null)}
         onConfirm={() => deletePairTarget && removePairMutation.mutate(deletePairTarget.id)}
+      />
+
+      <DeleteDialog
+        open={resetConfirmOpen}
+        title="Regenerar cruces"
+        description="Se eliminarán todos los partidos y resultados actuales. Las parejas se conservan. ¿Querés continuar?"
+        confirmLabel="Sí, regenerar"
+        loading={resetMutation.isPending}
+        onClose={() => setResetConfirmOpen(false)}
+        onConfirm={() => resetMutation.mutate()}
       />
     </Box>
   );
