@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import courtRoutes from "./routes/courts.routes";
 import playerRoutes from "./routes/player.routes";
 import bookingRoutes from "./routes/booking.routes";
@@ -10,6 +11,7 @@ import authRoutes from "./routes/auth.routes";
 import statsRoutes from "./routes/stats.routes";
 import profesorRoutes from "./routes/profesor.routes";
 import publicRoutes from "./routes/public.routes";
+import uploadRoutes from "./routes/upload.routes";
 import { AppDataSource } from "./data-source";
 
 const app = express();
@@ -33,6 +35,11 @@ app.use(async (_req, res, next) => {
   next();
 });
 
+// Serve uploaded files locally (Vercel uses blob storage)
+if (!process.env.VERCEL) {
+  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+}
+
 app.use("/api", courtRoutes);
 app.use("/api", playerRoutes);
 app.use("/api", bookingRoutes);
@@ -43,6 +50,7 @@ app.use("/api", authRoutes);
 app.use("/api", statsRoutes);
 app.use("/api", profesorRoutes);
 app.use("/api", publicRoutes);
+app.use("/api", uploadRoutes);
 
 // Local development only — Vercel sets VERCEL=1 automatically.
 if (!process.env.VERCEL) {

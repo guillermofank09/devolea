@@ -63,6 +63,7 @@ function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
         <Box key={p.id}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5 }}>
             <Avatar
+              src={p.avatarUrl}
               sx={{ bgcolor: stringToColor(p.name), width: 40, height: 40, fontSize: "0.9rem", fontWeight: 700, flexShrink: 0 }}
             >
               {getInitials(p.name)}
@@ -152,7 +153,7 @@ export default function ProfesorTable({ profesores, onEdit, onDelete, onSchedule
             <TableRow key={p.id} hover sx={{ "&:last-child td": { border: 0 } }}>
               <TableCell>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Avatar sx={{ bgcolor: stringToColor(p.name), width: 36, height: 36, fontSize: "0.85rem", fontWeight: 700 }}>
+                  <Avatar src={p.avatarUrl} sx={{ bgcolor: stringToColor(p.name), width: 36, height: 36, fontSize: "0.85rem", fontWeight: 700 }}>
                     {getInitials(p.name)}
                   </Avatar>
                   <Typography variant="body2" fontWeight={600}>{p.name}</Typography>

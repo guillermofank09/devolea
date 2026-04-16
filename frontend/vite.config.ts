@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: "Devolea · Gestión de Pádel",
         short_name: "Devolea",
-        description: "Software de Gestión de Canchas de Padel y Torneos",
+        description: "Software de Gestión de Canchas y Torneos",
         theme_color: "#F5AD27",
         background_color: "#ffffff",
         display: "standalone",
@@ -68,6 +68,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": "http://localhost:3001",
+      "/uploads": "http://localhost:3001",
     },
   },
 });

@@ -27,6 +27,9 @@ export class Profesor {
   })
   schedule?: object[] | null;
 
+  @Column({ type: "varchar", nullable: true })
+  avatarUrl?: string;
+
   @Column({ nullable: true })
   userId?: number;
 

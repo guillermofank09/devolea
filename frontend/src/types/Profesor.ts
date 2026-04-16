@@ -9,6 +9,7 @@ export interface Profesor {
   hourlyRate?: number;
   sex?: ProfesorSex;
   schedule?: DaySchedule[] | null;
+  avatarUrl?: string;
   createdAt: string;
 }
 
@@ -16,4 +17,5 @@ export interface ProfesorFormData {
   name: string;
   phone: string;
   sex?: ProfesorSex | "";
+  avatarUrl?: string;
 }

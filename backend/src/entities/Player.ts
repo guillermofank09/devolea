@@ -34,6 +34,9 @@ export class Player {
   @Column({ type: "varchar", nullable: true })
   phone?: string;
 
+  @Column({ type: "varchar", nullable: true })
+  avatarUrl?: string;
+
   @Column({ nullable: true })
   userId?: number;
 

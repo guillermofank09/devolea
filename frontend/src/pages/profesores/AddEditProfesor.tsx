@@ -24,9 +24,10 @@ import type { DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
 import PhoneField from "../../components/common/PhoneField";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
+import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
-const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "" };
+const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "" };
 
 interface Props {
   open: boolean;
@@ -46,7 +47,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
 
   useEffect(() => {
     if (profesor) {
-      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "" });
+      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
@@ -62,6 +63,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
       const payload = {
         ...data,
         sex: data.sex || undefined,
+        avatarUrl: data.avatarUrl || undefined,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
         schedule,
       };
@@ -98,6 +100,16 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ pt: 1 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+            {/* Avatar */}
+            <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
+              <AvatarUpload
+                name={form.name}
+                value={form.avatarUrl}
+                onChange={(url) => setForm(p => ({ ...p, avatarUrl: url }))}
+                disabled={mutation.isPending}
+              />
+            </Box>
 
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>

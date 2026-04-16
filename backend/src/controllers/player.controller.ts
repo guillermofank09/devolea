@@ -8,10 +8,10 @@ function getService() {
 }
 
 export const createPlayer = async (req: Request, res: Response) => {
-  const { name, category, city, sex, birthDate, phone } = req.body;
+  const { name, category, city, sex, birthDate, phone, avatarUrl } = req.body;
   const userId = req.authUser!.sub;
   try {
-    const player = await getService().create({ name, category, city, sex, birthDate, phone }, userId);
+    const player = await getService().create({ name, category, city, sex, birthDate, phone, avatarUrl }, userId);
     res.status(201).json(player);
   } catch {
     res.status(500).json({ error: "Error al crear el jugador" });
@@ -39,9 +39,9 @@ export const getPlayerById = async (req: Request, res: Response) => {
 };
 
 export const updatePlayer = async (req: Request, res: Response) => {
-  const { name, category, city, sex, birthDate, phone } = req.body;
+  const { name, category, city, sex, birthDate, phone, avatarUrl } = req.body;
   try {
-    const player = await getService().update(Number(req.params.id), { name, category, city, sex, birthDate, phone });
+    const player = await getService().update(Number(req.params.id), { name, category, city, sex, birthDate, phone, avatarUrl });
     if (!player) return res.status(404).json({ error: "Jugador no encontrado" });
     res.json(player);
   } catch {

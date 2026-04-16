@@ -7,6 +7,7 @@ export interface CreateProfesorDto {
   hourlyRate?: number;
   sex?: "MASCULINO" | "FEMENINO";
   schedule?: object[];
+  avatarUrl?: string;
 }
 
 export class ProfesorService {

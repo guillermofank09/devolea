@@ -8,6 +8,7 @@ export interface CreatePlayerDto {
   sex: PlayerSex;
   birthDate: string;
   phone?: string;
+  avatarUrl?: string;
 }
 
 export class PlayerService {

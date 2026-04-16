@@ -111,6 +111,7 @@ function MobileList({ players, onEdit, onDelete }: Props) {
         <Box key={player.id}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5 }}>
             <Avatar
+              src={player.avatarUrl}
               sx={{
                 bgcolor: stringToColor(player.name),
                 width: 40,
@@ -251,6 +252,7 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
               <TableCell>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                   <Avatar
+                    src={player.avatarUrl}
                     sx={{
                       bgcolor: stringToColor(player.name),
                       width: 36,

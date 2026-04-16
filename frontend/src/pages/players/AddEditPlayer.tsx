@@ -21,42 +21,34 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlayer, updatePlayer } from "../../api/playerService";
 import type { Player, PlayerCategory, PlayerFormData, PlayerSex } from "../../types/Player";
 import PhoneField from "../../components/common/PhoneField";
+import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 
-// ── Nominatim city search ─────────────────────────────────────────────────────
+// ── Georef Argentina city search ─────────────────────────────────────────────
 
 interface CityOption {
-  label: string;       // display name shown in dropdown
-  city: string;        // clean city name stored in the form
+  label: string;  // "Ciudad, Provincia" shown in dropdown and stored
 }
 
 async function searchCities(query: string): Promise<CityOption[]> {
   if (query.trim().length < 2) return [];
   const url =
-    `https://nominatim.openstreetmap.org/search` +
-    `?q=${encodeURIComponent(query)}` +
-    `&format=json&limit=8&addressdetails=1` +
-    `&countrycodes=ar` +
-    `&featuretype=city,town,village`;
-  const res = await fetch(url, {
-    headers: { "Accept-Language": "es", "User-Agent": "DevoleatClubManager/1.0" },
-  });
-  const data: any[] = await res.json();
+    `https://apis.datos.gob.ar/georef/api/localidades` +
+    `?nombre=${encodeURIComponent(query)}` +
+    `&campos=nombre,provincia.nombre` +
+    `&max=10&orden=nombre`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const localidades: any[] = data.localidades ?? [];
 
   const seen = new Set<string>();
   const results: CityOption[] = [];
 
-  for (const place of data) {
-    const addr = place.address ?? {};
-    // Extract the most specific locality name available
-    const city =
-      addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? addr.county ?? place.display_name.split(",")[0];
-    const state = addr.state ?? "";
-    const label = [city, state].filter(Boolean).join(", ");
-
-    if (!seen.has(city.toLowerCase())) {
-      seen.add(city.toLowerCase());
-      results.push({ label, city });
+  for (const loc of localidades) {
+    const label = `${loc.nombre}, ${loc.provincia.nombre}`;
+    if (!seen.has(label.toLowerCase())) {
+      seen.add(label.toLowerCase());
+      results.push({ label });
     }
   }
   return results;
@@ -82,6 +74,7 @@ const EMPTY: PlayerFormData = {
   sex: "MASCULINO",
   birthDate: "",
   phone: "",
+  avatarUrl: "",
 };
 
 interface Props {
@@ -114,6 +107,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
         sex: player.sex,
         birthDate: player.birthDate,
         phone: player.phone ?? "",
+        avatarUrl: player.avatarUrl ?? "",
       });
       setCityInput(player.city);
     } else {
@@ -181,6 +175,16 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
         <DialogContent sx={{ pt: 1 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
+            {/* Avatar */}
+            <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
+              <AvatarUpload
+                name={form.name}
+                value={form.avatarUrl}
+                onChange={(url) => set("avatarUrl", url)}
+                disabled={mutation.isPending}
+              />
+            </Box>
+
             {/* Nombre */}
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Nombre completo</FormLabel>
@@ -209,7 +213,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                   onChange={(_, value) => {
                     if (!value) { set("city", ""); setCityInput(""); }
                     else if (typeof value === "string") { set("city", value); setCityInput(value); }
-                    else { set("city", value.city); setCityInput(value.city); }
+                    else { set("city", value.label); setCityInput(value.label); }
                     setCityOptions([]);
                   }}
                   loading={cityLoading}
