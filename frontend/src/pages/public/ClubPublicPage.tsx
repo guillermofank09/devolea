@@ -183,9 +183,9 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
   const hasMatches = (data?.matches.length ?? 0) > 0;
 
   return (
-    <Paper elevation={0} sx={{ borderRadius: 4, overflow: "hidden", border: "1px solid", borderColor: COLORS.lightBorder, bgcolor: "#fff", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)" }}>
+    <Paper elevation={0} sx={{ borderRadius: 4, overflow: "clip", border: "1px solid", borderColor: COLORS.lightBorder, bgcolor: "#fff", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)" }}>
       {/* Banner */}
-      <Box sx={{ background: gradient, px: { xs: 3, md: 4 }, py: 3.5, position: "relative" }}>
+      <Box sx={{ background: gradient, px: { xs: 3, md: 4 }, py: 3.5, position: "relative", borderRadius: "16px 16px 0 0" }}>
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Typography variant="h5" fontWeight={800} color="#fff" lineHeight={1.2} sx={{ mb: 1, letterSpacing: "-0.02em" }}>
             {tournament.name}
@@ -245,7 +245,7 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
           </Box>
         )}
         {!isLoading && data && hasMatches && (
-          <Box sx={{ overflowX: "auto", overflowY: "auto", WebkitOverflowScrolling: "touch", mx: { xs: -2, md: 0 }, px: { xs: 2, md: 0 } }}>
+          <Box sx={{ overflow: "auto", WebkitOverflowScrolling: "touch", touchAction: "pan-x" }}>
             {isBracket
               ? <BracketView matches={data.matches} sex={data.sex} readOnly />
               : <RoundRobinList matches={data.matches} />
