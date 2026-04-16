@@ -44,6 +44,7 @@ import FormLabel from "@mui/material/FormLabel";
 import { FORM_LABEL_SX } from "../../../styles/formStyles";
 import { SPORTS, SPORT_LABEL } from "../../../constants/sports";
 import Checkbox from "@mui/material/Checkbox";
+import SportsIcon from "@mui/icons-material/Sports";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -239,6 +240,87 @@ function ResetPasswordDialog({ user, token, onClose }: { user: AdminUser; token:
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
         >
           {mutation.isPending ? "Guardando…" : "Cambiar contraseña"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Edit sports dialog ───────────────────────────────────────────────────────
+
+function EditSportsDialog({ user, token, onClose }: { user: AdminUser; token: string; onClose: () => void }) {
+  const [sports, setSports] = useState<string[]>(user.sports?.length ? user.sports : ["PADEL"]);
+  const queryClient = useQueryClient();
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const mutation = useMutation({
+    mutationFn: () => apiUpdateUser(token, user.id, { sports }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+      onClose();
+    },
+  });
+
+  function toggle(value: string) {
+    if (sports.includes(value)) {
+      if (sports.length === 1) return; // keep at least one
+      setSports(sports.filter(s => s !== value));
+    } else {
+      setSports([...sports, value]);
+    }
+  }
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Deportes — {user.name}</DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, overflow: "hidden" }}>
+          {SPORTS.map((s, idx) => {
+            const checked = sports.includes(s.value);
+            return (
+              <Box
+                key={s.value}
+                onClick={() => toggle(s.value)}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  px: 1.5,
+                  py: 0.75,
+                  cursor: "pointer",
+                  borderTop: idx > 0 ? "1px solid" : "none",
+                  borderColor: "divider",
+                  bgcolor: checked ? "rgba(245,173,39,0.08)" : "transparent",
+                  "&:hover": { bgcolor: checked ? "rgba(245,173,39,0.14)" : "action.hover" },
+                  transition: "background-color 150ms ease",
+                }}
+              >
+                <Checkbox
+                  checked={checked}
+                  size="small"
+                  disableRipple
+                  tabIndex={-1}
+                  sx={{ p: 0.5, mr: 1, color: "text.disabled", "&.Mui-checked": { color: "#F5AD27" } }}
+                />
+                <Typography variant="body2" fontWeight={checked ? 700 : 400} sx={{ color: checked ? "#b07d00" : "text.primary" }}>
+                  {s.label}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+        <Button onClick={onClose} fullWidth={fullScreen} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>Cancelar</Button>
+        <Button
+          variant="contained"
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          fullWidth={fullScreen}
+          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
+        >
+          {mutation.isPending ? "Guardando…" : "Guardar"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -443,6 +525,7 @@ function UserRow({
   onDelete,
   onEditPayment,
   onResetPassword,
+  onEditSports,
 }: {
   user: AdminUser;
   isSelf: boolean;
@@ -450,6 +533,7 @@ function UserRow({
   onDelete: () => void;
   onEditPayment: () => void;
   onResetPassword: () => void;
+  onEditSports: () => void;
 }) {
   const queryClient = useQueryClient();
   const { impersonate } = useAuth();
@@ -583,6 +667,11 @@ function UserRow({
           )}
           {user.role !== "superadmin" && (
             <>
+              <Tooltip title="Editar deportes">
+                <IconButton size="small" onClick={onEditSports} sx={{ color: "text.secondary" }}>
+                  <SportsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Editar fecha de pago">
                 <IconButton size="small" onClick={onEditPayment} sx={{ color: "text.secondary" }}>
                   <EditCalendarIcon fontSize="small" />
@@ -628,6 +717,7 @@ export default function AdminUsers() {
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<AdminUser | null>(null);
   const [resetPassTarget, setResetPassTarget] = useState<AdminUser | null>(null);
+  const [editSportsTarget, setEditSportsTarget] = useState<AdminUser | null>(null);
   const [search, setSearch] = useState("");
   const [filterOverdue, setFilterOverdue] = useState(false);
   const [filterDisabled, setFilterDisabled] = useState(false);
@@ -742,6 +832,7 @@ export default function AdminUsers() {
               onDelete={() => setDeleteTarget(u)}
               onEditPayment={() => setPaymentTarget(u)}
               onResetPassword={() => setResetPassTarget(u)}
+              onEditSports={() => setEditSportsTarget(u)}
             />
           </Box>
         ))}
@@ -767,6 +858,10 @@ export default function AdminUsers() {
 
       {resetPassTarget && (
         <ResetPasswordDialog user={resetPassTarget} token={token!} onClose={() => setResetPassTarget(null)} />
+      )}
+
+      {editSportsTarget && (
+        <EditSportsDialog user={editSportsTarget} token={token!} onClose={() => setEditSportsTarget(null)} />
       )}
 
       <DeleteDialog
