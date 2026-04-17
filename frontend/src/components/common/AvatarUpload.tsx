@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import CloseIcon from "@mui/icons-material/Close";
 import { uploadImage } from "../../api/uploadService";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 
@@ -22,6 +23,11 @@ export default function AvatarUpload({ name, value, onChange, disabled, size = 7
   useEffect(() => {
     return () => { if (preview) URL.revokeObjectURL(preview); };
   }, [preview]);
+
+  function handleClear() {
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
+    onChange("");
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -94,6 +100,22 @@ export default function AvatarUpload({ name, value, onChange, disabled, size = 7
           }}
         >
           <CameraAltIcon sx={{ fontSize: 13 }} />
+        </IconButton>
+      )}
+
+      {!disabled && src && !uploading && (
+        <IconButton
+          size="small"
+          onClick={handleClear}
+          sx={{
+            position: "absolute", top: -4, right: -4,
+            bgcolor: "#ef4444", color: "#fff",
+            width: 22, height: 22,
+            border: "2px solid white",
+            "&:hover": { bgcolor: "#dc2626" },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: 11 }} />
         </IconButton>
       )}
 
