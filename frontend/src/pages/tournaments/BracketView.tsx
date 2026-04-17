@@ -1,8 +1,9 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Avatar, Box, Paper, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import type { TournamentMatch, Pair } from "../../types/Tournament";
 import ChampionBanner from "../../components/common/ChampionBanner";
+import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 const MATCH_H = 100;
 const MATCH_W = 240;
@@ -35,12 +36,6 @@ function isPlaceholder(m: TournamentMatch): boolean {
   return m.pair1 === null && m.pair2 === null && m.status === "PENDING";
 }
 
-function pairShortLabel(pair: Pair | null | undefined): string {
-  if (!pair) return "A definir";
-  const p1 = pair.player1.name.split(" ")[0];
-  const p2 = pair.player2.name.split(" ")[0];
-  return `${p1} / ${p2}`;
-}
 
 function getRoundLabel(roundNumber: number, totalRounds: number, allRoundCounts: number[]): string {
   const hasCrossPhase = allRoundCounts.length >= 2 && allRoundCounts[0] === allRoundCounts[1];
@@ -339,9 +334,9 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit }: { match: Tour
     >
       <Box sx={{ width: 6, flexShrink: 0, bgcolor: sideColor }} />
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <PairRow label={pairShortLabel(match.pair1)} isWinner={pair1Won} isLoser={pair2Won} isBye={!match.pair1} score={pair1Won ? "G" : ""} />
+        <PairRow pair={match.pair1} isWinner={pair1Won} isLoser={pair2Won} isBye={!match.pair1} />
         <Box sx={{ height: "1px", bgcolor: "#f1f5f9" }} />
-        <PairRow label={pairShortLabel(match.pair2)} isWinner={pair2Won} isLoser={pair1Won} isBye={!match.pair2} score={pair2Won ? "G" : ""} />
+        <PairRow pair={match.pair2} isWinner={pair2Won} isLoser={pair1Won} isBye={!match.pair2} />
         
         <Box sx={{ mt: "auto", px: 1.5, py: 0.5, bgcolor: live ? "transparent" : "grey.50", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {groupLabel && (
@@ -383,23 +378,55 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit }: { match: Tour
   );
 }
 
-function PairRow({ label, isWinner, isLoser, isBye }: { label: string; isWinner: boolean; isLoser: boolean; isBye: boolean; score: string }) {
+function PlayerMiniAvatar({ name, avatarUrl, dim }: { name: string; avatarUrl?: string; dim: boolean }) {
   return (
-    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 2, gap: 1, bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
+    <Avatar
+      src={avatarUrl}
+      sx={{
+        width: 18, height: 18,
+        fontSize: "0.45rem",
+        fontWeight: 700,
+        bgcolor: dim ? "#cbd5e1" : stringToColor(name),
+        opacity: dim ? 0.5 : 1,
+        flexShrink: 0,
+      }}
+    >
+      {!avatarUrl && getInitials(name)}
+    </Avatar>
+  );
+}
+
+function PairRow({ pair, isWinner, isLoser, isBye }: { pair: Pair | null | undefined; isWinner: boolean; isLoser: boolean; isBye: boolean }) {
+  const dim = isBye || isLoser;
+  if (!pair) {
+    return (
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 2 }}>
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "text.disabled", fontWeight: 500 }}>
+          A definir
+        </Typography>
+      </Box>
+    );
+  }
+  const p1 = pair.player1.name.split(" ")[0];
+  const p2 = pair.player2.name.split(" ")[0];
+  return (
+    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.75, bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
+      <Box sx={{ display: "flex", gap: 0.4, flexShrink: 0 }}>
+        <PlayerMiniAvatar name={pair.player1.name} avatarUrl={pair.player1.avatarUrl} dim={dim} />
+        <PlayerMiniAvatar name={pair.player2.name} avatarUrl={pair.player2.avatarUrl} dim={dim} />
+      </Box>
       <Typography
         variant="body2" noWrap
         sx={{
-          flex: 1, fontSize: "0.8rem",
+          flex: 1, fontSize: "0.78rem",
           fontWeight: isWinner ? 700 : 500,
-          color: isBye || isLoser ? "text.disabled" : "text.primary",
+          color: dim ? "text.disabled" : "text.primary",
           minWidth: 0,
         }}
       >
-        {label}
+        {p1} / {p2}
       </Typography>
-      {isWinner && (
-        <EmojiEventsIcon sx={{ fontSize: 14, color: "#f5ad27" }} />
-      )}
+      {isWinner && <EmojiEventsIcon sx={{ fontSize: 13, color: "#f5ad27", flexShrink: 0 }} />}
     </Box>
   );
 }
