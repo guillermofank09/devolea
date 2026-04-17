@@ -12,6 +12,7 @@ import statsRoutes from "./routes/stats.routes";
 import profesorRoutes from "./routes/profesor.routes";
 import publicRoutes from "./routes/public.routes";
 import uploadRoutes from "./routes/upload.routes";
+import equipoRoutes from "./routes/equipo.routes";
 import { AppDataSource } from "./data-source";
 
 const app = express();
@@ -51,6 +52,7 @@ app.use("/api", statsRoutes);
 app.use("/api", profesorRoutes);
 app.use("/api", publicRoutes);
 app.use("/api", uploadRoutes);
+app.use("/api", equipoRoutes);
 
 // Local development only — Vercel sets VERCEL=1 automatically.
 if (!process.env.VERCEL) {

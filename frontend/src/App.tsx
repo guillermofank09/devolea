@@ -16,16 +16,17 @@ import Login from './pages/login';
 import Register from './pages/register';
 import Stats from './pages/stats';
 import Profesores from './pages/profesores';
+import Equipos from './pages/equipos';
 import AdminUsers from './pages/admin/users';
 import ClubPublicPage from './pages/public/ClubPublicPage';
 import { useAuth } from './context/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
 import './App.css';
 
-type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
+type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos';
 
 // Paths that belong to the authenticated app — everything else is a public club page
-const PROTECTED_PREFIXES = ['/players', '/tournaments', '/profile', '/settings', '/profesores', '/stats', '/logout', '/admin'];
+const PROTECTED_PREFIXES = ['/players', '/tournaments', '/profile', '/settings', '/profesores', '/equipos', '/stats', '/logout', '/admin'];
 function isPublicClubPath(pathname: string): boolean {
   if (pathname === '/') return false;
   return !PROTECTED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'));
@@ -105,6 +106,7 @@ function ProtectedApp() {
     location.pathname.startsWith('/players') ? 'jugadores' :
     location.pathname.startsWith('/tournaments') ? 'torneos' :
     location.pathname.startsWith('/profesores') ? 'profesores' :
+    location.pathname.startsWith('/equipos') ? 'equipos' :
     'canchas';
 
   const handleSelect = (key: NavKey) => {
@@ -112,6 +114,7 @@ function ProtectedApp() {
     else if (key === 'jugadores') navigate('/players');
     else if (key === 'torneos') navigate('/tournaments');
     else if (key === 'profesores') navigate('/profesores');
+    else if (key === 'equipos') navigate('/equipos');
   };
 
   return (
@@ -124,6 +127,7 @@ function ProtectedApp() {
           onSelect={handleSelect}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
+          sports={user?.sports ?? []}
         />
         {mobileOpen && (
           <div className="sb-backdrop" onClick={() => setMobileOpen(false)} />
@@ -137,6 +141,7 @@ function ProtectedApp() {
             <Route path="/profile"  element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profesores" element={<Profesores />} />
+            <Route path="/equipos" element={<Equipos />} />
             <Route path="/stats"    element={<Stats />} />
             <Route path="/logout"   element={<Logout />} />
             <Route path="*" element={<Navigate to="/" replace />} />

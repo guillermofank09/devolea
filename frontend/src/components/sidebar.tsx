@@ -7,11 +7,14 @@ import {
   faUserFriends,
   faTrophy,
   faChalkboardTeacher,
+  faShield,
   faAngleLeft,
   faAngleRight,
 } from '@fortawesome/free-solid-svg-icons';
 
-type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores';
+export type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos';
+
+const SPORTS_WITH_TEAMS = ['FUTBOL', 'VOLEY', 'BASQUET'];
 
 interface Props {
   initialActive?: NavKey;
@@ -19,13 +22,15 @@ interface Props {
   defaultCollapsed?: boolean;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  sports?: string[];
 }
 
-const NAV_ITEMS: { key: NavKey; label: string; icon: IconProp }[] = [
-  { key: 'canchas',    label: 'Canchas',    icon: faThLarge            },
-  { key: 'jugadores',  label: 'Jugadores',  icon: faUserFriends        },
-  { key: 'profesores', label: 'Profesores', icon: faChalkboardTeacher  },
-  { key: 'torneos',    label: 'Torneos',    icon: faTrophy             },
+const ALL_NAV_ITEMS: { key: NavKey; label: string; icon: IconProp; requiredSports?: string[] }[] = [
+  { key: 'canchas',    label: 'Canchas',    icon: faThLarge           },
+  { key: 'jugadores',  label: 'Jugadores',  icon: faUserFriends       },
+  { key: 'profesores', label: 'Profesores', icon: faChalkboardTeacher },
+  { key: 'equipos',    label: 'Equipos',    icon: faShield,           requiredSports: SPORTS_WITH_TEAMS },
+  { key: 'torneos',    label: 'Torneos',    icon: faTrophy            },
 ];
 
 const Sidebar: React.FC<Props> = ({
@@ -34,9 +39,14 @@ const Sidebar: React.FC<Props> = ({
   defaultCollapsed = false,
   mobileOpen = false,
   onMobileClose,
+  sports = [],
 }) => {
   const [active, setActive] = useState<NavKey>(initialActive);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  const NAV_ITEMS = ALL_NAV_ITEMS.filter(item =>
+    !item.requiredSports || item.requiredSports.some(s => sports.includes(s))
+  );
 
   useEffect(() => {
     setActive(initialActive);
