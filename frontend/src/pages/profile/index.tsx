@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Autocomplete,
@@ -195,7 +195,9 @@ export default function Profile() {
   // ── form state ──
   const [clubName, setClubName]     = useState("");
   const [logoUrl, setLogoUrl]       = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const logoPreviewRef = useRef<string | null>(null);
   const [address, setAddress]       = useState("");
   const [phone, setPhone]           = useState("");
   const [lat, setLat]               = useState<number | null>(null);
@@ -240,17 +242,27 @@ export default function Profile() {
   }, [addrInput]);
 
   // ── logo upload ──
-  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
+
+    // Show preview instantly from local file
+    if (logoPreviewRef.current) URL.revokeObjectURL(logoPreviewRef.current);
+    const objectUrl = URL.createObjectURL(file);
+    logoPreviewRef.current = objectUrl;
+    setLogoPreview(objectUrl);
     setLogoUploading(true);
-    try {
-      const url = await uploadImage(file, "logos");
-      setLogoUrl(url);
-    } finally {
-      setLogoUploading(false);
-    }
+
+    uploadImage(file, "logos")
+      .then((url) => {
+        setLogoUrl(url);
+        setLogoPreview(null);
+        URL.revokeObjectURL(objectUrl);
+        logoPreviewRef.current = null;
+      })
+      .catch(() => setLogoPreview(null))
+      .finally(() => setLogoUploading(false));
   }
 
   // ── save ──
@@ -324,15 +336,22 @@ export default function Profile() {
                     "&:hover": logoUploading ? {} : { borderColor: "text.secondary" },
                   }}
                 >
-                  {logoUploading ? (
+                  {(logoPreview || logoUrl) ? (
+                    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+                      <Box
+                        component="img"
+                        src={logoPreview ?? logoUrl}
+                        alt="logo"
+                        sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+                      />
+                      {logoUploading && (
+                        <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(255,255,255,0.6)" }}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      )}
+                    </Box>
+                  ) : logoUploading ? (
                     <CircularProgress size={24} />
-                  ) : logoUrl ? (
-                    <Box
-                      component="img"
-                      src={logoUrl}
-                      alt="logo"
-                      sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
-                    />
                   ) : (
                     <>
                       <UploadIcon sx={{ color: "text.disabled", fontSize: 22 }} />
@@ -343,7 +362,7 @@ export default function Profile() {
                   )}
                   <input type="file" accept="image/*" hidden disabled={logoUploading} onChange={handleLogoChange} />
                 </Box>
-                {logoUrl && !logoUploading && (
+                {(logoUrl || logoPreview) && !logoUploading && (
                   <Button
                     size="small"
                     color="error"
@@ -496,7 +515,7 @@ export default function Profile() {
           variant="contained"
           size="large"
           startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : <SaveOutlinedIcon />}
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || logoUploading}
           onClick={handleSave}
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 4, boxShadow: 4 }}
         >
