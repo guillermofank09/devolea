@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Avatar, Box, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { uploadImage } from "../../api/uploadService";
@@ -13,27 +13,45 @@ interface Props {
 }
 
 export default function AvatarUpload({ name, value, onChange, disabled, size = 72 }: Props) {
+  // Local blob URL shown immediately after picking — replaced by real URL once upload finishes
+  const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Revoke the object URL when it's replaced or the component unmounts
+  useEffect(() => {
+    return () => { if (preview) URL.revokeObjectURL(preview); };
+  }, [preview]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
+
+    // Show preview instantly from the local file
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
     setUploading(true);
-    try {
-      const url = await uploadImage(file, "avatars");
-      onChange(url);
-    } finally {
-      setUploading(false);
-    }
+
+    // Upload in the background — does not block the form
+    uploadImage(file, "avatars")
+      .then((url) => {
+        onChange(url);
+        setPreview(null); // real URL now in `value`, release blob
+      })
+      .catch(() => {
+        setPreview(null); // revert to previous on error
+      })
+      .finally(() => setUploading(false));
   }
+
+  const src = preview ?? value;
 
   return (
     <Box sx={{ position: "relative", width: size, height: size }}>
       <Tooltip title="Cambiar foto">
         <Avatar
-          src={value}
+          src={src}
           sx={{
             width: size,
             height: size,
@@ -48,21 +66,22 @@ export default function AvatarUpload({ name, value, onChange, disabled, size = 7
           }}
           onClick={() => !disabled && inputRef.current?.click()}
         >
-          {!value && getInitials(name || "?")}
+          {!src && getInitials(name || "?")}
         </Avatar>
       </Tooltip>
 
+      {/* Subtle spinner while uploading — doesn't block the form */}
       {uploading && (
         <Box sx={{
           position: "absolute", inset: 0, display: "flex",
           alignItems: "center", justifyContent: "center",
-          bgcolor: "rgba(0,0,0,0.4)", borderRadius: "50%",
+          bgcolor: "rgba(0,0,0,0.25)", borderRadius: "50%",
         }}>
-          <CircularProgress size={size * 0.4} sx={{ color: "#fff" }} />
+          <CircularProgress size={size * 0.3} sx={{ color: "#fff" }} />
         </Box>
       )}
 
-      {!disabled && !uploading && (
+      {!disabled && (
         <IconButton
           size="small"
           onClick={() => inputRef.current?.click()}
