@@ -409,22 +409,18 @@ function PairRow({ pair, isWinner, isLoser, isBye }: { pair: Pair | null | undef
   }
   const p1 = pair.player1.name.split(" ")[0];
   const p2 = pair.player2.name.split(" ")[0];
+  const textColor = dim ? "text.disabled" : "text.primary";
+  const fw = isWinner ? 700 : 500;
   return (
-    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.75, bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
-      <Box sx={{ display: "flex", gap: 0.4, flexShrink: 0 }}>
-        <PlayerMiniAvatar name={pair.player1.name} avatarUrl={pair.player1.avatarUrl} dim={dim} />
-        <PlayerMiniAvatar name={pair.player2.name} avatarUrl={pair.player2.avatarUrl} dim={dim} />
-      </Box>
-      <Typography
-        variant="body2" noWrap
-        sx={{
-          flex: 1, fontSize: "0.78rem",
-          fontWeight: isWinner ? 700 : 500,
-          color: dim ? "text.disabled" : "text.primary",
-          minWidth: 0,
-        }}
-      >
-        {p1} / {p2}
+    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.5, overflow: "hidden", bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
+      <PlayerMiniAvatar name={pair.player1.name} avatarUrl={pair.player1.avatarUrl} dim={dim} />
+      <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flexShrink: 1, minWidth: 0 }}>
+        {p1}
+      </Typography>
+      <Typography sx={{ fontSize: "0.72rem", color: "text.disabled", flexShrink: 0 }}>/</Typography>
+      <PlayerMiniAvatar name={pair.player2.name} avatarUrl={pair.player2.avatarUrl} dim={dim} />
+      <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flex: 1, minWidth: 0 }}>
+        {p2}
       </Typography>
       {isWinner && <EmojiEventsIcon sx={{ fontSize: 13, color: "#f5ad27", flexShrink: 0 }} />}
     </Box>
