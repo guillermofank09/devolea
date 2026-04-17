@@ -15,6 +15,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo.png";
+import { trackEvent } from "../../lib/analytics";
 
 export default function Login() {
   const { login } = useAuth();
@@ -32,6 +33,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(username, password);
+      trackEvent("login");
       navigate("/");
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Error al iniciar sesión. Intentá de nuevo.");

@@ -31,6 +31,7 @@ import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail
 import type { PublicBookingSlot, PublicCourt, PublicProfesor } from "../../api/publicService";
 import PageLoader from "../../components/common/PageLoader";
 import BracketView from "../tournaments/BracketView";
+import { trackEvent } from "../../lib/analytics";
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -384,6 +385,7 @@ function CourtCalendar({
                     href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
                     target={clickable ? "_blank" : undefined}
                     rel={clickable ? "noopener noreferrer" : undefined}
+                    onClick={clickable ? () => trackEvent("whatsapp_reserva", { cancha: court.name }) : undefined}
                     sx={{
                       height: 60,
                       bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4",
@@ -447,6 +449,7 @@ function CourtCalendar({
                       href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
                       target={clickable ? "_blank" : undefined}
                       rel={clickable ? "noopener noreferrer" : undefined}
+                      onClick={clickable ? () => trackEvent("whatsapp_reserva", { cancha: court.name }) : undefined}
                       sx={{
                         height: 64,
                         bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4",
@@ -963,6 +966,7 @@ function ClubInfoPanel({ clubName, address, logoSrc, mapUrl, businessHours, phon
           href={`https://wa.me/${phone.replace(/\D/g, "")}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent("whatsapp_contacto")}
           sx={{ px: 3.5, py: 2, display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", borderBottom: `1px solid ${COLORS.border}`, transition: "bgcolor 0.15s", "&:hover": { bgcolor: "rgba(255,255,255,0.04)" } }}
         >
           <WhatsAppIcon sx={{ fontSize: 18, color: "#4ade80", flexShrink: 0 }} />
@@ -1189,6 +1193,7 @@ export default function ClubPublicPage() {
                         href={`https://wa.me/${profile.phone.replace(/\D/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackEvent("whatsapp_contacto")}
                         sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, py: 1.75, borderRadius: 3, bgcolor: "#16a34a", textDecoration: "none", transition: "opacity 0.15s", "&:hover": { opacity: 0.9 } }}
                       >
                         <WhatsAppIcon sx={{ fontSize: 22, color: "#fff" }} />

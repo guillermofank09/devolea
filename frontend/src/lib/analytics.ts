@@ -29,3 +29,8 @@ export function trackPageView(path: string, title?: string): void {
     page_title: title ?? document.title,
   });
 }
+
+export function trackEvent(name: string, params?: Record<string, string | number | boolean>): void {
+  if (!GA_ID || typeof window.gtag !== "function") return;
+  window.gtag("event", name, params ?? {});
+}
