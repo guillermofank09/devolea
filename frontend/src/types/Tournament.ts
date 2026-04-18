@@ -1,4 +1,5 @@
 import type { Player } from "./Player";
+import type { Equipo } from "./Equipo";
 
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
@@ -6,6 +7,11 @@ export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | 
 export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
 export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
+
+export interface TournamentTeam {
+  id: number;
+  equipo: Equipo;
+}
 
 export interface Tournament {
   id: number;
@@ -16,6 +22,7 @@ export interface Tournament {
   endDate: string;
   status: TournamentStatus;
   format?: TournamentFormat;
+  sport?: string;
   createdAt: string;
 }
 
@@ -25,12 +32,13 @@ export interface TournamentFormData {
   sex: TournamentSex;
   startDate: string;
   endDate: string;
+  sport?: string;
 }
 
 export interface Pair {
   id: number;
   player1: Player;
-  player2: Player;
+  player2: Player | null;
   player1InscriptionPaid: boolean;
   player2InscriptionPaid: boolean;
   preferredStartTimes?: string[];
@@ -40,6 +48,8 @@ export interface TournamentMatch {
   id: number;
   pair1?: Pair | null;
   pair2?: Pair | null;
+  team1?: TournamentTeam | null;
+  team2?: TournamentTeam | null;
   court?: { id: number; name: string } | null;
   scheduledAt?: string | null;
   round: number;
@@ -55,5 +65,6 @@ export interface TournamentMatch {
 
 export interface TournamentDetail extends Tournament {
   pairs: Pair[];
+  teams: TournamentTeam[];
   matches: TournamentMatch[];
 }

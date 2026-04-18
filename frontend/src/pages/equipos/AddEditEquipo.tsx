@@ -21,6 +21,9 @@ import { createEquipo, updateEquipo } from "../../api/equipoService";
 import type { Equipo, EquipoFormData } from "../../types/Equipo";
 import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
+import { isTeamSport, SPORT_LABELS } from "../tournaments/AddEditTournament";
+import { MenuItem, Select } from "@mui/material";
 
 // ── Georef Argentina city search ──────────────────────────────────────────────
 
@@ -50,7 +53,7 @@ async function searchCities(query: string): Promise<CityOption[]> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const EMPTY: EquipoFormData = { name: "", city: "", sex: "", avatarUrl: "" };
+const EMPTY: EquipoFormData = { name: "", city: "", sex: "", sport: "", avatarUrl: "" };
 
 interface Props {
   open: boolean;
@@ -70,10 +73,13 @@ export default function AddEditEquipo({ open, onClose, equipo }: Props) {
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isEditing = !!equipo;
+  const { user } = useAuth();
+  const teamSports = (user?.sports ?? []).filter(s => isTeamSport(s));
+  const showSportSelector = teamSports.length > 1;
 
   useEffect(() => {
     if (equipo) {
-      setForm({ name: equipo.name, city: equipo.city ?? "", sex: equipo.sex ?? "", avatarUrl: equipo.avatarUrl ?? "" });
+      setForm({ name: equipo.name, city: equipo.city ?? "", sex: equipo.sex ?? "", sport: equipo.sport ?? "", avatarUrl: equipo.avatarUrl ?? "" });
       setCityInput(equipo.city ?? "");
     } else {
       setForm(EMPTY);
@@ -102,7 +108,7 @@ export default function AddEditEquipo({ open, onClose, equipo }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: EquipoFormData) => {
-      const payload = { ...data, sex: data.sex || undefined, avatarUrl: data.avatarUrl || undefined };
+      const payload = { ...data, sex: data.sex || undefined, sport: data.sport || undefined, avatarUrl: data.avatarUrl || undefined };
       return isEditing ? updateEquipo(equipo!.id, payload) : createEquipo(payload);
     },
     onSuccess: () => {
@@ -199,6 +205,25 @@ export default function AddEditEquipo({ open, onClose, equipo }: Props) {
                 )}
               />
             </Box>
+
+            {showSportSelector && (
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={form.sport ?? ""}
+                  onChange={e => setForm(p => ({ ...p, sport: e.target.value }))}
+                  disabled={mutation.isPending}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin especificar</em></MenuItem>
+                  {teamSports.map(s => (
+                    <MenuItem key={s} value={s}>{SPORT_LABELS[s] ?? s}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            )}
 
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>

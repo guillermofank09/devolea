@@ -32,6 +32,9 @@ export class Player {
   birthDate!: string;
 
   @Column({ type: "varchar", nullable: true })
+  sport?: string;
+
+  @Column({ type: "varchar", nullable: true })
   phone?: string;
 
   @Column({ type: "varchar", nullable: true })

@@ -23,6 +23,8 @@ import type { Player, PlayerCategory, PlayerFormData, PlayerSex } from "../../ty
 import PhoneField from "../../components/common/PhoneField";
 import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABELS } from "../tournaments/AddEditTournament";
 
 // ── Georef Argentina city search ─────────────────────────────────────────────
 
@@ -74,6 +76,7 @@ const EMPTY: PlayerFormData = {
   sex: "MASCULINO",
   birthDate: "",
   phone: "",
+  sport: "",
   avatarUrl: "",
 };
 
@@ -97,6 +100,9 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isEditing = !!player;
+  const { user } = useAuth();
+  const userSports = user?.sports ?? [];
+  const showSportSelector = userSports.includes("PADEL") && userSports.includes("TENIS");
 
   useEffect(() => {
     if (player) {
@@ -107,6 +113,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
         sex: player.sex,
         birthDate: player.birthDate,
         phone: player.phone ?? "",
+        sport: player.sport ?? "",
         avatarUrl: player.avatarUrl ?? "",
       });
       setCityInput(player.city);
@@ -287,6 +294,25 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                 ))}
               </Select>
             </Box>
+
+            {/* Deporte (solo si club tiene padel y tenis) */}
+            {showSportSelector && (
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={form.sport ?? ""}
+                  onChange={e => set("sport", e.target.value)}
+                  disabled={mutation.isPending}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin especificar</em></MenuItem>
+                  <MenuItem value="PADEL">{SPORT_LABELS["PADEL"]}</MenuItem>
+                  <MenuItem value="TENIS">{SPORT_LABELS["TENIS"]}</MenuItem>
+                </Select>
+              </Box>
+            )}
 
             {/* Sexo */}
             <Box>

@@ -252,7 +252,7 @@ export default function EditPairDialog({
   }, [selectedDate, profile, matchDuration, courts, courtBookingResults]);
 
   const otherPairs = existingPairs.filter(p => p.id !== pair.id);
-  const usedInTournament = otherPairs.flatMap(p => [p.player1.id, p.player2.id]);
+  const usedInTournament = otherPairs.flatMap(p => [p.player1.id, ...(p.player2 ? [p.player2.id] : [])]);
 
   const disabledForP1 = [...usedInTournament, ...(player2 ? [player2.id] : [])];
   const disabledForP2 = [...usedInTournament, ...(player1 ? [player1.id] : [])];
@@ -271,7 +271,7 @@ export default function EditPairDialog({
   const mutation = useMutation({
     mutationFn: () => updatePair(tournamentId, pair.id, {
       player1Id: !hasMatches && player1 && player1.id !== pair.player1.id ? player1.id : undefined,
-      player2Id: !hasMatches && player2 && player2.id !== pair.player2.id ? player2.id : undefined,
+      player2Id: !hasMatches && player2 && player2.id !== pair.player2?.id ? player2.id : undefined,
       player1InscriptionPaid: p1Paid,
       player2InscriptionPaid: p2Paid,
       preferredStartTimes: selectedTimes.length ? selectedTimes : null,

@@ -249,7 +249,7 @@ export default function AddPairDialog({
     });
   }, [selectedDate, profile, matchDuration, courts, courtBookingResults]);
 
-  const usedInTournament = existingPairs.flatMap(p => [p.player1.id, p.player2.id]);
+  const usedInTournament = existingPairs.flatMap(p => [p.player1.id, ...(p.player2 ? [p.player2.id] : [])]);
   const disabledForP1 = [...usedInTournament, ...(player2 ? [player2.id] : [])];
   const disabledForP2 = [...usedInTournament, ...(player1 ? [player1.id] : [])];
 

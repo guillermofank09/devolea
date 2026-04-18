@@ -15,6 +15,9 @@ export class Equipo {
   sex?: "MASCULINO" | "FEMENINO";
 
   @Column({ type: "varchar", nullable: true })
+  sport?: string;
+
+  @Column({ type: "varchar", nullable: true })
   avatarUrl?: string;
 
   @Column({ nullable: true })

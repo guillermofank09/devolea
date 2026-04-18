@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Tournament, TournamentDetail, TournamentFormData, Pair, TournamentMatch } from "../types/Tournament";
+import type { Tournament, TournamentDetail, TournamentFormData, Pair, TournamentMatch, TournamentTeam } from "../types/Tournament";
 import { API_BASE } from "./config";
 
 const BASE = `${API_BASE}/api`;
@@ -19,7 +19,7 @@ export const updateTournament = (id: number, data: Partial<TournamentFormData>):
 export const deleteTournament = (id: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${id}`).then(() => undefined);
 
-export const addPair = (tournamentId: number, player1Id: number, player2Id: number, opts?: {
+export const addPair = (tournamentId: number, player1Id: number, player2Id: number | null, opts?: {
   player1InscriptionPaid?: boolean;
   player2InscriptionPaid?: boolean;
   preferredStartTimes?: string[] | null;
@@ -60,6 +60,8 @@ export const updateMatch = (matchId: number, data: {
   scheduledAt?: string | null;
   pair1Id?: number | null;
   pair2Id?: number | null;
+  team1Id?: number | null;
+  team2Id?: number | null;
   winnerId?: number | null;
   result?: string;
   status?: string;
@@ -68,3 +70,9 @@ export const updateMatch = (matchId: number, data: {
   delayedUntil?: string | null;
 }): Promise<TournamentMatch> =>
   axios.put(`${BASE}/tournaments/matches/${matchId}`, data).then(r => r.data);
+
+export const addTeam = (tournamentId: number, equipoId: number): Promise<TournamentTeam> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/teams`, { equipoId }).then(r => r.data);
+
+export const removeTeam = (tournamentId: number, teamId: number): Promise<void> =>
+  axios.delete(`${BASE}/tournaments/${tournamentId}/teams/${teamId}`).then(() => undefined);

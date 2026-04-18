@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
 import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
+import { TournamentTeam } from "../entities/TournamentTeam";
 import { Booking } from "../entities/Booking";
 import { AppSettings } from "../entities/AppSettings";
 import { TournamentService } from "../services/tournament.service";
@@ -19,6 +20,7 @@ function getService() {
     AppDataSource.getRepository(Pair),
     AppDataSource.getRepository(TournamentMatch),
     AppDataSource.getRepository(Booking),
+    AppDataSource.getRepository(TournamentTeam),
   );
 }
 
@@ -121,5 +123,17 @@ export const updateMatch = async (req: Request, res: Response) => {
 
 export const triggerRepechage = async (req: Request, res: Response) => {
   try { res.json(await getService().triggerRepechage(Number(req.params.id))); }
+  catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
+export const addTeam = async (req: Request, res: Response) => {
+  const { equipoId } = req.body;
+  try {
+    res.status(201).json(await getService().addTeam(Number(req.params.id), Number(equipoId)));
+  } catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
+export const removeTeam = async (req: Request, res: Response) => {
+  try { await getService().removeTeam(Number(req.params.teamId)); res.json({ message: "Equipo eliminado" }); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };

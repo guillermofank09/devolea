@@ -24,7 +24,7 @@ import { updateMatch, createPlaceholderMatch, fetchMatchesByCourt } from "../../
 import { fetchCourts } from "../../api/courtService";
 import { fetchBookingsByCourt } from "../../api/bookingService";
 import { fetchSettings } from "../../api/settingsService";
-import type { Pair, TournamentMatch, MatchLiveStatus } from "../../types/Tournament";
+import type { Pair, TournamentMatch, MatchLiveStatus, TournamentTeam } from "../../types/Tournament";
 import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
 import { FORM_LABEL_SX } from "../../styles/formStyles";
@@ -80,12 +80,14 @@ function calcWinnerFromSets(sets: SetScore[], p1Id: number | "", p2Id: number | 
 }
 
 function pairLabel(pair: Pair) {
+  if (!pair.player2) return pair.player1.name;
   return `${pair.player1.name} / ${pair.player2.name}`;
 }
 
 function pairInitials(pair: Pair): string {
   const initials = (name: string) =>
     name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? "").join("");
+  if (!pair.player2) return initials(pair.player1.name);
   return `${initials(pair.player1.name)} / ${initials(pair.player2.name)}`;
 }
 
@@ -103,18 +105,22 @@ interface Props {
   onClose: () => void;
   match: TournamentMatch;
   pairs: Pair[];
+  teams?: TournamentTeam[];
+  teamMode?: boolean;
   tournamentId: number;
   totalRounds?: number;
 }
 
-export default function EditMatchDialog({ open, onClose, match, pairs, tournamentId, totalRounds }: Props) {
+export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds }: Props) {
   const isVirtual = match.id < 0;
-  const isPlaceholder = isVirtual || (!match.pair1 && !match.pair2);
+  const isPlaceholder = isVirtual || (!match.pair1 && !match.pair2 && !match.team1 && !match.team2);
 
   const [scheduledAt, setScheduledAt] = useState("");
   const [courtId, setCourtId] = useState<number | "">("");
   const [pair1Id, setPair1Id] = useState<number | "">("");
   const [pair2Id, setPair2Id] = useState<number | "">("");
+  const [team1Id, setTeam1Id] = useState<number | "">("");
+  const [team2Id, setTeam2Id] = useState<number | "">("");
   const [winnerId, setWinnerId] = useState<number | null>(null);
   const [sets, setSets] = useState<SetScore[]>([{ p1: "", p2: "" }, { p1: "", p2: "" }, { p1: "", p2: "" }]);
   const [liveStatus, setLiveStatus] = useState<MatchLiveStatus | null>(null);
@@ -143,6 +149,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
       setCourtId(match.court?.id ?? "");
       setPair1Id(match.pair1?.id ?? "");
       setPair2Id(match.pair2?.id ?? "");
+      setTeam1Id(match.team1?.id ?? "");
+      setTeam2Id(match.team2?.id ?? "");
       setWinnerId(match.winnerId ?? null);
       setSets(parseResultToSets(match.result, setsCount));
       setLiveStatus(match.liveStatus ?? null);
@@ -190,8 +198,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
       .forEach(m => {
         const start = new Date(m.scheduledAt!);
         const end = new Date(start.getTime() + matchDuration * 60 * 1000);
-        const p1 = m.pair1 ? `${m.pair1.player1.name.split(" ")[0]}/${m.pair1.player2.name.split(" ")[0]}` : "?";
-        const p2 = m.pair2 ? `${m.pair2.player1.name.split(" ")[0]}/${m.pair2.player2.name.split(" ")[0]}` : "BYE";
+        const p1 = m.pair1 ? `${m.pair1.player1.name.split(" ")[0]}${m.pair1.player2 ? "/" + m.pair1.player2.name.split(" ")[0] : ""}` : "?";
+        const p2 = m.pair2 ? `${m.pair2.player1.name.split(" ")[0]}${m.pair2.player2 ? "/" + m.pair2.player2.name.split(" ")[0] : ""}` : "BYE";
         events.push({
           id: m.id,
           title: `Torneo: ${p1} vs ${p2}`,
@@ -260,14 +268,21 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
       }
 
       const wasBye = match.status === "BYE";
-      const pair2IsNowSet = pair2Id !== "" && pair2Id != null;
+      const pair2IsNowSet = teamMode ? (team2Id !== "" && team2Id != null) : (pair2Id !== "" && pair2Id != null);
       const status = winnerId ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
       const result = composeSetsResult(sets);
       return updateMatch(match.id, {
         scheduledAt: scheduledAtISO,
         courtId: courtIdNum,
-        pair1Id: pair1Id !== "" ? Number(pair1Id) : null,
-        pair2Id: pair2Id !== "" ? Number(pair2Id) : null,
+        ...(teamMode
+          ? {
+              team1Id: team1Id !== "" ? Number(team1Id) : null,
+              team2Id: team2Id !== "" ? Number(team2Id) : null,
+            }
+          : {
+              pair1Id: pair1Id !== "" ? Number(pair1Id) : null,
+              pair2Id: pair2Id !== "" ? Number(pair2Id) : null,
+            }),
         winnerId: winnerId ?? null,
         result: result || undefined,
         status,
@@ -289,7 +304,9 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
 
   const currentPair1 = pairs.find(p => p.id === Number(pair1Id)) ?? match.pair1;
   const currentPair2 = pairs.find(p => p.id === Number(pair2Id)) ?? match.pair2;
-  const showWinner = !!currentPair1 && !!currentPair2;
+  const currentTeam1 = teams.find(t => t.id === Number(team1Id)) ?? match.team1;
+  const currentTeam2 = teams.find(t => t.id === Number(team2Id)) ?? match.team2;
+  const showWinner = teamMode ? (!!currentTeam1 && !!currentTeam2) : (!!currentPair1 && !!currentPair2);
 
   // ── Controls panel (shared between side-layout and stacked) ────────────────
   const controlsPanel = (
@@ -354,8 +371,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
         </Typography>
       )}
 
-      {/* Live status (non-placeholder matches with pairs) */}
-      {!isPlaceholder && (match.pair1 || match.pair2) && (
+      {/* Live status (non-placeholder matches with pairs or teams) */}
+      {!isPlaceholder && (match.pair1 || match.pair2 || match.team1 || match.team2) && (
         <>
           <Divider />
           <Box>
@@ -414,81 +431,113 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
         </>
       )}
 
-      {/* Pairs (non-placeholder) */}
+      {/* Pairs or Teams (non-placeholder) */}
       {!isPlaceholder && (
         <>
           <Divider />
-          <Box>
-            <FormLabel sx={FORM_LABEL_SX}>Pareja 1</FormLabel>
-            <Select
-              fullWidth size="small" value={pair1Id}
-              onChange={e => setPair1Id(e.target.value as number | "")}
-              displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
-            >
-              <MenuItem value=""><em>Sin pareja</em></MenuItem>
-              {pairs.map(p => <MenuItem key={p.id} value={p.id}>{pairLabel(p)}</MenuItem>)}
-            </Select>
-          </Box>
-
-          <Box>
-            <FormLabel sx={FORM_LABEL_SX}>Pareja 2</FormLabel>
-            <Select
-              fullWidth size="small" value={pair2Id}
-              onChange={e => setPair2Id(e.target.value as number | "")}
-              displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
-            >
-              <MenuItem value=""><em>Sin pareja</em></MenuItem>
-              {pairs.map(p => <MenuItem key={p.id} value={p.id}>{pairLabel(p)}</MenuItem>)}
-            </Select>
-          </Box>
+          {teamMode ? (
+            <>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Equipo 1</FormLabel>
+                <Select
+                  fullWidth size="small" value={team1Id}
+                  onChange={e => setTeam1Id(e.target.value as number | "")}
+                  displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin equipo</em></MenuItem>
+                  {teams.map(t => <MenuItem key={t.id} value={t.id}>{t.equipo.name}</MenuItem>)}
+                </Select>
+              </Box>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Equipo 2</FormLabel>
+                <Select
+                  fullWidth size="small" value={team2Id}
+                  onChange={e => setTeam2Id(e.target.value as number | "")}
+                  displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin equipo</em></MenuItem>
+                  {teams.map(t => <MenuItem key={t.id} value={t.id}>{t.equipo.name}</MenuItem>)}
+                </Select>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Pareja 1</FormLabel>
+                <Select
+                  fullWidth size="small" value={pair1Id}
+                  onChange={e => setPair1Id(e.target.value as number | "")}
+                  displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin pareja</em></MenuItem>
+                  {pairs.map(p => <MenuItem key={p.id} value={p.id}>{pairLabel(p)}</MenuItem>)}
+                </Select>
+              </Box>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Pareja 2</FormLabel>
+                <Select
+                  fullWidth size="small" value={pair2Id}
+                  onChange={e => setPair2Id(e.target.value as number | "")}
+                  displayEmpty sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin pareja</em></MenuItem>
+                  {pairs.map(p => <MenuItem key={p.id} value={p.id}>{pairLabel(p)}</MenuItem>)}
+                </Select>
+              </Box>
+            </>
+          )}
 
           <Box>
             <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Resultado por set</FormLabel>
-            {currentPair1 && currentPair2 && (
+            {(teamMode ? (currentTeam1 && currentTeam2) : (currentPair1 && currentPair2)) && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
                 <Typography variant="caption" sx={{ minWidth: 44 }} />
                 <Typography variant="caption" color="text.secondary" fontWeight={700}
                   sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
-                  {pairInitials(currentPair1)}
+                  {teamMode ? currentTeam1?.equipo.name.substring(0, 8) : pairInitials(currentPair1!)}
                 </Typography>
                 <Box sx={{ width: 12 }} />
                 <Typography variant="caption" color="text.secondary" fontWeight={700}
                   sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
-                  {pairInitials(currentPair2)}
+                  {teamMode ? currentTeam2?.equipo.name.substring(0, 8) : pairInitials(currentPair2!)}
                 </Typography>
               </Box>
             )}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {Array.from({ length: setsCount }, (_, i) => (
-                <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ minWidth: 44 }}>
-                    Set {i + 1}
-                  </Typography>
-                  <TextField
-                    size="small" value={sets[i]?.p1 ?? ""}
-                    onChange={e => {
-                      const next = sets.map((s, idx) => idx === i ? { ...s, p1: e.target.value } : s);
-                      setSets(next);
-                      setWinnerId(calcWinnerFromSets(next, pair1Id, pair2Id));
-                    }}
-                    placeholder="0"
-                    inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                    sx={{ width: 56, flexShrink: 0 }}
-                  />
-                  <Typography variant="body2" color="text.secondary">—</Typography>
-                  <TextField
-                    size="small" value={sets[i]?.p2 ?? ""}
-                    onChange={e => {
-                      const next = sets.map((s, idx) => idx === i ? { ...s, p2: e.target.value } : s);
-                      setSets(next);
-                      setWinnerId(calcWinnerFromSets(next, pair1Id, pair2Id));
-                    }}
-                    placeholder="0"
-                    inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                    sx={{ width: 56, flexShrink: 0 }}
-                  />
-                </Box>
-              ))}
+              {Array.from({ length: setsCount }, (_, i) => {
+                const p1Id = teamMode ? team1Id : pair1Id;
+                const p2Id = teamMode ? team2Id : pair2Id;
+                return (
+                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ minWidth: 44 }}>
+                      Set {i + 1}
+                    </Typography>
+                    <TextField
+                      size="small" value={sets[i]?.p1 ?? ""}
+                      onChange={e => {
+                        const next = sets.map((s, idx) => idx === i ? { ...s, p1: e.target.value } : s);
+                        setSets(next);
+                        setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
+                      }}
+                      placeholder="0"
+                      inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
+                      sx={{ width: 56, flexShrink: 0 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">—</Typography>
+                    <TextField
+                      size="small" value={sets[i]?.p2 ?? ""}
+                      onChange={e => {
+                        const next = sets.map((s, idx) => idx === i ? { ...s, p2: e.target.value } : s);
+                        setSets(next);
+                        setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
+                      }}
+                      placeholder="0"
+                      inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
+                      sx={{ width: 56, flexShrink: 0 }}
+                    />
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
 
@@ -510,8 +559,17 @@ export default function EditMatchDialog({ open, onClose, match, pairs, tournamen
                   },
                 }}
               >
-                <ToggleButton value={currentPair1!.id}>{pairLabel(currentPair1!)}</ToggleButton>
-                <ToggleButton value={currentPair2!.id}>{pairLabel(currentPair2!)}</ToggleButton>
+                {teamMode ? (
+                  <>
+                    <ToggleButton value={currentTeam1!.id}>{currentTeam1!.equipo.name}</ToggleButton>
+                    <ToggleButton value={currentTeam2!.id}>{currentTeam2!.equipo.name}</ToggleButton>
+                  </>
+                ) : (
+                  <>
+                    <ToggleButton value={currentPair1!.id}>{pairLabel(currentPair1!)}</ToggleButton>
+                    <ToggleButton value={currentPair2!.id}>{pairLabel(currentPair2!)}</ToggleButton>
+                  </>
+                )}
               </ToggleButtonGroup>
             </Box>
           )}

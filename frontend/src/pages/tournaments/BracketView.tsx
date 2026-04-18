@@ -1,7 +1,7 @@
 import { Avatar, Box, Paper, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import type { TournamentMatch, Pair } from "../../types/Tournament";
+import type { TournamentMatch, Pair, TournamentTeam } from "../../types/Tournament";
 import ChampionBanner from "../../components/common/ChampionBanner";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 
@@ -17,6 +17,7 @@ interface Props {
   onVirtualMatchClick?: (round: number, matchNumber: number) => void;
   sex?: string | null;
   readOnly?: boolean;
+  teamMode?: boolean;
 }
 
 // Virtual slot: a future match that has no DB record yet
@@ -32,7 +33,8 @@ function isVirtual(s: AnySlot): s is VirtualSlot {
   return (s as VirtualSlot).virtual === true;
 }
 
-function isPlaceholder(m: TournamentMatch): boolean {
+function isPlaceholder(m: TournamentMatch, teamMode?: boolean): boolean {
+  if (teamMode) return !m.team1 && !m.team2 && m.status === "PENDING";
   return m.pair1 === null && m.pair2 === null && m.status === "PENDING";
 }
 
@@ -51,7 +53,7 @@ function getRoundLabel(roundNumber: number, totalRounds: number, allRoundCounts:
   return `Ronda ${roundNumber}`;
 }
 
-export default function BracketView({ matches, onEditMatch, onVirtualMatchClick, sex, readOnly = false }: Props) {
+export default function BracketView({ matches, onEditMatch, onVirtualMatchClick, sex, readOnly = false, teamMode = false }: Props) {
   const matchesByRound: Record<number, TournamentMatch[]> = {};
   matches.forEach(m => {
     if (!matchesByRound[m.round]) matchesByRound[m.round] = [];
@@ -164,13 +166,19 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
   const lastRealRound = generatedRounds[generatedRounds.length - 1];
   const finalMatches = matchesByRound[lastRealRound];
   let champion: Pair | null = null;
+  let championLabel: string | undefined;
   if (
     lastRealRound === totalRoundsExpected &&
     finalMatches?.length === 1 &&
     finalMatches[0].winnerId != null
   ) {
     const fm = finalMatches[0];
-    champion = fm.pair1?.id === fm.winnerId ? (fm.pair1 ?? null) : (fm.pair2 ?? null);
+    if (teamMode) {
+      const winTeam: TournamentTeam | null | undefined = fm.team1?.id === fm.winnerId ? fm.team1 : fm.team2;
+      championLabel = winTeam?.equipo?.name;
+    } else {
+      champion = fm.pair1?.id === fm.winnerId ? (fm.pair1 ?? null) : (fm.pair2 ?? null);
+    }
   }
 
   const bracketContent = (
@@ -199,7 +207,7 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
               <Box key={isVirtual(slot) ? `v-${round}-${mIdx}` : slot.id} sx={{ position: "absolute", top: cy - MATCH_H / 2, left: rIdx * (MATCH_W + CONN_W), width: MATCH_W, height: MATCH_H }}>
                 {isVirtual(slot) ? (
                   <PlaceholderCard readOnly={readOnly} onClick={readOnly ? undefined : () => onVirtualMatchClick?.(slot.round, slot.matchNumber)} />
-                ) : isPlaceholder(slot) ? (
+                ) : isPlaceholder(slot, teamMode) ? (
                   <PlaceholderCard
                     scheduledAt={slot.scheduledAt ?? undefined}
                     courtName={slot.court?.name}
@@ -213,6 +221,7 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
                     groupLabel={hasCrossPhase && isR1 ? getGroupLabel(mIdx) : undefined}
                     readOnly={readOnly}
                     onEdit={readOnly ? undefined : () => onEditMatch?.(slot)}
+                    teamMode={teamMode}
                   />
                 )}
               </Box>
@@ -228,9 +237,9 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
       <Box sx={{ flex: 1, minWidth: 0, overflow: "auto", WebkitOverflowScrolling: "touch", touchAction: "pan-x", pb: 2 }}>
         {bracketContent}
       </Box>
-      {champion && (
+      {(champion || championLabel) && (
         <Box sx={{ flexShrink: 0, width: { xs: "100%", md: 240 }, pt: { md: 8 } }}>
-          <ChampionBanner champion={champion} sex={sex} />
+          <ChampionBanner champion={champion ?? undefined} championLabel={championLabel} sex={sex} />
         </Box>
       )}
     </Box>
@@ -308,11 +317,11 @@ const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: s
   EARLY:    { stripe: "#3b82f6", border: "#bfdbfe", bg: "#eff6ff", text: "#1e40af", label: "Adelantado" },
 };
 
-function BracketMatchCard({ match, groupLabel, readOnly, onEdit }: { match: TournamentMatch; groupLabel?: string; readOnly?: boolean; onEdit?: () => void }) {
+function BracketMatchCard({ match, groupLabel, readOnly, onEdit, teamMode }: { match: TournamentMatch; groupLabel?: string; readOnly?: boolean; onEdit?: () => void; teamMode?: boolean }) {
   const isBye = match.status === "BYE";
   const isCompleted = match.status === "COMPLETED";
-  const pair1Won = match.winnerId != null && match.pair1?.id === match.winnerId;
-  const pair2Won = match.winnerId != null && match.pair2?.id === match.winnerId;
+  const pair1Won = match.winnerId != null && (teamMode ? match.team1?.id === match.winnerId : match.pair1?.id === match.winnerId);
+  const pair2Won = match.winnerId != null && (teamMode ? match.team2?.id === match.winnerId : match.pair2?.id === match.winnerId);
   const live = match.liveStatus ? LIVE_STATUS_COLORS[match.liveStatus] : null;
   const sideColor = live ? live.stripe : isBye ? "#3b82f6" : isCompleted ? "#10b981" : "#cbd5e1";
 
@@ -334,9 +343,17 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit }: { match: Tour
     >
       <Box sx={{ width: 6, flexShrink: 0, bgcolor: sideColor }} />
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <PairRow pair={match.pair1} isWinner={pair1Won} isLoser={pair2Won} isBye={!match.pair1} />
+        {teamMode ? (
+          <TeamRow team={match.team1} isWinner={pair1Won} isLoser={pair2Won} isBye={!match.team1} />
+        ) : (
+          <PairRow pair={match.pair1} isWinner={pair1Won} isLoser={pair2Won} isBye={!match.pair1} />
+        )}
         <Box sx={{ height: "1px", bgcolor: "#f1f5f9" }} />
-        <PairRow pair={match.pair2} isWinner={pair2Won} isLoser={pair1Won} isBye={!match.pair2} />
+        {teamMode ? (
+          <TeamRow team={match.team2} isWinner={pair2Won} isLoser={pair1Won} isBye={!match.team2} />
+        ) : (
+          <PairRow pair={match.pair2} isWinner={pair2Won} isLoser={pair1Won} isBye={!match.pair2} />
+        )}
         
         <Box sx={{ mt: "auto", px: 1.5, py: 0.5, bgcolor: live ? "transparent" : "grey.50", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {groupLabel && (
@@ -396,6 +413,39 @@ function PlayerMiniAvatar({ name, avatarUrl, dim }: { name: string; avatarUrl?: 
   );
 }
 
+function TeamRow({ team, isWinner, isLoser, isBye }: { team: TournamentTeam | null | undefined; isWinner: boolean; isLoser: boolean; isBye: boolean }) {
+  const dim = isBye || isLoser;
+  if (!team) {
+    return (
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 2 }}>
+        <Typography variant="caption" sx={{ fontSize: "0.75rem", color: "text.disabled", fontWeight: 500 }}>
+          A definir
+        </Typography>
+      </Box>
+    );
+  }
+  const textColor = dim ? "text.disabled" : "text.primary";
+  const fw = isWinner ? 700 : 500;
+  return (
+    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.5, overflow: "hidden", bgcolor: isWinner ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
+      <Avatar
+        src={team.equipo.avatarUrl}
+        sx={{
+          width: 18, height: 18, fontSize: "0.45rem", fontWeight: 700,
+          bgcolor: dim ? "#cbd5e1" : stringToColor(team.equipo.name),
+          opacity: dim ? 0.5 : 1, flexShrink: 0,
+        }}
+      >
+        {!team.equipo.avatarUrl && getInitials(team.equipo.name)}
+      </Avatar>
+      <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flex: 1, minWidth: 0 }}>
+        {team.equipo.name}
+      </Typography>
+      {isWinner && <EmojiEventsIcon sx={{ fontSize: 13, color: "#f5ad27", flexShrink: 0 }} />}
+    </Box>
+  );
+}
+
 function PairRow({ pair, isWinner, isLoser, isBye }: { pair: Pair | null | undefined; isWinner: boolean; isLoser: boolean; isBye: boolean }) {
   const dim = isBye || isLoser;
   if (!pair) {
@@ -408,7 +458,6 @@ function PairRow({ pair, isWinner, isLoser, isBye }: { pair: Pair | null | undef
     );
   }
   const p1 = pair.player1.name.split(" ")[0];
-  const p2 = pair.player2.name.split(" ")[0];
   const textColor = dim ? "text.disabled" : "text.primary";
   const fw = isWinner ? 700 : 500;
   return (
@@ -417,11 +466,15 @@ function PairRow({ pair, isWinner, isLoser, isBye }: { pair: Pair | null | undef
       <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flexShrink: 1, minWidth: 0 }}>
         {p1}
       </Typography>
-      <Typography sx={{ fontSize: "0.72rem", color: "text.disabled", flexShrink: 0 }}>/</Typography>
-      <PlayerMiniAvatar name={pair.player2.name} avatarUrl={pair.player2.avatarUrl} dim={dim} />
-      <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flex: 1, minWidth: 0 }}>
-        {p2}
-      </Typography>
+      {pair.player2 && (
+        <>
+          <Typography sx={{ fontSize: "0.72rem", color: "text.disabled", flexShrink: 0 }}>/</Typography>
+          <PlayerMiniAvatar name={pair.player2.name} avatarUrl={pair.player2.avatarUrl} dim={dim} />
+          <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: fw, color: textColor, flex: 1, minWidth: 0 }}>
+            {pair.player2.name.split(" ")[0]}
+          </Typography>
+        </>
+      )}
       {isWinner && <EmojiEventsIcon sx={{ fontSize: 13, color: "#f5ad27", flexShrink: 0 }} />}
     </Box>
   );

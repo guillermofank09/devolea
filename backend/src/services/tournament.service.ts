@@ -2,7 +2,13 @@ import { Between, Not, IsNull, Repository } from "typeorm";
 import { Tournament, TournamentFormat } from "../entities/Tournament";
 import { Pair } from "../entities/Pair";
 import { TournamentMatch } from "../entities/TournamentMatch";
+import { TournamentTeam } from "../entities/TournamentTeam";
 import { Booking } from "../entities/Booking";
+
+function isTeamSport(sport?: string | null): boolean {
+  if (!sport) return false;
+  return sport.startsWith("FUTBOL") || sport === "VOLEY" || sport === "BASQUET";
+}
 
 function deserializePair(pair: Pair): any {
   return {
@@ -17,9 +23,10 @@ export class TournamentService {
     private pRepo: Repository<Pair>,
     private mRepo: Repository<TournamentMatch>,
     private bRepo: Repository<Booking>,
+    private ttRepo: Repository<TournamentTeam>,
   ) {}
 
-  async create(dto: { name: string; category: string; startDate: string; endDate: string }, userId: number): Promise<Tournament> {
+  async create(dto: { name: string; category: string; sex?: string; startDate: string; endDate: string; sport?: string }, userId: number): Promise<Tournament> {
     const entity = this.tRepo.create({ ...dto, userId } as any) as unknown as Tournament;
     return await this.tRepo.save(entity);
   }
@@ -32,12 +39,36 @@ export class TournamentService {
     const tournament = await this.tRepo.findOneBy({ id });
     if (!tournament) return null;
     const pairs = await this.pRepo.find({ where: { tournament: { id } } });
+    const teams = await this.ttRepo.find({ where: { tournament: { id } } });
     const matches = await this.mRepo.find({
       where: { tournament: { id } },
       order: { round: "ASC", matchNumber: "ASC" },
       relations: { court: true },
     });
-    return { ...tournament, pairs: pairs.map(deserializePair), matches };
+    return { ...tournament, pairs: pairs.map(deserializePair), teams, matches };
+  }
+
+  async addTeam(tournamentId: number, equipoId: number): Promise<TournamentTeam> {
+    const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
+    if (matchCount > 0) throw new Error("No se pueden agregar equipos después de generar los cruces");
+    const existing = await this.ttRepo.find({ where: { tournament: { id: tournamentId } } });
+    if (existing.some(t => t.equipo.id === equipoId)) {
+      throw new Error("Este equipo ya está en el torneo");
+    }
+    return await this.ttRepo.save(
+      this.ttRepo.create({
+        tournament: { id: tournamentId } as any,
+        equipo: { id: equipoId } as any,
+      })
+    );
+  }
+
+  async removeTeam(teamId: number): Promise<void> {
+    const team = await this.ttRepo.findOne({ where: { id: teamId }, relations: ["tournament"] });
+    if (!team) throw new Error("Equipo no encontrado");
+    const matchCount = await this.mRepo.count({ where: { tournament: { id: team.tournament.id } } });
+    if (matchCount > 0) throw new Error("No se puede eliminar un equipo después de generar los cruces");
+    await this.ttRepo.delete(teamId);
   }
 
   async update(id: number, dto: Partial<Tournament>): Promise<Tournament | null> {
@@ -49,7 +80,7 @@ export class TournamentService {
     await this.tRepo.delete(id);
   }
 
-  async addPair(tournamentId: number, player1Id: number, player2Id: number, opts?: {
+  async addPair(tournamentId: number, player1Id: number, player2Id: number | null, opts?: {
     player1InscriptionPaid?: boolean;
     player2InscriptionPaid?: boolean;
     preferredStartTimes?: string[] | null;
@@ -58,17 +89,18 @@ export class TournamentService {
     if (matchCount > 0) throw new Error("No se pueden agregar parejas después de generar los cruces");
 
     const existingPairs = await this.pRepo.find({ where: { tournament: { id: tournamentId } } });
-    const usedPlayerIds = existingPairs.flatMap(p => [p.player1.id, p.player2.id]);
-    if (usedPlayerIds.includes(player1Id) || usedPlayerIds.includes(player2Id)) {
-      throw new Error("Uno o ambos jugadores ya están en otra pareja del torneo");
+    const usedPlayerIds = existingPairs.flatMap(p => [p.player1.id, p.player2?.id].filter(Boolean));
+    if (usedPlayerIds.includes(player1Id)) throw new Error("Este jugador ya está en el torneo");
+    if (player2Id != null) {
+      if (usedPlayerIds.includes(player2Id)) throw new Error("Este jugador ya está en el torneo");
+      if (player1Id === player2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
     }
-    if (player1Id === player2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
 
     const saved = await this.pRepo.save(
       this.pRepo.create({
         tournament: { id: tournamentId } as any,
         player1: { id: player1Id } as any,
-        player2: { id: player2Id } as any,
+        player2: player2Id != null ? { id: player2Id } as any : null,
         player1InscriptionPaid: opts?.player1InscriptionPaid ?? false,
         player2InscriptionPaid: opts?.player2InscriptionPaid ?? false,
         preferredStartTimes: opts?.preferredStartTimes?.length ? JSON.stringify(opts.preferredStartTimes) : null,
@@ -91,11 +123,11 @@ export class TournamentService {
       const matchCount = await this.mRepo.count({ where: { tournament: { id: pair.tournament.id } } });
       if (matchCount > 0) throw new Error("No se pueden modificar jugadores después de generar los cruces");
       const newP1Id = dto.player1Id ?? pair.player1.id;
-      const newP2Id = dto.player2Id ?? pair.player2.id;
-      if (newP1Id === newP2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
+      const newP2Id = dto.player2Id ?? pair.player2?.id ?? null;
+      if (newP2Id != null && newP1Id === newP2Id) throw new Error("Los jugadores de una pareja deben ser distintos");
       const existing = await this.pRepo.find({ where: { tournament: { id: pair.tournament.id } } });
-      const usedIds = existing.filter(p => p.id !== pairId).flatMap(p => [p.player1.id, p.player2.id]);
-      if (usedIds.includes(newP1Id) || usedIds.includes(newP2Id)) {
+      const usedIds = existing.filter(p => p.id !== pairId).flatMap(p => [p.player1.id, p.player2?.id].filter(Boolean));
+      if (usedIds.includes(newP1Id) || (newP2Id != null && usedIds.includes(newP2Id))) {
         throw new Error("Uno o ambos jugadores ya están en otra pareja del torneo");
       }
       if (dto.player1Id !== undefined) (pair as any).player1 = { id: dto.player1Id };
@@ -124,9 +156,120 @@ export class TournamentService {
     await this.tRepo.update(tournamentId, { format: null as any, status: "DRAFT" });
   }
 
+  private async generateMatchesTeamMode(tournamentId: number, startTime: Date, courtIds: number[], matchDuration: number, formatOverride?: string): Promise<TournamentMatch[]> {
+    const teams = await this.ttRepo.find({ where: { tournament: { id: tournamentId } } });
+    if (teams.length < 2) throw new Error("Se necesitan al menos 2 equipos para generar cruces");
+
+    const format: TournamentFormat = formatOverride === "ROUND_ROBIN" || formatOverride === "BRACKET"
+      ? formatOverride
+      : teams.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
+    await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
+
+    const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(startTime); dayEnd.setHours(23, 59, 59, 999);
+    const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
+    for (const cId of courtIds) {
+      const bookings = await this.bRepo.find({
+        where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
+        order: { startTime: "ASC" },
+      });
+      courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
+    }
+
+    const nextFreeAt = new Map<number, number>();
+    for (const cId of courtIds) nextFreeAt.set(cId, startTime.getTime());
+
+    const advancePastBookings = (cId: number, tMs: number): number => {
+      const bookings = courtBookingsMap.get(cId) ?? [];
+      let t = tMs; let changed = true;
+      while (changed) {
+        changed = false;
+        const tEnd = t + matchDuration * 60 * 1000;
+        for (const b of bookings) {
+          if (b.startTime.getTime() < tEnd && b.endTime.getTime() > t) { t = b.endTime.getTime(); changed = true; break; }
+        }
+      }
+      return t;
+    };
+
+    const getNextSlot = (): { court: any; scheduledAt: Date } | null => {
+      if (courtIds.length === 0) return null;
+      let bestCId = courtIds[0];
+      let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
+      for (const cId of courtIds.slice(1)) {
+        const ms = advancePastBookings(cId, nextFreeAt.get(cId)!);
+        if (ms < bestMs) { bestCId = cId; bestMs = ms; }
+      }
+      nextFreeAt.set(bestCId, bestMs + matchDuration * 60 * 1000);
+      return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
+    };
+
+    const toCreate: Partial<TournamentMatch>[] = [];
+    const t = { id: tournamentId };
+
+    if (format === "ROUND_ROBIN") {
+      let matchNum = 1;
+      for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+          const slot = getNextSlot();
+          toCreate.push({ tournament: t as any, team1: teams[i] as any, team2: teams[j] as any, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
+          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+        }
+      }
+    } else {
+      const shuffled = [...teams].sort(() => Math.random() - 0.5);
+      let matchNum = 1;
+      for (let i = 0; i < shuffled.length; i += 2) {
+        if (i + 1 < shuffled.length) {
+          const slot = getNextSlot();
+          toCreate.push({ tournament: t as any, team1: shuffled[i] as any, team2: shuffled[i + 1] as any, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
+          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+        } else {
+          toCreate.push({ tournament: t as any, team1: shuffled[i] as any, team2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
+        }
+      }
+    }
+
+    const savedR1 = await this.mRepo.save(toCreate.map(m => this.mRepo.create(m)));
+
+    if (format === "BRACKET") {
+      const r1Real = savedR1.filter(m => m.status !== "BYE");
+      const r1ByeCount = savedR1.length - r1Real.length;
+      const r2CrossCount = Math.floor(r1Real.length / 2) * 2;
+      const r2ByeCount = (r1Real.length % 2) + r1ByeCount;
+      const r2Total = r2CrossCount + r2ByeCount;
+
+      if (r2Total > 0) {
+        await this.mRepo.save(Array.from({ length: r2Total }, (_, i) =>
+          this.mRepo.create({ tournament: t as any, round: 2, matchNumber: i + 1, status: "PENDING" })
+        ));
+      }
+
+      const placeholders: Partial<TournamentMatch>[] = [];
+      let roundMatchCount = r2Total; let roundNum = 3;
+      while (roundMatchCount > 1) {
+        roundMatchCount = Math.ceil(roundMatchCount / 2);
+        for (let i = 0; i < roundMatchCount; i++) {
+          placeholders.push({ tournament: t as any, round: roundNum, matchNumber: i + 1, status: "PENDING" });
+        }
+        roundNum++;
+      }
+      if (placeholders.length > 0) await this.mRepo.save(placeholders.map(m => this.mRepo.create(m)));
+    }
+
+    return savedR1;
+  }
+
   async generateMatches(tournamentId: number, startTime: Date, courtIds: number[] = [], matchDuration = 90, formatOverride?: string): Promise<TournamentMatch[]> {
     const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
     if (matchCount > 0) throw new Error("Los cruces ya fueron generados");
+
+    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    const isTeamMode = isTeamSport(tournament?.sport);
+
+    if (isTeamMode) {
+      return await this.generateMatchesTeamMode(tournamentId, startTime, courtIds, matchDuration, formatOverride);
+    }
 
     const pairs = await this.pRepo.find({ where: { tournament: { id: tournamentId } } });
     if (pairs.length < 2) throw new Error("Se necesitan al menos 2 parejas para generar cruces");
@@ -314,8 +457,10 @@ export class TournamentService {
     });
     if (!allMatches.length) throw new Error("No hay cruces generados");
 
-    // Current active round: highest round that has at least one assigned pair
-    const activeMatches = allMatches.filter(m => m.pair1 !== null || m.pair2 !== null);
+    // Current active round: highest round that has at least one assigned pair or team
+    const activeMatches = allMatches.filter(m =>
+      m.pair1 !== null || m.pair2 !== null || m.team1 !== null || m.team2 !== null
+    );
     if (!activeMatches.length) throw new Error("No hay cruces generados");
 
     const maxRound = Math.max(...activeMatches.map(m => m.round));
@@ -333,6 +478,7 @@ export class TournamentService {
 
     // ── R1 → R2: cross-group logic (new bracket format, no repechage in R1) ──────
     const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    const isTeamMode = isTeamSport(tournament?.sport);
     const isNewBracket = tournament?.format === "BRACKET"
       && maxRound === 1
       && !currentRoundMatches.some(m => m.isRepechage);
@@ -357,47 +503,116 @@ export class TournamentService {
       for (let i = 0; i + 1 < r1Regular.length; i += 2) {
         const mA = r1Regular[i];
         const mB = r1Regular[i + 1];
-        const wA = mA.winnerId === mA.pair1?.id ? mA.pair1 : mA.pair2;
-        const lA = mA.winnerId === mA.pair1?.id ? mA.pair2 : mA.pair1;
-        const wB = mB.winnerId === mB.pair1?.id ? mB.pair1 : mB.pair2;
-        const lB = mB.winnerId === mB.pair1?.id ? mB.pair2 : mB.pair1;
 
         const c1 = nextRoundMatches[r2Idx++];
-        if (c1 && wA && lB) {
-          c1.pair1 = wA; c1.pair2 = lB; c1.status = "PENDING";
-          if (!c1.scheduledAt) { c1.scheduledAt = new Date(time); addDuration(); }
-        }
-
         const c2 = nextRoundMatches[r2Idx++];
-        if (c2 && wB && lA) {
-          c2.pair1 = wB; c2.pair2 = lA; c2.status = "PENDING";
-          if (!c2.scheduledAt) { c2.scheduledAt = new Date(time); addDuration(); }
+
+        if (isTeamMode) {
+          const wAId = mA.team1?.id === mA.winnerId ? mA.team1?.id : mA.team2?.id;
+          const lAId = mA.team1?.id === mA.winnerId ? mA.team2?.id : mA.team1?.id;
+          const wBId = mB.team1?.id === mB.winnerId ? mB.team1?.id : mB.team2?.id;
+          const lBId = mB.team1?.id === mB.winnerId ? mB.team2?.id : mB.team1?.id;
+          if (c1 && wAId != null && lBId != null) {
+            c1.team1 = { id: wAId } as any; c1.team2 = { id: lBId } as any; c1.status = "PENDING";
+            if (!c1.scheduledAt) { c1.scheduledAt = new Date(time); addDuration(); }
+          }
+          if (c2 && wBId != null && lAId != null) {
+            c2.team1 = { id: wBId } as any; c2.team2 = { id: lAId } as any; c2.status = "PENDING";
+            if (!c2.scheduledAt) { c2.scheduledAt = new Date(time); addDuration(); }
+          }
+        } else {
+          const wA = mA.winnerId === mA.pair1?.id ? mA.pair1 : mA.pair2;
+          const lA = mA.winnerId === mA.pair1?.id ? mA.pair2 : mA.pair1;
+          const wB = mB.winnerId === mB.pair1?.id ? mB.pair1 : mB.pair2;
+          const lB = mB.winnerId === mB.pair1?.id ? mB.pair2 : mB.pair1;
+          if (c1 && wA && lB) {
+            c1.pair1 = wA; c1.pair2 = lB; c1.status = "PENDING";
+            if (!c1.scheduledAt) { c1.scheduledAt = new Date(time); addDuration(); }
+          }
+          if (c2 && wB && lA) {
+            c2.pair1 = wB; c2.pair2 = lA; c2.status = "PENDING";
+            if (!c2.scheduledAt) { c2.scheduledAt = new Date(time); addDuration(); }
+          }
         }
       }
 
       // Unpaired R1 match (odd count): winner advances directly as BYE in R2
       if (r1Regular.length % 2 === 1) {
         const last = r1Regular[r1Regular.length - 1];
-        const winner = last.winnerId === last.pair1?.id ? last.pair1 : last.pair2;
         const byeSlot = nextRoundMatches[r2Idx++];
-        if (byeSlot && winner) {
-          byeSlot.pair1 = winner; byeSlot.pair2 = null as any;
-          byeSlot.status = "BYE"; byeSlot.winnerId = winner.id; byeSlot.scheduledAt = null;
+        if (isTeamMode) {
+          const winnerTeamId = last.team1?.id === last.winnerId ? last.team1?.id : last.team2?.id;
+          if (byeSlot && winnerTeamId != null) {
+            byeSlot.team1 = { id: winnerTeamId } as any; byeSlot.team2 = null;
+            byeSlot.status = "BYE"; byeSlot.winnerId = winnerTeamId; byeSlot.scheduledAt = null;
+          }
+        } else {
+          const winner = last.winnerId === last.pair1?.id ? last.pair1 : last.pair2;
+          if (byeSlot && winner) {
+            byeSlot.pair1 = winner; byeSlot.pair2 = null as any;
+            byeSlot.status = "BYE"; byeSlot.winnerId = winner.id; byeSlot.scheduledAt = null;
+          }
         }
       }
 
-      // R1 BYE pairs advance as BYE in R2
+      // R1 BYE entries advance as BYE in R2
       for (const r1Bye of r1Byes) {
         const byeSlot = nextRoundMatches[r2Idx++];
-        if (byeSlot && r1Bye.pair1) {
-          byeSlot.pair1 = r1Bye.pair1; byeSlot.pair2 = null as any;
-          byeSlot.status = "BYE"; byeSlot.winnerId = r1Bye.pair1.id; byeSlot.scheduledAt = null;
+        if (isTeamMode) {
+          if (byeSlot && r1Bye.team1) {
+            byeSlot.team1 = r1Bye.team1; byeSlot.team2 = null;
+            byeSlot.status = "BYE"; byeSlot.winnerId = r1Bye.team1.id; byeSlot.scheduledAt = null;
+          }
+        } else {
+          if (byeSlot && r1Bye.pair1) {
+            byeSlot.pair1 = r1Bye.pair1; byeSlot.pair2 = null as any;
+            byeSlot.status = "BYE"; byeSlot.winnerId = r1Bye.pair1.id; byeSlot.scheduledAt = null;
+          }
         }
       }
 
       return await this.mRepo.save(nextRoundMatches.slice(0, r2Idx));
     }
     // ── End cross-group logic ────────────────────────────────────────────────────
+
+    // Team mode: simple winner propagation (no repechage for teams)
+    if (isTeamMode) {
+      const teamWinners = currentRoundMatches
+        .filter(m => !m.isRepechage)
+        .map(m => {
+          if (m.status === "BYE") return m.team1?.id ?? null;
+          return m.team1?.id === m.winnerId ? m.team1?.id : m.team2?.id;
+        })
+        .filter((id): id is number => id != null);
+
+      if (teamWinners.length < 2) throw new Error("No hay suficientes ganadores para generar la siguiente ronda");
+
+      const nextRoundNum = maxRound + 1;
+      const nextRoundMatches = allMatches
+        .filter(m => m.round === nextRoundNum)
+        .sort((a, b) => a.matchNumber - b.matchNumber);
+      if (!nextRoundMatches.length) throw new Error("No se encontraron partidos para la siguiente ronda");
+
+      let time = new Date(startTime);
+      const addDuration = () => { time = new Date(time.getTime() + matchDuration * 60 * 1000); };
+
+      for (let i = 0; i < teamWinners.length; i += 2) {
+        const match = nextRoundMatches[Math.floor(i / 2)];
+        if (i + 1 < teamWinners.length) {
+          match.team1 = { id: teamWinners[i] } as any;
+          match.team2 = { id: teamWinners[i + 1] } as any;
+          match.status = "PENDING";
+          if (!match.scheduledAt) { match.scheduledAt = new Date(time); addDuration(); }
+        } else {
+          match.team1 = { id: teamWinners[i] } as any;
+          match.team2 = null;
+          match.status = "BYE";
+          match.winnerId = teamWinners[i];
+          match.scheduledAt = null;
+        }
+      }
+      return await this.mRepo.save(nextRoundMatches);
+    }
 
     // Build repechage winner map: byeTeamId → repechage match
     const repechajeByByeTeam = new Map<number, TournamentMatch>();
@@ -541,14 +756,16 @@ export class TournamentService {
     });
   }
 
-  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
-    // Load the full entity including pair relations so propagation has the pair IDs
+  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; team1Id?: number | null; team2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
+    // Load the full entity including pair/team relations so propagation has the IDs
     const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true, pair1: true, pair2: true } });
     if (!match) return null;
 
     if (dto.scheduledAt !== undefined) match.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
     if (dto.pair1Id !== undefined) match.pair1 = dto.pair1Id != null ? { id: dto.pair1Id } as any : null;
     if (dto.pair2Id !== undefined) match.pair2 = dto.pair2Id != null ? { id: dto.pair2Id } as any : null;
+    if (dto.team1Id !== undefined) match.team1 = dto.team1Id != null ? { id: dto.team1Id } as any : null;
+    if (dto.team2Id !== undefined) match.team2 = dto.team2Id != null ? { id: dto.team2Id } as any : null;
     if (dto.winnerId !== undefined) match.winnerId = dto.winnerId ?? null;
     if (dto.result !== undefined) match.result = dto.result ?? null;
     if (dto.status !== undefined) match.status = dto.status as any;
@@ -592,12 +809,52 @@ export class TournamentService {
     // Skip old-style brackets that used repechage matches
     if (currentRoundMatches.some(m => m.isRepechage)) return;
 
+    const isTeamMode = isTeamSport(tournament.sport);
     const winnerId = completedMatch.winnerId;
+    const toSave: TournamentMatch[] = [];
+
+    if (isTeamMode) {
+      const winnerTeamId = completedMatch.team1?.id === winnerId ? completedMatch.team1?.id : completedMatch.team2?.id;
+      const loserTeamId = completedMatch.team1?.id === winnerId ? completedMatch.team2?.id : completedMatch.team1?.id;
+      if (winnerTeamId == null) return;
+
+      if (currentRound === 1) {
+        const r1Regular = currentRoundMatches
+          .filter(m => m.status !== "BYE")
+          .sort((a, b) => a.matchNumber - b.matchNumber);
+        const realIndex = r1Regular.findIndex(m => m.id === completedMatch.id);
+        if (realIndex === -1) return;
+
+        if (realIndex < nextRoundMatches.length) {
+          const winnerSlot = nextRoundMatches[realIndex];
+          winnerSlot.team1 = { id: winnerTeamId } as any;
+          toSave.push(winnerSlot);
+        }
+        if (loserTeamId != null) {
+          const crossIndex = realIndex % 2 === 0 ? realIndex + 1 : realIndex - 1;
+          if (crossIndex >= 0 && crossIndex < nextRoundMatches.length) {
+            const loserSlot = nextRoundMatches[crossIndex];
+            loserSlot.team2 = { id: loserTeamId } as any;
+            if (!toSave.some(s => s.id === loserSlot.id)) toSave.push(loserSlot);
+          }
+        }
+      } else {
+        const matchIndex = completedMatch.matchNumber - 1;
+        const nextMatchIndex = Math.floor(matchIndex / 2);
+        const isSecond = matchIndex % 2 === 1;
+        const nextMatch = nextRoundMatches[nextMatchIndex];
+        if (!nextMatch) return;
+        if (!isSecond) nextMatch.team1 = { id: winnerTeamId } as any;
+        else nextMatch.team2 = { id: winnerTeamId } as any;
+        toSave.push(nextMatch);
+      }
+      if (toSave.length) await this.mRepo.save(toSave);
+      return;
+    }
+
     const winnerPair = completedMatch.pair1?.id === winnerId ? completedMatch.pair1 : completedMatch.pair2;
     const loserPair  = completedMatch.pair1?.id === winnerId ? completedMatch.pair2  : completedMatch.pair1;
     if (!winnerPair) return;
-
-    const toSave: TournamentMatch[] = [];
 
     if (currentRound === 1) {
       // Cross-phase R1 → R2:

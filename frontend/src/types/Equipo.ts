@@ -5,6 +5,7 @@ export interface Equipo {
   name: string;
   city?: string;
   sex?: EquipoSex;
+  sport?: string;
   avatarUrl?: string;
   createdAt: string;
 }
@@ -13,5 +14,6 @@ export interface EquipoFormData {
   name: string;
   city: string;
   sex?: EquipoSex | "";
+  sport?: string;
   avatarUrl?: string;
 }

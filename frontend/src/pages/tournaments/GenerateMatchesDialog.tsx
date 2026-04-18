@@ -78,9 +78,11 @@ interface Props {
   tournamentId: number;
   tournamentStartDate: string;
   onGenerated: () => void;
+  teamMode?: boolean;
+  tennisMode?: boolean;
 }
 
-export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated }: Props) {
+export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated, teamMode = false, tennisMode = false }: Props) {
   const [date, setDate] = useState("");
   const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
@@ -100,10 +102,11 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     }
   }, [open, tournamentStartDate]);
 
+  const unit = teamMode ? "equipos" : tennisMode ? "jugadores" : "parejas";
   const formatDesc =
     selectedFormat === "ROUND_ROBIN"
-      ? `Con ${pairCount} parejas se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos en total).`
-      : `Con ${pairCount} parejas se jugarán 2 rondas garantizadas: primero los cruces iniciales (Ronda 1) y luego los ganadores enfrentan a los perdedores de los otros grupos (Cruces). Después continúa la eliminación directa.`;
+      ? `Con ${pairCount} ${unit} se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos en total).`
+      : `Con ${pairCount} ${unit} se jugarán 2 rondas garantizadas: primero los cruces iniciales (Ronda 1) y luego los ganadores enfrentan a los perdedores de los otros grupos (Cruces). Después continúa la eliminación directa.`;
 
   const { data: settings } = useQuery({
     queryKey: ["appSettings"],

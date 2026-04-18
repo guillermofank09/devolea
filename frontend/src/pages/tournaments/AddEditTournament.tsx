@@ -15,10 +15,24 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTournament, updateTournament } from "../../api/tournamentService";
 import type { Tournament, TournamentCategory, TournamentSex, TournamentFormData } from "../../types/Tournament";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
+import { fetchCourts } from "../../api/courtService";
+import type { Court } from "../../types/Court";
+
+export function isTeamSport(sport?: string | null): boolean {
+  if (!sport) return false;
+  return sport.startsWith("FUTBOL") || sport === "VOLEY" || sport === "BASQUET";
+}
+
+export const SPORT_LABELS: Record<string, string> = {
+  PADEL: "Pádel", TENIS: "Tenis",
+  FUTBOL: "Fútbol", FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
+  VOLEY: "Voley", BASQUET: "Básquet",
+};
 
 const SEX_OPTIONS: { value: TournamentSex; label: string }[] = [
   { value: "MIXTO",     label: "Mixto" },
@@ -43,6 +57,7 @@ const EMPTY: TournamentFormData = {
   sex: "MIXTO",
   startDate: "",
   endDate: "",
+  sport: "",
 };
 
 const dateSx = {
@@ -58,15 +73,45 @@ interface Props {
   open: boolean;
   onClose: () => void;
   tournament?: Tournament | null;
+  hasMatches?: boolean;
 }
 
-export default function AddEditTournament({ open, onClose, tournament }: Props) {
+export default function AddEditTournament({ open, onClose, tournament, hasMatches = false }: Props) {
   const [form, setForm] = useState<TournamentFormData>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isEditing = !!tournament;
+  const { user } = useAuth();
+  // Use configured sports, fall back to all available sports if none configured
+  const ALL_SPORTS = ["PADEL", "TENIS", "FUTBOL", "VOLEY", "BASQUET"];
+  const configuredSports = user?.sports ?? [];
+  const sports = configuredSports.length > 0 ? configuredSports : ALL_SPORTS;
+  const hasFutbol = sports.includes("FUTBOL");
+
+  const { data: courts = [] } = useQuery<Court[]>({
+    queryKey: ["courtsData"],
+    queryFn: () => fetchCourts(),
+    enabled: open && hasFutbol,
+  });
+
+  // Build sport options: expand FUTBOL into specific subtypes found in courts
+  const sportOptions: { value: string; label: string }[] = [];
+  for (const s of sports) {
+    if (s === "FUTBOL") {
+      const futbolTypes = [...new Set(
+        courts.filter(c => c.sport === "FUTBOL").map(c => c.type as string)
+      )].filter(t => t.startsWith("FUTBOL")).sort();
+      if (futbolTypes.length > 0) {
+        futbolTypes.forEach(t => sportOptions.push({ value: t, label: SPORT_LABELS[t] ?? t }));
+      } else {
+        sportOptions.push({ value: "FUTBOL", label: "Fútbol" });
+      }
+    } else {
+      sportOptions.push({ value: s, label: SPORT_LABELS[s] ?? s });
+    }
+  }
 
   useEffect(() => {
     if (tournament) {
@@ -76,6 +121,7 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
         sex: tournament.sex ?? "MIXTO",
         startDate: tournament.startDate,
         endDate: tournament.endDate,
+        sport: tournament.sport ?? "",
       });
     } else {
       setForm(EMPTY);
@@ -89,6 +135,12 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
       if (field === "startDate" && next.endDate && next.endDate < value) {
         next.endDate = "";
       }
+      if (field === "sport" && value && !prev.name.trim()) {
+        next.name = `Torneo ${SPORT_LABELS[value] ?? value}`;
+      }
+      if (field === "sport" && value && value !== "PADEL" && value !== "TENIS") {
+        next.category = "SIN_CATEGORIA";
+      }
       return next;
     });
 
@@ -97,6 +149,9 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
       isEditing ? updateTournament(tournament!.id, data) : createTournament(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentsData"] });
+      if (isEditing) {
+        queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournament!.id)] });
+      }
       onClose();
     },
     onError: (e: any) => {
@@ -129,6 +184,29 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
         <DialogContent sx={{ pt: 1 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
+            {sportOptions.length > 0 && (
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
+                <Select
+                  fullWidth size="small"
+                  value={form.sport ?? ""}
+                  onChange={e => set("sport", e.target.value)}
+                  disabled={isEditing && hasMatches}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  <MenuItem value=""><em>Sin especificar</em></MenuItem>
+                  {sportOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+                {isTeamSport(form.sport) && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                    Los equipos competirán en este torneo (en vez de parejas)
+                  </Typography>
+                )}
+              </Box>
+            )}
+
             <Box>
               <FormLabel sx={FORM_LABEL_SX}>Nombre del torneo</FormLabel>
               <TextField
@@ -142,36 +220,43 @@ export default function AddEditTournament({ open, onClose, tournament }: Props) 
               />
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={form.category}
-                  onChange={e => set("category", e.target.value)}
-                  sx={{ height: 40, fontSize: "0.875rem" }}
-                >
-                  {CATEGORIES.map(c => (
-                    <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                  ))}
-                </Select>
-              </Box>
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={form.sex}
-                  onChange={e => set("sex", e.target.value)}
-                  sx={{ height: 40, fontSize: "0.875rem" }}
-                >
-                  {SEX_OPTIONS.map(s => (
-                    <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            </Box>
+            {(() => {
+              const showCategory = !form.sport || form.sport === "PADEL" || form.sport === "TENIS";
+              return (
+                <Box sx={{ display: "grid", gridTemplateColumns: showCategory ? { xs: "1fr", sm: "1fr 1fr" } : "1fr", gap: 2 }}>
+                  {showCategory && (
+                    <Box>
+                      <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
+                      <Select
+                        fullWidth
+                        size="small"
+                        value={form.category}
+                        onChange={e => set("category", e.target.value)}
+                        sx={{ height: 40, fontSize: "0.875rem" }}
+                      >
+                        {CATEGORIES.map(c => (
+                          <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+                        ))}
+                      </Select>
+                    </Box>
+                  )}
+                  <Box>
+                    <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={form.sex}
+                      onChange={e => set("sex", e.target.value)}
+                      sx={{ height: 40, fontSize: "0.875rem" }}
+                    >
+                      {SEX_OPTIONS.map(s => (
+                        <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+                </Box>
+              );
+            })()}
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>

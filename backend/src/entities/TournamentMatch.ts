@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDa
 import { Tournament } from "./Tournament";
 import { Pair } from "./Pair";
 import { Court } from "./Court";
+import { TournamentTeam } from "./TournamentTeam";
 
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
 export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
@@ -17,6 +18,10 @@ export class TournamentMatch {
   @JoinColumn({ name: "pair2Id" }) pair2?: Pair | null;
   @ManyToOne(() => Court, { nullable: true, eager: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "courtId" }) court?: Court | null;
+  @ManyToOne(() => TournamentTeam, { nullable: true, eager: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "team1Id" }) team1?: TournamentTeam | null;
+  @ManyToOne(() => TournamentTeam, { nullable: true, eager: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "team2Id" }) team2?: TournamentTeam | null;
   @Column({ type: "timestamptz", nullable: true }) scheduledAt?: Date | null;
   @Column() round!: number;
   @Column() matchNumber!: number;

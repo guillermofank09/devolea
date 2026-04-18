@@ -3,12 +3,13 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import type { Pair } from "../../types/Tournament";
 
 interface Props {
-  champion: Pair;
+  champion?: Pair | null;
+  championLabel?: string;
   sex?: string | null;
   compact?: boolean;
 }
 
-export default function ChampionBanner({ champion, sex, compact }: Props) {
+export default function ChampionBanner({ champion, championLabel, sex, compact }: Props) {
   const title = sex === "FEMENINO" ? "Campeonas" : "Campeones";
 
   return (
@@ -107,9 +108,13 @@ export default function ChampionBanner({ champion, sex, compact }: Props) {
               lineHeight: 1.4,
             }}
           >
-            {champion.player1.name}
-            <Box component="span" sx={{ mx: 0.5, color: "#F5AD27", fontWeight: 900 }}>/</Box>
-            {champion.player2.name}
+            {championLabel ?? (
+              <>
+                {champion?.player1.name}
+                <Box component="span" sx={{ mx: 0.5, color: "#F5AD27", fontWeight: 900 }}>/</Box>
+                {champion?.player2.name}
+              </>
+            )}
           </Typography>
         </Box>
       </Box>
