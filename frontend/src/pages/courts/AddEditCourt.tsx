@@ -93,7 +93,7 @@ const AddEditCourt = ({
 
   const { data: courts = [] } = useQuery<Court[]>({
     queryKey: ["courtsData"],
-    queryFn: fetchCourts,
+    queryFn: () => fetchCourts(),
     staleTime: Infinity,
   });
 
