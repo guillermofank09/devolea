@@ -84,7 +84,7 @@ function getValue(player: Player, key: SortKey): string | number {
     case "category": return CATEGORY_ORDER[player.category];
     case "city":     return player.city.toLowerCase();
     case "sex":      return player.sex;
-    case "age":      return -new Date(player.birthDate).getTime();
+    case "age":      return player.birthDate ? -new Date(player.birthDate).getTime() : 0;
   }
 }
 
@@ -140,7 +140,7 @@ function MobileList({ players, onEdit, onDelete }: Props) {
                 </Tooltip>
               </Box>
               <Typography variant="caption" color="text.secondary">
-                {player.city} · {player.sex === "MASCULINO" ? "M" : "F"} · {getAge(player.birthDate)} años
+                {player.city} · {player.sex === "MASCULINO" ? "M" : "F"}{player.birthDate ? ` · ${getAge(player.birthDate)} años` : ""}
                 {player.sport ? ` · ${SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport}` : ""}
                 {player.phone ? ` · +${player.phone}` : ""}
               </Typography>
@@ -303,7 +303,7 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
               </TableCell>
 
               <TableCell>
-                <Typography variant="body2">{getAge(player.birthDate)} años</Typography>
+                <Typography variant="body2">{player.birthDate ? `${getAge(player.birthDate)} años` : "—"}</Typography>
               </TableCell>
 
               <TableCell align="right">

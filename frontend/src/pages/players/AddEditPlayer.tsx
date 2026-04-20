@@ -162,7 +162,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
     mutation.mutate(form);
   };
 
-  const isValid = form.name.trim() && form.city.trim() && form.birthDate;
+  const isValid = form.name.trim() && form.city.trim();
 
 
   return (

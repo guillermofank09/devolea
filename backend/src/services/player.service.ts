@@ -6,7 +6,7 @@ export interface CreatePlayerDto {
   category: PlayerCategory;
   city: string;
   sex: PlayerSex;
-  birthDate: string;
+  birthDate?: string;
   phone?: string;
   sport?: string;
   avatarUrl?: string;

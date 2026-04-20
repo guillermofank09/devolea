@@ -15,7 +15,7 @@ export interface Player {
   category: PlayerCategory;
   city: string;
   sex: PlayerSex;
-  birthDate: string; // YYYY-MM-DD
+  birthDate?: string; // YYYY-MM-DD
   phone?: string;
   sport?: string;
   avatarUrl?: string;
@@ -27,7 +27,7 @@ export interface PlayerFormData {
   category: PlayerCategory;
   city: string;
   sex: PlayerSex;
-  birthDate: string;
+  birthDate?: string;
   phone: string;
   sport?: string;
   avatarUrl?: string;

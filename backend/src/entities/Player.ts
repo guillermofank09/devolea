@@ -28,8 +28,8 @@ export class Player {
   @Column()
   sex!: PlayerSex;
 
-  @Column({ type: "date" })
-  birthDate!: string;
+  @Column({ type: "date", nullable: true })
+  birthDate?: string;
 
   @Column({ type: "varchar", nullable: true })
   sport?: string;
