@@ -24,7 +24,9 @@ import SportsTennisOutlinedIcon from "@mui/icons-material/SportsTennisOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, saveSettings } from "../../api/settingsService";
+import { fetchCourts } from "../../api/courtService";
 import type { AppSettings } from "../../types/AppSettings";
+import type { Court } from "../../types/Court";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
 import { useAuth } from "../../context/AuthContext";
@@ -33,19 +35,26 @@ import { SPORT_LABEL } from "../../constants/sports";
 const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
 const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
 
-const FUTBOL_TYPES = [
-  { value: "FUTBOL5",  label: "Fútbol 5" },
-  { value: "FUTBOL7",  label: "Fútbol 7" },
-  { value: "FUTBOL9",  label: "Fútbol 9" },
-  { value: "FUTBOL11", label: "Fútbol 11" },
-];
+const FUTBOL_TYPE_LABEL: Record<string, string> = {
+  FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
+};
 
-/** Expands sports into price rows: Fútbol → one row per sub-type, others → one row per sport */
-function toPriceRows(sports: string[]): { key: string; label: string }[] {
-  return sports.flatMap(sport => {
-    if (sport === "FUTBOL") return FUTBOL_TYPES.map(t => ({ key: t.value, label: t.label }));
-    return [{ key: sport, label: SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport }];
-  });
+/** Builds price rows from actual courts: Fútbol → one row per unique court type, others → one row per sport */
+function toPriceRows(courts: Court[], sports: string[]): { key: string; label: string }[] {
+  const seen = new Set<string>();
+  const rows: { key: string; label: string }[] = [];
+  for (const sport of sports) {
+    const sportCourts = courts.filter(c => c.sport === sport);
+    if (sport === "FUTBOL") {
+      const types = [...new Set(sportCourts.map(c => c.type as string).filter(t => t.startsWith("FUTBOL")))];
+      for (const t of types) {
+        if (!seen.has(t)) { seen.add(t); rows.push({ key: t, label: FUTBOL_TYPE_LABEL[t] ?? t }); }
+      }
+    } else if (sportCourts.length > 0) {
+      if (!seen.has(sport)) { seen.add(sport); rows.push({ key: sport, label: SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport }); }
+    }
+  }
+  return rows;
 }
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
@@ -84,6 +93,12 @@ export default function Settings() {
     queryFn: fetchSettings,
     retry: 1,
     staleTime: 30_000,
+  });
+
+  const { data: courts = [] } = useQuery<Court[]>({
+    queryKey: ["courtsData"],
+    queryFn: () => fetchCourts(),
+    staleTime: 60_000,
   });
 
   const mutation = useMutation({
@@ -165,8 +180,8 @@ export default function Settings() {
           {/* ── Precios ── */}
           <Section icon={<MonetizationOnOutlinedIcon />} title="Precios">
             {(() => {
-              const courtRows = toPriceRows(clubSports);
-              const classRows = toPriceRows(sportsWithClass);
+              const courtRows = toPriceRows(courts, clubSports);
+              const classRows = toPriceRows(courts, sportsWithClass);
               const showLabels = courtRows.length > 1;
               return (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
