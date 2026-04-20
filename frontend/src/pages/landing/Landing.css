@@ -729,6 +729,10 @@
     display: none;
   }
 
+  .lp-btn-wa {
+    display: none;
+  }
+
   .lp-laptop-top  { width: 220px; }
   .lp-laptop-base { width: 248px; }
 }
