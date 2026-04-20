@@ -383,9 +383,14 @@ export default function Landing() {
           <p className="lp-section-sub">
             Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
           </p>
-          <button className="lp-btn-primary lp-btn-xl" onClick={() => navigate("/login")}>
+          <a
+            className="lp-btn-primary lp-btn-xl"
+            href={`https://wa.me/${import.meta.env.VITE_CONTACT_PHONE}?text=${encodeURIComponent("Hola! Me gustaría iniciar el período de prueba con Devolea para ver como funciona la aplicación en mi Club")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Prueba Devolea
-          </button>
+          </a>
         </div>
       </section>
 
