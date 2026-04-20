@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -18,8 +18,8 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createCourt } from "../../api/courtService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createCourt, fetchCourts } from "../../api/courtService";
 import type { Court, CourtType, CreateCourt } from "../../types/Court";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
@@ -38,6 +38,21 @@ function defaultType(sport: string): CourtType {
   return COURT_TYPES_BY_SPORT[sport]?.[0]?.value ?? "TECHADA";
 }
 
+function buildCourtName(sport: string, type: CourtType, courts: Court[]): string {
+  // For FUTBOL the type encodes the size (Fútbol 5, Fútbol 11…), use that as label.
+  // For all other sports, use the sport label.
+  const isFutbol = sport === "FUTBOL";
+  const label = isFutbol
+    ? (COURT_TYPES_BY_SPORT.FUTBOL?.find(t => t.value === type)?.label ?? "Fútbol")
+    : (SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport);
+
+  // Count existing courts that share the same "slot" to determine the next number.
+  const existing = courts.filter(c =>
+    isFutbol ? c.type === type : c.sport === sport
+  );
+  return `Cancha ${label} - Nro ${existing.length + 1}`;
+}
+
 const TOGGLE_BTN_SX = {
   textTransform: "none",
   fontWeight: 600,
@@ -54,34 +69,65 @@ const TOGGLE_BTN_SX = {
 
 const AddEditCourt = ({
   isEditing = false,
-  courtNumber = 1,
   compact = false,
   controlled,
 }: {
   isEditing?: boolean;
-  courtNumber?: number;
   compact?: boolean;
   controlled?: { open: boolean; onClose: () => void };
 }) => {
   const { user } = useAuth();
   const sports = user?.sports ?? ["PADEL"];
 
-  const [name, setName] = useState(`Cancha ${courtNumber}`);
-  const [sport, setSport] = useState<string>(sports[0] ?? "PADEL");
-  const [type, setCourtType] = useState<CourtType>(defaultType(sports[0] ?? "PADEL"));
+  const initialSport = sports[0] ?? "PADEL";
+  const initialType = defaultType(initialSport);
+
+  const [sport, setSport] = useState<string>(initialSport);
+  const [type, setCourtType] = useState<CourtType>(initialType);
+  const [name, setName] = useState("");
   const [internalOpen, setInternalOpen] = useState(isEditing);
+  const nameEdited = useRef(false);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
+
+  const { data: courts = [] } = useQuery<Court[]>({
+    queryKey: ["courtsData"],
+    queryFn: fetchCourts,
+    staleTime: Infinity,
+  });
 
   const isControlled = !!controlled;
   const open = isControlled ? controlled!.open : internalOpen;
   const handleClickOpen = () => setInternalOpen(true);
   const handleClose = isControlled ? controlled!.onClose : () => setInternalOpen(false);
 
+  // Reset form when dialog opens (add mode only)
+  useEffect(() => {
+    if (open && !isEditing) {
+      nameEdited.current = false;
+      setSport(initialSport);
+      setCourtType(initialType);
+      setName(buildCourtName(initialSport, initialType, courts));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Auto-update name when sport or type changes (unless user edited it)
+  useEffect(() => {
+    if (!nameEdited.current) {
+      setName(buildCourtName(sport, type, courts));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sport, type, courts]);
+
   function handleSportChange(newSport: string) {
     setSport(newSport);
     setCourtType(defaultType(newSport));
+  }
+
+  function handleTypeChange(newType: CourtType) {
+    setCourtType(newType);
   }
 
   const typeOptions = COURT_TYPES_BY_SPORT[sport] ?? COURT_TYPES_BY_SPORT.PADEL;
@@ -134,20 +180,6 @@ const AddEditCourt = ({
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
               <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Ej: Cancha 1"
-                  autoFocus
-                  disabled={mutation.isPending}
-                  sx={FORM_INPUT_SX}
-                />
-              </Box>
-
-              <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
                 <ToggleButtonGroup
                   exclusive
@@ -171,7 +203,7 @@ const AddEditCourt = ({
                   fullWidth
                   size="small"
                   value={type}
-                  onChange={e => setCourtType(e.target.value as CourtType)}
+                  onChange={e => handleTypeChange(e.target.value as CourtType)}
                   disabled={mutation.isPending}
                   sx={{ height: 40, fontSize: "0.875rem" }}
                 >
@@ -179,6 +211,18 @@ const AddEditCourt = ({
                     <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                   ))}
                 </Select>
+              </Box>
+
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={name}
+                  onChange={e => { nameEdited.current = true; setName(e.target.value); }}
+                  disabled={mutation.isPending}
+                  sx={FORM_INPUT_SX}
+                />
               </Box>
 
               {mutation.isError && (

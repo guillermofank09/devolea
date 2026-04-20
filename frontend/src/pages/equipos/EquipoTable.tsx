@@ -33,7 +33,7 @@ function MobileList({ equipos, onEdit, onDelete }: Props) {
           {idx > 0 && <Divider />}
           <Box sx={{ px: 2, py: 1.5, display: "flex", alignItems: "center", gap: 2 }}>
             <EquipoAvatar equipo={e} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
               <Typography variant="body2" fontWeight={700} noWrap>{e.name}</Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
                 {[e.city, e.sex === "MASCULINO" ? "Masculino" : e.sex === "FEMENINO" ? "Femenino" : null, e.sport ? (SPORT_LABELS[e.sport] ?? e.sport) : null]

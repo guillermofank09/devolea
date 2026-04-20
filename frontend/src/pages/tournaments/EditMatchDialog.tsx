@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -25,6 +26,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateMatch, createPlaceholderMatch, fetchMatchesByCourt } from "../../api/tournamentService";
 import { fetchCourts } from "../../api/courtService";
+import { fetchPlayers } from "../../api/playerService";
+import type { Player } from "../../types/Player";
 import type { Court } from "../../types/Court";
 import { fetchBookingsByCourt } from "../../api/bookingService";
 import { fetchSettings } from "../../api/settingsService";
@@ -152,6 +155,17 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   });
   const matchDuration = settings?.tournamentMatchDuration ?? 60;
   const setsCount = settings?.tournamentSetsCount ?? 3;
+
+  const { data: allPlayers = [] } = useQuery<Player[]>({
+    queryKey: ["playersData"],
+    queryFn: () => fetchPlayers(),
+    enabled: open && isFootball,
+    staleTime: 60_000,
+  });
+  // Show football players first, then those without sport set
+  const players = allPlayers
+    .filter(p => !p.sport || p.sport === "FUTBOL")
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
     if (open) {
@@ -622,13 +636,33 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {goals.map((goal, i) => (
                     <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <TextField
+                      <Autocomplete
+                        freeSolo
                         size="small"
-                        value={goal.playerName}
-                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, playerName: e.target.value } : g))}
-                        placeholder="Jugador"
+                        options={players}
+                        getOptionLabel={(opt) => typeof opt === "string" ? opt : opt.name}
+                        inputValue={goal.playerName}
+                        onInputChange={(_, value) =>
+                          setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, playerName: value } : g))
+                        }
+                        onChange={(_, value) => {
+                          if (value && typeof value !== "string") {
+                            setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, playerName: value.name } : g));
+                          }
+                        }}
                         sx={{ flex: 1 }}
-                        inputProps={{ style: { fontSize: "0.85rem" } }}
+                        renderOption={(props, opt) => (
+                          <li {...props} key={opt.id}>
+                            <Typography variant="body2">{opt.name}</Typography>
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder="Jugador"
+                            inputProps={{ ...params.inputProps, style: { fontSize: "0.85rem" } }}
+                          />
+                        )}
                       />
                       <Select
                         size="small"

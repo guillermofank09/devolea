@@ -33,6 +33,21 @@ import { SPORT_LABEL } from "../../constants/sports";
 const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
 const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
 
+const FUTBOL_TYPES = [
+  { value: "FUTBOL5",  label: "Fútbol 5" },
+  { value: "FUTBOL7",  label: "Fútbol 7" },
+  { value: "FUTBOL9",  label: "Fútbol 9" },
+  { value: "FUTBOL11", label: "Fútbol 11" },
+];
+
+/** Expands sports into price rows: Fútbol → one row per sub-type, others → one row per sport */
+function toPriceRows(sports: string[]): { key: string; label: string }[] {
+  return sports.flatMap(sport => {
+    if (sport === "FUTBOL") return FUTBOL_TYPES.map(t => ({ key: t.value, label: t.label }));
+    return [{ key: sport, label: SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport }];
+  });
+}
+
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({
   icon,
@@ -149,111 +164,73 @@ export default function Settings() {
         <Grid size={{ xs: 12, md: 6 }}>
           {/* ── Precios ── */}
           <Section icon={<MonetizationOnOutlinedIcon />} title="Precios">
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-
-              {clubSports.length === 1 ? (
-                // ── Single sport: simple layout (no sport label) ──
-                <>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                      Precio por hora de cancha
-                    </Typography>
-                    <TextField
-                      type="text" inputMode="decimal" size="small" placeholder="0"
-                      value={sportPrices[clubSports[0]] != null ? String(sportPrices[clubSports[0]]) : ""}
-                      onChange={e => {
-                        const raw = e.target.value;
-                        if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-                          const val = raw.replace(/^0+(\d)/, "$1");
-                          setSportPrices(prev => { const n = { ...prev }; if (val === "") delete n[clubSports[0]]; else n[clubSports[0]] = Number(val); return n; });
-                        }
-                      }}
-                      slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                      sx={{ width: { xs: "100%", sm: 200 } }}
-                    />
-                  </Box>
-                  {sportsWithClass.length > 0 && (
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                        Precio por hora (clase con profesor)
-                      </Typography>
-                      <TextField
-                        type="text" inputMode="decimal" size="small" placeholder="0"
-                        value={sportClassPrices[sportsWithClass[0]] != null ? String(sportClassPrices[sportsWithClass[0]]) : ""}
-                        onChange={e => {
-                          const raw = e.target.value;
-                          if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-                            const val = raw.replace(/^0+(\d)/, "$1");
-                            setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[sportsWithClass[0]]; else n[sportsWithClass[0]] = Number(val); return n; });
-                          }
-                        }}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                        sx={{ width: { xs: "100%", sm: 200 } }}
-                      />
-                    </Box>
-                  )}
-                </>
-              ) : (
-                // ── Multi-sport: one row per sport ──
-                <>
+            {(() => {
+              const courtRows = toPriceRows(clubSports);
+              const classRows = toPriceRows(sportsWithClass);
+              const showLabels = courtRows.length > 1;
+              return (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                   <Box>
                     <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
                       sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
                       Precio por hora de cancha
                     </Typography>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                      {clubSports.map(sport => (
-                        <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>{SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}</Typography>
+                      {courtRows.map(row => (
+                        <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                          {showLabels && (
+                            <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
+                          )}
                           <TextField
                             type="text" inputMode="decimal" size="small" placeholder="0"
-                            value={sportPrices[sport] != null ? String(sportPrices[sport]) : ""}
+                            value={sportPrices[row.key] != null ? String(sportPrices[row.key]) : ""}
                             onChange={e => {
                               const raw = e.target.value;
                               if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
                                 const val = raw.replace(/^0+(\d)/, "$1");
-                                setSportPrices(prev => { const n = { ...prev }; if (val === "") delete n[sport]; else n[sport] = Number(val); return n; });
+                                setSportPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
                               }
                             }}
                             slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                            sx={{ width: { xs: "100%", sm: 160 } }}
+                            sx={{ width: { xs: "100%", sm: showLabels ? 160 : 200 } }}
                           />
                         </Box>
                       ))}
                     </Box>
                   </Box>
-                  {sportsWithClass.length > 0 && (
+                  {classRows.length > 0 && (
                     <Box>
                       <Typography variant="caption" color="text.disabled" fontWeight={700} display="block" mb={1.25}
                         sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
                         Precio por hora (clase con profesor)
                       </Typography>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                        {sportsWithClass.map(sport => (
-                          <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>{SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}</Typography>
+                        {classRows.map(row => (
+                          <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            {showLabels && (
+                              <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
+                            )}
                             <TextField
                               type="text" inputMode="decimal" size="small" placeholder="0"
-                              value={sportClassPrices[sport] != null ? String(sportClassPrices[sport]) : ""}
+                              value={sportClassPrices[row.key] != null ? String(sportClassPrices[row.key]) : ""}
                               onChange={e => {
                                 const raw = e.target.value;
                                 if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
                                   const val = raw.replace(/^0+(\d)/, "$1");
-                                  setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[sport]; else n[sport] = Number(val); return n; });
+                                  setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
                                 }
                               }}
                               slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                              sx={{ width: { xs: "100%", sm: 160 } }}
+                              sx={{ width: { xs: "100%", sm: showLabels ? 160 : 200 } }}
                             />
                           </Box>
                         ))}
                       </Box>
                     </Box>
                   )}
-                </>
-              )}
-
-            </Box>
+                </Box>
+              );
+            })()}
           </Section>
 
           {/* ── Torneos ── */}

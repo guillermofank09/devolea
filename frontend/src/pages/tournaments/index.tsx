@@ -34,6 +34,9 @@ import type { Tournament, TournamentCategory, TournamentSex } from "../../types/
 import PageHeader from "../../components/common/PageHeader";
 import AddEditTournament from "./AddEditTournament";
 import DeleteDialog from "../../components/common/DeleteDialog";
+import { useAuth } from "../../context/AuthContext";
+import { SPORT_LABEL } from "../../constants/sports";
+import { SPORT_LABELS } from "./AddEditTournament";
 
 const CATEGORY_LABEL: Record<TournamentCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
@@ -77,8 +80,13 @@ export default function Tournaments() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TournamentCategory | "">("");
   const [sexFilter, setSexFilter] = useState<TournamentSex | "">("");
+  const [sportFilter, setSportFilter] = useState<string>("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const { user } = useAuth();
+  const userSports = user?.sports ?? [];
+  const hasFutbol = userSports.includes("FUTBOL");
 
   const { isPending, isFetching, error, data } = useQuery<Tournament[]>({
     queryKey: ["tournamentsData"],
@@ -102,10 +110,45 @@ export default function Tournaments() {
     const nameMatch = search === "" || t.name.toLowerCase().includes(search.toLowerCase());
     const catMatch = categoryFilter === "" || t.category === categoryFilter;
     const sexMatch = sexFilter === "" || t.sex === sexFilter;
-    return nameMatch && catMatch && sexMatch;
+    const sportMatch = sportFilter === "" || t.sport === sportFilter;
+    return nameMatch && catMatch && sexMatch && sportMatch;
   });
 
-  const hasActiveFilters = categoryFilter !== "" || sexFilter !== "";
+  const hasActiveFilters = categoryFilter !== "" || sexFilter !== "" || sportFilter !== "";
+
+  // Build sport filter options: expand FUTBOL into sub-types found in data, keep others per-sport.
+  // Only show the filter when there are 2+ distinct sport options.
+  const sportOptions: { value: string; label: string }[] = [];
+  for (const s of userSports) {
+    if (s === "FUTBOL" && data) {
+      const futbolSports = [...new Set(
+        data.filter(t => t.sport && t.sport.startsWith("FUTBOL")).map(t => t.sport as string)
+      )].sort();
+      if (futbolSports.length > 0) {
+        futbolSports.forEach(ft => sportOptions.push({ value: ft, label: SPORT_LABELS[ft] ?? ft }));
+      } else if (hasFutbol) {
+        sportOptions.push({ value: "FUTBOL", label: "Fútbol" });
+      }
+    } else {
+      sportOptions.push({ value: s, label: SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s });
+    }
+  }
+
+  const sportSelect = sportOptions.length > 1 ? (
+    <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 140 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
+      <Select
+        value={sportFilter}
+        displayEmpty
+        onChange={(e) => setSportFilter(e.target.value)}
+        renderValue={(val) => val ? (SPORT_LABELS[val] ?? SPORT_LABEL[val as keyof typeof SPORT_LABEL] ?? val) : "Deporte"}
+      >
+        <MenuItem value="">Todos</MenuItem>
+        {sportOptions.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  ) : null;
 
   const categorySelect = (
     <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 150 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
@@ -169,6 +212,7 @@ export default function Tournaments() {
         }
         sx={{ borderRadius: 2, backgroundColor: "white", minWidth: 200 }}
       />
+      {sportSelect}
       {categorySelect}
       {sexSelect}
       {addButton}
@@ -205,6 +249,7 @@ export default function Tournaments() {
             sx={{ borderRadius: 2, backgroundColor: "white" }}
           />
           <Box sx={{ display: "flex", gap: 1 }}>
+            {sportSelect}
             {categorySelect}
             {sexSelect}
           </Box>
@@ -237,7 +282,7 @@ export default function Tournaments() {
             <Typography
               variant="caption"
               color="text.disabled"
-              onClick={() => { setCategoryFilter(""); setSexFilter(""); }}
+              onClick={() => { setCategoryFilter(""); setSexFilter(""); setSportFilter(""); }}
               sx={{ cursor: "pointer", "&:hover": { color: "text.secondary" } }}
             >
               Limpiar filtros

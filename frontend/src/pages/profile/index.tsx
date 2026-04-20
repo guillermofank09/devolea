@@ -299,7 +299,7 @@ export default function Profile() {
                 </Typography>
                 <TextField
                   fullWidth
-                  placeholder="Ej. Club de Pádel Devolea"
+                  placeholder="Ej. Club Deportivo Devolea"
                   value={clubName}
                   onChange={e => setClubName(e.target.value)}
                   size="small"

@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico"],
       manifest: {
-        name: "Devolea · Gestión de Pádel",
+        name: "Devolea · Gestión de Canchas y Torneos",
         short_name: "Devolea",
         description: "Software de Gestión de Canchas y Torneos",
         theme_color: "#F5AD27",

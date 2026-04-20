@@ -24,7 +24,7 @@ import PhoneField from "../../components/common/PhoneField";
 import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
-import { SPORT_LABELS } from "../tournaments/AddEditTournament";
+import { SPORT_LABEL } from "../../constants/sports";
 
 // ── Georef Argentina city search ─────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
   const isEditing = !!player;
   const { user } = useAuth();
   const userSports = user?.sports ?? [];
-  const showSportSelector = userSports.includes("PADEL") && userSports.includes("TENIS");
+  const showSportSelector = userSports.length > 0;
 
   useEffect(() => {
     if (player) {
@@ -278,24 +278,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
               disabled={mutation.isPending}
             />
 
-            {/* Categoría */}
-            <Box>
-              <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
-              <Select
-                fullWidth
-                size="small"
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-                disabled={mutation.isPending}
-                sx={{ height: 40, fontSize: "0.875rem" }}
-              >
-                {CATEGORIES.map((c) => (
-                  <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-
-            {/* Deporte (solo si club tiene padel y tenis) */}
+            {/* Deporte — opciones según los deportes habilitados del club */}
             {showSportSelector && (
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
@@ -308,8 +291,30 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                   sx={{ height: 40, fontSize: "0.875rem" }}
                 >
                   <MenuItem value=""><em>Sin especificar</em></MenuItem>
-                  <MenuItem value="PADEL">{SPORT_LABELS["PADEL"]}</MenuItem>
-                  <MenuItem value="TENIS">{SPORT_LABELS["TENIS"]}</MenuItem>
+                  {userSports.map(s => (
+                    <MenuItem key={s} value={s}>
+                      {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            )}
+
+            {/* Categoría — solo para Pádel */}
+            {form.sport === "PADEL" && (
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={form.category}
+                  onChange={(e) => set("category", e.target.value)}
+                  disabled={mutation.isPending}
+                  sx={{ height: 40, fontSize: "0.875rem" }}
+                >
+                  {CATEGORIES.map((c) => (
+                    <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+                  ))}
                 </Select>
               </Box>
             )}

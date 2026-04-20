@@ -217,6 +217,8 @@ const CourtView = ({
         onClose={() => setPendingSlot(null)}
         slot={pendingSlot}
         courtId={court.id}
+        courtSport={court.sport}
+        courtType={court.type}
         onBooked={() => setPendingSlot(null)}
       />
 

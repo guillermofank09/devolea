@@ -16,6 +16,10 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RoofingIcon from "@mui/icons-material/Roofing";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
+import SportsSoccerIcon from "@mui/icons-material/SportsSoccer";
+import SportsVolleyballIcon from "@mui/icons-material/SportsVolleyball";
+import SportsBasketballIcon from "@mui/icons-material/SportsBasketball";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Court } from "../../types/Court";
 import { deleteCourt } from "../../api/courtService";
@@ -36,6 +40,19 @@ const STATUS_CONFIG: Record<
   AVAILABLE:       { label: "Disponible",    borderColor: "#4caf50", chipColor: "success" },
   "IN USE":        { label: "En Uso",        borderColor: "#f44336", chipColor: "error"   },
   "NOT AVAILABLE": { label: "No Disponible", borderColor: "#9e9e9e", chipColor: "default" },
+};
+
+// Sport badge config — icon + palette per sport
+const SPORT_CHIP: Record<string, { icon: React.ReactElement; bg: string; color: string }> = {
+  PADEL:    { icon: <SportsTennisIcon />,    bg: "#fff8e1", color: "#c07700" },
+  TENIS:    { icon: <SportsTennisIcon />,    bg: "#f1f8e9", color: "#2e7d32" },
+  FUTBOL:   { icon: <SportsSoccerIcon />,    bg: "#e8f5e9", color: "#1b5e20" },
+  FUTBOL5:  { icon: <SportsSoccerIcon />,    bg: "#e8f5e9", color: "#1b5e20" },
+  FUTBOL7:  { icon: <SportsSoccerIcon />,    bg: "#e8f5e9", color: "#1b5e20" },
+  FUTBOL9:  { icon: <SportsSoccerIcon />,    bg: "#e8f5e9", color: "#1b5e20" },
+  FUTBOL11: { icon: <SportsSoccerIcon />,    bg: "#e8f5e9", color: "#1b5e20" },
+  VOLEY:    { icon: <SportsVolleyballIcon />, bg: "#e3f2fd", color: "#0d47a1" },
+  BASQUET:  { icon: <SportsBasketballIcon />, bg: "#fff3e0", color: "#bf360c" },
 };
 
 const TYPE_CONFIG: Partial<Record<Court["type"], { label: string; icon: React.ReactNode }>> = {
@@ -100,13 +117,25 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
                 {typeInfo?.label ?? type}
               </Typography>
             </Box>
-            {sport && (
-              <Chip
-                label={SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                size="small"
-                sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700, bgcolor: "rgba(245,173,39,0.12)", color: "#b07d00" }}
-              />
-            )}
+            {sport && (() => {
+              const cfg = SPORT_CHIP[sport];
+              return (
+                <Chip
+                  icon={cfg?.icon}
+                  label={SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                  size="small"
+                  sx={{
+                    height: 26,
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    bgcolor: cfg?.bg ?? "rgba(245,173,39,0.12)",
+                    color: cfg?.color ?? "#b07d00",
+                    "& .MuiChip-icon": { fontSize: 15, color: "inherit", ml: "6px" },
+                    "& .MuiChip-label": { px: "8px" },
+                  }}
+                />
+              );
+            })()}
           </Box>
 
           {/* Hourly rate */}

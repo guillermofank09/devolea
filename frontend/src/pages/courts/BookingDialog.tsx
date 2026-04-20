@@ -65,10 +65,12 @@ interface Props {
   onClose: () => void;
   slot: SlotInfo | null;
   courtId: number;
+  courtSport?: string;
+  courtType?: string;
   onBooked: () => void;
 }
 
-export default function BookingDialog({ open, onClose, slot, courtId, onBooked }: Props) {
+export default function BookingDialog({ open, onClose, slot, courtId, courtSport, courtType, onBooked }: Props) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [bookingType, setBookingType] = useState<"player" | "profesor">("player");
@@ -88,22 +90,28 @@ export default function BookingDialog({ open, onClose, slot, courtId, onBooked }
     staleTime: 30_000,
   });
 
-  // Auto-fill price when slot, booking type or selected profesor changes
+  // Auto-fill price when slot, booking type or selected profesor changes.
+  // Uses per-sport price from settings when available, falls back to global rate.
   useEffect(() => {
     if (!slot || !settings) { setPrice(""); return; }
     const hrs = (slot.end.getTime() - slot.start.getTime()) / 3_600_000;
     let rate: number;
+    // For Fútbol, price is keyed by court type (e.g. "FUTBOL5"); for others, by sport.
+    const priceKey = courtSport === "FUTBOL" && courtType ? courtType : courtSport;
     if (bookingType === "profesor") {
-      // Use profesor's own rate if set, otherwise fall back to global class rate
-      rate = selectedProfesor?.hourlyRate != null
-        ? Number(selectedProfesor.hourlyRate)
-        : Number(settings.classHourlyRate);
+      if (selectedProfesor?.hourlyRate != null) {
+        rate = Number(selectedProfesor.hourlyRate);
+      } else {
+        const sportClassRate = priceKey ? settings.sportClassPrices?.[priceKey] : undefined;
+        rate = sportClassRate != null ? sportClassRate : Number(settings.classHourlyRate);
+      }
     } else {
-      rate = Number(settings.hourlyRate);
+      const sportRate = priceKey ? settings.sportPrices?.[priceKey] : undefined;
+      rate = sportRate != null ? sportRate : Number(settings.hourlyRate);
     }
     const computed = hrs * rate;
     setPrice(computed > 0 ? String(computed) : "");
-  }, [slot, bookingType, settings, selectedProfesor]);
+  }, [slot, bookingType, settings, selectedProfesor, courtSport, courtType]);
 
   const { data: players = [], isFetching: fetchingPlayers } = useQuery<Player[]>({
     queryKey: ["playersData"],

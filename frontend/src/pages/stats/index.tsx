@@ -265,7 +265,7 @@ function PlayerCategoryChart({ data }: { data: PlayerCategoryEntry[] }) {
   const GROUP_GAP = 12;
   const BAR_GAP   = 3;
   // Natural canvas: each group gets equal space
-  const NATURAL_W = Math.max(n * (40 + GROUP_GAP) + Y_AXIS_W + 8, 260);
+  const NATURAL_W = Math.max(n * (40 + GROUP_GAP) + Y_AXIS_W + 8, 380);
   const groupW    = (NATURAL_W - Y_AXIS_W - GROUP_GAP * (n + 1)) / n;
   const barW      = (groupW - BAR_GAP) / 2;
 
@@ -347,7 +347,7 @@ function PlayerCategoryChart({ data }: { data: PlayerCategoryEntry[] }) {
               {/* Category label */}
               <text
                 x={cxGroup} y={CHART_H + 15}
-                textAnchor="middle" fontSize={11}
+                textAnchor="middle" fontSize={9}
                 fill={isHov ? "#111" : "#888"} fontWeight={isHov ? 700 : 400}
                 style={{ transition: "fill 0.15s" }}
               >

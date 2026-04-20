@@ -23,6 +23,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import type { Player, PlayerCategory } from "../../types/Player";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
+import { SPORT_LABEL } from "../../constants/sports";
 
 export const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA:       "1ra",
@@ -140,6 +141,7 @@ function MobileList({ players, onEdit, onDelete }: Props) {
               </Box>
               <Typography variant="caption" color="text.secondary">
                 {player.city} · {player.sex === "MASCULINO" ? "M" : "F"} · {getAge(player.birthDate)} años
+                {player.sport ? ` · ${SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport}` : ""}
                 {player.phone ? ` · +${player.phone}` : ""}
               </Typography>
             </Box>
@@ -222,6 +224,8 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
               </TableSortLabel>
             </TableCell>
 
+            <TableCell sx={{ fontWeight: 700 }}>Deporte</TableCell>
+
             <TableCell sortDirection={sortKey === "sex" ? sortDir : false}>
               <TableSortLabel
                 active={sortKey === "sex"}
@@ -282,6 +286,14 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
 
               <TableCell>
                 <Typography variant="body2">{player.city}</Typography>
+              </TableCell>
+
+              <TableCell>
+                <Typography variant="body2" color="text.secondary">
+                  {player.sport
+                    ? (SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport)
+                    : "—"}
+                </Typography>
               </TableCell>
 
               <TableCell>
