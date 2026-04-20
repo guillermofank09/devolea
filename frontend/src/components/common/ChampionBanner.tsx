@@ -110,9 +110,9 @@ export default function ChampionBanner({ champion, championLabel, sex, compact }
           >
             {championLabel ?? (
               <>
-                {champion?.player1.name}
+                {champion?.player1?.name}
                 <Box component="span" sx={{ mx: 0.5, color: "#F5AD27", fontWeight: 900 }}>/</Box>
-                {champion?.player2.name}
+                {champion?.player2?.name}
               </>
             )}
           </Typography>

@@ -128,8 +128,8 @@ const CourtView = ({
       .map(m => {
         const start = new Date(m.scheduledAt!);
         const end = new Date(start.getTime() + 90 * 60 * 1000);
-        const p1 = m.pair1 ? m.pair1.player1.name.split(" ")[0] + "/" + m.pair1.player2.name.split(" ")[0] : "?";
-        const p2 = m.pair2 ? m.pair2.player1.name.split(" ")[0] + "/" + m.pair2.player2.name.split(" ")[0] : "BYE";
+        const p1 = m.pair1 ? m.pair1.player1?.name.split(" ")[0] + "/" + m.pair1.player2?.name.split(" ")[0] : "?";
+        const p2 = m.pair2 ? m.pair2.player1?.name.split(" ")[0] + "/" + m.pair2.player2?.name.split(" ")[0] : "BYE";
         return {
           id: m.id,
           title: `Torneo: ${p1} vs ${p2}`,
@@ -232,8 +232,8 @@ const CourtView = ({
           const m = selectedTournamentMatch;
           const start = new Date(m.scheduledAt!);
           const end = new Date(start.getTime() + 90 * 60 * 1000);
-          const p1 = m.pair1 ? `${m.pair1.player1.name} / ${m.pair1.player2.name}` : "A definir";
-          const p2 = m.pair2 ? `${m.pair2.player1.name} / ${m.pair2.player2.name}` : "BYE";
+          const p1 = m.pair1 ? `${m.pair1.player1.name} / ${m.pair1.player2?.name}` : "A definir";
+          const p2 = m.pair2 ? `${m.pair2.player1.name} / ${m.pair2.player2?.name}` : "BYE";
           return (
             <>
               <Box sx={{ bgcolor: "#1565c0", px: 3, pt: 2.5, pb: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
