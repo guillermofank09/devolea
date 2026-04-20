@@ -6,13 +6,15 @@ import AddEditCourt from "./AddEditCourt";
 import PageHeader from "../../components/common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCourts } from "../../api/courtService";
-import { Alert, Box, useMediaQuery, useTheme } from "@mui/material";
+import { Alert, Box, Fab, useMediaQuery, useTheme } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import EmptyState from "../../components/common/EmptyState";
 import CardGridSkeleton from "../../components/common/CardGridSkeleton";
 
 export default function Courts() {
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -52,10 +54,24 @@ export default function Courts() {
       <PageHeader
         title="Canchas"
         subtitle="Administrá las canchas disponibles del club"
-        action={hasData ? <AddEditCourt compact={isMobile} /> : undefined}
+        action={hasData && !isMobile ? <AddEditCourt /> : undefined}
       />
 
       {renderContent()}
+
+      {isMobile && hasData && (
+        <Fab
+          aria-label="Agregar cancha"
+          onClick={() => setAddOpen(true)}
+          sx={{ position: "fixed", bottom: 24, right: 24, bgcolor: "#111", color: "#fff", "&:hover": { bgcolor: "#333" }, zIndex: 1200 }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
+
+      {isMobile && (
+        <AddEditCourt controlled={{ open: addOpen, onClose: () => setAddOpen(false) }} />
+      )}
 
       {selectedCourt && (
         <CourtView court={selectedCourt} isOpen={open} handleClose={handleClose} />

@@ -8,6 +8,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Fab,
   FormControl,
   Grid,
   IconButton,
@@ -179,7 +180,7 @@ export default function Tournaments() {
       <PageHeader
         title="Torneos"
         subtitle="Administrá los torneos del club"
-        action={isMobile ? addButton : desktopAction}
+        action={isMobile ? undefined : desktopAction}
       />
 
       {/* Mobile: search + filters */}
@@ -208,6 +209,16 @@ export default function Tournaments() {
             {sexSelect}
           </Box>
         </Box>
+      )}
+
+      {isMobile && (
+        <Fab
+          aria-label="Agregar torneo"
+          onClick={() => setAddOpen(true)}
+          sx={{ position: "fixed", bottom: 24, right: 24, bgcolor: "#111", color: "#fff", "&:hover": { bgcolor: "#333" }, zIndex: 1200 }}
+        >
+          <AddIcon />
+        </Fab>
       )}
 
       {isPending && <PageLoader />}

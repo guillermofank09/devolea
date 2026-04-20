@@ -44,6 +44,12 @@ export interface Pair {
   preferredStartTimes?: string[];
 }
 
+export interface MatchGoal {
+  playerName: string;
+  teamId: number;
+  minute: number;
+}
+
 export interface TournamentMatch {
   id: number;
   pair1?: Pair | null;
@@ -57,6 +63,7 @@ export interface TournamentMatch {
   status: MatchStatus;
   winnerId?: number | null;
   result?: string | null;
+  goals?: MatchGoal[] | null;
   isRepechage?: boolean;
   liveStatus?: MatchLiveStatus | null;
   delayedUntil?: string | null;

@@ -28,9 +28,10 @@ interface Props {
   onClose: () => void;
   tournamentId: number;
   existingTeams: TournamentTeam[];
+  sport?: string;
 }
 
-export default function AddTeamDialog({ open, onClose, tournamentId, existingTeams }: Props) {
+export default function AddTeamDialog({ open, onClose, tournamentId, existingTeams, sport }: Props) {
   const [equipoId, setEquipoId] = useState<number | "">("");
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +46,11 @@ export default function AddTeamDialog({ open, onClose, tournamentId, existingTea
   });
 
   const existingIds = new Set(existingTeams.map(t => t.equipo.id));
-  const available = equipos.filter(e => !existingIds.has(e.id));
+  const available = equipos.filter(e => {
+    if (existingIds.has(e.id)) return false;
+    if (!sport) return true;
+    return e.sport === sport;
+  });
 
   const mutation = useMutation({
     mutationFn: () => addTeam(tournamentId, Number(equipoId)),

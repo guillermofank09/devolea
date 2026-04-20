@@ -56,10 +56,12 @@ const AddEditCourt = ({
   isEditing = false,
   courtNumber = 1,
   compact = false,
+  controlled,
 }: {
   isEditing?: boolean;
   courtNumber?: number;
   compact?: boolean;
+  controlled?: { open: boolean; onClose: () => void };
 }) => {
   const { user } = useAuth();
   const sports = user?.sports ?? ["PADEL"];
@@ -67,13 +69,15 @@ const AddEditCourt = ({
   const [name, setName] = useState(`Cancha ${courtNumber}`);
   const [sport, setSport] = useState<string>(sports[0] ?? "PADEL");
   const [type, setCourtType] = useState<CourtType>(defaultType(sports[0] ?? "PADEL"));
-  const [open, setOpen] = useState(isEditing);
+  const [internalOpen, setInternalOpen] = useState(isEditing);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
-  const handleClickOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const isControlled = !!controlled;
+  const open = isControlled ? controlled!.open : internalOpen;
+  const handleClickOpen = () => setInternalOpen(true);
+  const handleClose = isControlled ? controlled!.onClose : () => setInternalOpen(false);
 
   function handleSportChange(newSport: string) {
     setSport(newSport);
@@ -86,7 +90,7 @@ const AddEditCourt = ({
     mutationFn: createCourt,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courtsData"] });
-      setOpen(false);
+      handleClose();
     },
   });
 
@@ -97,7 +101,7 @@ const AddEditCourt = ({
 
   return (
     <>
-      {!open && !isEditing && (
+      {!isControlled && !open && !isEditing && (
         <Button
           variant="contained"
           startIcon={compact ? undefined : <AddIcon />}

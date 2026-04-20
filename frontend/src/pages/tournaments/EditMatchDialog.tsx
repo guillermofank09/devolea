@@ -10,6 +10,7 @@ import {
   DialogTitle,
   Divider,
   FormLabel,
+  IconButton,
   MenuItem,
   Select,
   TextField,
@@ -19,15 +20,19 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateMatch, createPlaceholderMatch, fetchMatchesByCourt } from "../../api/tournamentService";
 import { fetchCourts } from "../../api/courtService";
+import type { Court } from "../../types/Court";
 import { fetchBookingsByCourt } from "../../api/bookingService";
 import { fetchSettings } from "../../api/settingsService";
-import type { Pair, TournamentMatch, MatchLiveStatus, TournamentTeam } from "../../types/Tournament";
+import type { Pair, TournamentMatch, MatchLiveStatus, TournamentTeam, MatchGoal } from "../../types/Tournament";
 import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
 import { FORM_LABEL_SX } from "../../styles/formStyles";
+import { useAuth } from "../../context/AuthContext";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
 
 interface SetScore { p1: string; p2: string; }
@@ -109,9 +114,12 @@ interface Props {
   teamMode?: boolean;
   tournamentId: number;
   totalRounds?: number;
+  sport?: string;
 }
 
-export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds }: Props) {
+export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds, sport }: Props) {
+  const { user } = useAuth();
+  const isFootball = sport?.startsWith("FUTBOL") ?? false;
   const isVirtual = match.id < 0;
   const isPlaceholder = isVirtual || (!match.pair1 && !match.pair2 && !match.team1 && !match.team2);
 
@@ -123,6 +131,9 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   const [team2Id, setTeam2Id] = useState<number | "">("");
   const [winnerId, setWinnerId] = useState<number | null>(null);
   const [sets, setSets] = useState<SetScore[]>([{ p1: "", p2: "" }, { p1: "", p2: "" }, { p1: "", p2: "" }]);
+  const [fbScore1, setFbScore1] = useState("");
+  const [fbScore2, setFbScore2] = useState("");
+  const [goals, setGoals] = useState<MatchGoal[]>([]);
   const [liveStatus, setLiveStatus] = useState<MatchLiveStatus | null>(null);
   const [delayedUntilTime, setDelayedUntilTime] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -153,18 +164,34 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
       setTeam2Id(match.team2?.id ?? "");
       setWinnerId(match.winnerId ?? null);
       setSets(parseResultToSets(match.result, setsCount));
+      if (isFootball) {
+        const parts = (match.result ?? "").split("-");
+        setFbScore1(parts[0] ?? "");
+        setFbScore2(parts[1] ?? "");
+        setGoals(match.goals ? [...match.goals] : []);
+      }
       setLiveStatus(match.liveStatus ?? null);
       const delayedParts = toLocalDatetimeParts(match.delayedUntil);
       setDelayedUntilTime(delayedParts.time);
       setError(null);
     }
-  }, [open, match, setsCount]);
+  }, [open, match, setsCount, isFootball]);
 
-  const { data: courts = [] } = useQuery<{ id: number; name: string }[]>({
+  const { data: allCourts = [] } = useQuery<Court[]>({
     queryKey: ["courtsData"],
     queryFn: () => fetchCourts(),
     enabled: open,
   });
+
+  const multipleSports = (user?.sports ?? []).length > 1;
+  const courts = sport && multipleSports
+    ? allCourts.filter(c => {
+        if (sport.startsWith("FUTBOL")) {
+          return c.sport === "FUTBOL" && c.type === sport;
+        }
+        return c.sport === sport;
+      })
+    : allCourts;
 
   const { data: bookings = [] } = useQuery<Booking[]>({
     queryKey: ["bookingsByCourt", courtId],
@@ -269,6 +296,34 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
 
       const wasBye = match.status === "BYE";
       const pair2IsNowSet = teamMode ? (team2Id !== "" && team2Id != null) : (pair2Id !== "" && pair2Id != null);
+
+      if (isFootball) {
+        const s1 = parseInt(fbScore1) || 0;
+        const s2 = parseInt(fbScore2) || 0;
+        const fbResult = (fbScore1 !== "" || fbScore2 !== "") ? `${s1}-${s2}` : undefined;
+        let fbWinnerId: number | null = winnerId ?? null;
+        if (fbScore1 !== "" && fbScore2 !== "") {
+          const t1Id = team1Id !== "" ? Number(team1Id) : null;
+          const t2Id = team2Id !== "" ? Number(team2Id) : null;
+          if (s1 > s2) fbWinnerId = t1Id;
+          else if (s2 > s1) fbWinnerId = t2Id;
+          else fbWinnerId = winnerId ?? null; // draw: keep manual selection
+        }
+        const fbStatus = fbWinnerId ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
+        return updateMatch(match.id, {
+          scheduledAt: scheduledAtISO,
+          courtId: courtIdNum,
+          team1Id: team1Id !== "" ? Number(team1Id) : null,
+          team2Id: team2Id !== "" ? Number(team2Id) : null,
+          winnerId: fbWinnerId,
+          result: fbResult,
+          goals: goals.length > 0 ? goals : null,
+          status: fbStatus,
+          liveStatus: liveStatus ?? null,
+          delayedUntil: delayedUntilISO,
+        });
+      }
+
       const status = winnerId ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
       const result = composeSetsResult(sets);
       return updateMatch(match.id, {
@@ -487,91 +542,209 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
             </>
           )}
 
-          <Box>
-            <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Resultado por set</FormLabel>
-            {(teamMode ? (currentTeam1 && currentTeam2) : (currentPair1 && currentPair2)) && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
-                <Typography variant="caption" sx={{ minWidth: 44 }} />
-                <Typography variant="caption" color="text.secondary" fontWeight={700}
-                  sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
-                  {teamMode ? currentTeam1?.equipo.name.substring(0, 8) : pairInitials(currentPair1!)}
-                </Typography>
-                <Box sx={{ width: 12 }} />
-                <Typography variant="caption" color="text.secondary" fontWeight={700}
-                  sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
-                  {teamMode ? currentTeam2?.equipo.name.substring(0, 8) : pairInitials(currentPair2!)}
-                </Typography>
-              </Box>
-            )}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {Array.from({ length: setsCount }, (_, i) => {
-                const p1Id = teamMode ? team1Id : pair1Id;
-                const p2Id = teamMode ? team2Id : pair2Id;
-                return (
-                  <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ minWidth: 44 }}>
-                      Set {i + 1}
-                    </Typography>
+          {isFootball ? (
+            <>
+              {/* Football: score */}
+              <Box>
+                <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Marcador</FormLabel>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ flex: 1, textAlign: "center" }}>
+                    {currentTeam1 && (
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} noWrap sx={{ display: "block", mb: 0.5, fontSize: "0.72rem" }}>
+                        {currentTeam1.equipo.name}
+                      </Typography>
+                    )}
                     <TextField
-                      size="small" value={sets[i]?.p1 ?? ""}
-                      onChange={e => {
-                        const next = sets.map((s, idx) => idx === i ? { ...s, p1: e.target.value } : s);
-                        setSets(next);
-                        setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
-                      }}
+                      size="small"
+                      type="number"
+                      value={fbScore1}
+                      onChange={e => setFbScore1(e.target.value)}
                       placeholder="0"
-                      inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                      sx={{ width: 56, flexShrink: 0 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">—</Typography>
-                    <TextField
-                      size="small" value={sets[i]?.p2 ?? ""}
-                      onChange={e => {
-                        const next = sets.map((s, idx) => idx === i ? { ...s, p2: e.target.value } : s);
-                        setSets(next);
-                        setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
-                      }}
-                      placeholder="0"
-                      inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
-                      sx={{ width: 56, flexShrink: 0 }}
+                      inputProps={{ min: 0, style: { textAlign: "center", padding: "8px", fontSize: "1.2rem", fontWeight: 700 } }}
+                      sx={{ width: "100%" }}
                     />
                   </Box>
-                );
-              })}
-            </Box>
-          </Box>
-
-          {showWinner && (
-            <Box>
-              <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Ganador</FormLabel>
-              <ToggleButtonGroup
-                value={winnerId} exclusive onChange={(_, val) => setWinnerId(val)}
-                size="small" orientation="vertical" fullWidth
-                sx={{
-                  "& .MuiToggleButton-root": {
-                    textTransform: "none", fontWeight: 600, fontSize: "0.875rem",
-                    borderColor: "divider", color: "text.secondary",
-                    justifyContent: "flex-start", px: 2, py: 1.25,
-                  },
-                  "& .MuiToggleButton-root.Mui-selected": {
-                    bgcolor: "#F5AD27", color: "#111", borderColor: "#F5AD27",
-                    "&:hover": { bgcolor: "#e09b18" },
-                  },
-                }}
-              >
-                {teamMode ? (
-                  <>
-                    <ToggleButton value={currentTeam1!.id}>{currentTeam1!.equipo.name}</ToggleButton>
-                    <ToggleButton value={currentTeam2!.id}>{currentTeam2!.equipo.name}</ToggleButton>
-                  </>
-                ) : (
-                  <>
-                    <ToggleButton value={currentPair1!.id}>{pairLabel(currentPair1!)}</ToggleButton>
-                    <ToggleButton value={currentPair2!.id}>{pairLabel(currentPair2!)}</ToggleButton>
-                  </>
+                  <Typography variant="h6" color="text.disabled" sx={{ flexShrink: 0, mt: currentTeam1 ? 2.5 : 0 }}>—</Typography>
+                  <Box sx={{ flex: 1, textAlign: "center" }}>
+                    {currentTeam2 && (
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} noWrap sx={{ display: "block", mb: 0.5, fontSize: "0.72rem" }}>
+                        {currentTeam2.equipo.name}
+                      </Typography>
+                    )}
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={fbScore2}
+                      onChange={e => setFbScore2(e.target.value)}
+                      placeholder="0"
+                      inputProps={{ min: 0, style: { textAlign: "center", padding: "8px", fontSize: "1.2rem", fontWeight: 700 } }}
+                      sx={{ width: "100%" }}
+                    />
+                  </Box>
+                </Box>
+                {/* Draw: manual winner */}
+                {showWinner && fbScore1 !== "" && fbScore2 !== "" && parseInt(fbScore1) === parseInt(fbScore2) && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+                      Empate — seleccioná el ganador (penales/desempate):
+                    </Typography>
+                    <ToggleButtonGroup
+                      value={winnerId} exclusive onChange={(_, val) => setWinnerId(val)}
+                      size="small" fullWidth
+                      sx={{
+                        "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, fontSize: "0.78rem", borderColor: "divider" },
+                        "& .MuiToggleButton-root.Mui-selected": { bgcolor: "#F5AD27", color: "#111", borderColor: "#F5AD27" },
+                      }}
+                    >
+                      <ToggleButton value={currentTeam1!.id}>{currentTeam1!.equipo.name}</ToggleButton>
+                      <ToggleButton value={currentTeam2!.id}>{currentTeam2!.equipo.name}</ToggleButton>
+                    </ToggleButtonGroup>
+                  </Box>
                 )}
-              </ToggleButtonGroup>
-            </Box>
+              </Box>
+
+              {/* Football: goal scorers */}
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                  <FormLabel sx={FORM_LABEL_SX}>Goles</FormLabel>
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => setGoals(prev => [...prev, { playerName: "", teamId: currentTeam1 ? currentTeam1.id : 0, minute: 0 }])}
+                    sx={{ textTransform: "none", fontSize: "0.78rem" }}
+                  >
+                    Agregar gol
+                  </Button>
+                </Box>
+                {goals.length === 0 && (
+                  <Typography variant="caption" color="text.disabled">Sin goles registrados.</Typography>
+                )}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {goals.map((goal, i) => (
+                    <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <TextField
+                        size="small"
+                        value={goal.playerName}
+                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, playerName: e.target.value } : g))}
+                        placeholder="Jugador"
+                        sx={{ flex: 1 }}
+                        inputProps={{ style: { fontSize: "0.85rem" } }}
+                      />
+                      <Select
+                        size="small"
+                        value={goal.teamId || (currentTeam1?.id ?? 0)}
+                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, teamId: Number(e.target.value) } : g))}
+                        sx={{ minWidth: 90, fontSize: "0.8rem" }}
+                      >
+                        {currentTeam1 && <MenuItem value={currentTeam1.id}>{currentTeam1.equipo.name}</MenuItem>}
+                        {currentTeam2 && <MenuItem value={currentTeam2.id}>{currentTeam2.equipo.name}</MenuItem>}
+                      </Select>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={goal.minute || ""}
+                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, minute: parseInt(e.target.value) || 0 } : g))}
+                        placeholder="Min"
+                        inputProps={{ min: 0, max: 120, style: { textAlign: "center", padding: "6px 4px", width: 44 } }}
+                        sx={{ width: 60, flexShrink: 0 }}
+                      />
+                      <IconButton size="small" color="error" onClick={() => setGoals(prev => prev.filter((_, idx) => idx !== i))}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Box>
+                <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Resultado por set</FormLabel>
+                {(teamMode ? (currentTeam1 && currentTeam2) : (currentPair1 && currentPair2)) && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+                    <Typography variant="caption" sx={{ minWidth: 44 }} />
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}
+                      sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
+                      {teamMode ? currentTeam1?.equipo.name.substring(0, 8) : pairInitials(currentPair1!)}
+                    </Typography>
+                    <Box sx={{ width: 12 }} />
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}
+                      sx={{ width: 56, textAlign: "center", fontSize: "0.7rem", flexShrink: 0 }}>
+                      {teamMode ? currentTeam2?.equipo.name.substring(0, 8) : pairInitials(currentPair2!)}
+                    </Typography>
+                  </Box>
+                )}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {Array.from({ length: setsCount }, (_, i) => {
+                    const p1Id = teamMode ? team1Id : pair1Id;
+                    const p2Id = teamMode ? team2Id : pair2Id;
+                    return (
+                      <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ minWidth: 44 }}>
+                          Set {i + 1}
+                        </Typography>
+                        <TextField
+                          size="small" value={sets[i]?.p1 ?? ""}
+                          onChange={e => {
+                            const next = sets.map((s, idx) => idx === i ? { ...s, p1: e.target.value } : s);
+                            setSets(next);
+                            setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
+                          }}
+                          placeholder="0"
+                          inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
+                          sx={{ width: 56, flexShrink: 0 }}
+                        />
+                        <Typography variant="body2" color="text.secondary">—</Typography>
+                        <TextField
+                          size="small" value={sets[i]?.p2 ?? ""}
+                          onChange={e => {
+                            const next = sets.map((s, idx) => idx === i ? { ...s, p2: e.target.value } : s);
+                            setSets(next);
+                            setWinnerId(calcWinnerFromSets(next, p1Id, p2Id));
+                          }}
+                          placeholder="0"
+                          inputProps={{ style: { textAlign: "center", padding: "6px 8px" } }}
+                          sx={{ width: 56, flexShrink: 0 }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+
+              {showWinner && (
+                <Box>
+                  <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 1 }}>Ganador</FormLabel>
+                  <ToggleButtonGroup
+                    value={winnerId} exclusive onChange={(_, val) => setWinnerId(val)}
+                    size="small" orientation="vertical" fullWidth
+                    sx={{
+                      "& .MuiToggleButton-root": {
+                        textTransform: "none", fontWeight: 600, fontSize: "0.875rem",
+                        borderColor: "divider", color: "text.secondary",
+                        justifyContent: "flex-start", px: 2, py: 1.25,
+                      },
+                      "& .MuiToggleButton-root.Mui-selected": {
+                        bgcolor: "#F5AD27", color: "#111", borderColor: "#F5AD27",
+                        "&:hover": { bgcolor: "#e09b18" },
+                      },
+                    }}
+                  >
+                    {teamMode ? (
+                      <>
+                        <ToggleButton value={currentTeam1!.id}>{currentTeam1!.equipo.name}</ToggleButton>
+                        <ToggleButton value={currentTeam2!.id}>{currentTeam2!.equipo.name}</ToggleButton>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleButton value={currentPair1!.id}>{pairLabel(currentPair1!)}</ToggleButton>
+                        <ToggleButton value={currentPair2!.id}>{pairLabel(currentPair2!)}</ToggleButton>
+                      </>
+                    )}
+                  </ToggleButtonGroup>
+                </Box>
+              )}
+            </>
           )}
         </>
       )}

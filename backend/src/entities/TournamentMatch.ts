@@ -28,6 +28,7 @@ export class TournamentMatch {
   @Column({ default: "PENDING" }) status!: MatchStatus;
   @Column({ type: "int", nullable: true }) winnerId?: number | null;
   @Column({ type: "varchar", nullable: true }) result?: string | null;
+  @Column({ type: "jsonb", nullable: true }) goals?: { playerName: string; teamId: number; minute: number }[] | null;
   @Column({ default: false }) isRepechage!: boolean;
   @Column({ type: "varchar", nullable: true }) liveStatus?: MatchLiveStatus | null;
   @Column({ type: "timestamptz", nullable: true }) delayedUntil?: Date | null;

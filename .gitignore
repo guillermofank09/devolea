@@ -13,6 +13,9 @@ frontend/public/pwa-192x192.png
 frontend/public/pwa-512x512.png
 frontend/public/apple-touch-icon.png
 
+#upload images
+backend/uploads/
+
 # Environment files
 .env
 .env.local
@@ -47,3 +50,4 @@ pgdata/
 
 # Claude Code local settings
 .claude/
+CLAUDE.md

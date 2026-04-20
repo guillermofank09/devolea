@@ -756,7 +756,7 @@ export class TournamentService {
     });
   }
 
-  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; team1Id?: number | null; team2Id?: number | null; winnerId?: number | null; result?: string; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
+  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; team1Id?: number | null; team2Id?: number | null; winnerId?: number | null; result?: string; goals?: { playerName: string; teamId: number; minute: number }[] | null; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
     // Load the full entity including pair/team relations so propagation has the IDs
     const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true, pair1: true, pair2: true } });
     if (!match) return null;
@@ -768,6 +768,7 @@ export class TournamentService {
     if (dto.team2Id !== undefined) match.team2 = dto.team2Id != null ? { id: dto.team2Id } as any : null;
     if (dto.winnerId !== undefined) match.winnerId = dto.winnerId ?? null;
     if (dto.result !== undefined) match.result = dto.result ?? null;
+    if (dto.goals !== undefined) match.goals = dto.goals ?? null;
     if (dto.status !== undefined) match.status = dto.status as any;
     if (dto.courtId !== undefined) match.court = dto.courtId != null ? { id: dto.courtId } as any : null;
     if (dto.liveStatus !== undefined) match.liveStatus = (dto.liveStatus ?? null) as any;

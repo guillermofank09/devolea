@@ -16,9 +16,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEquipo, updateEquipo } from "../../api/equipoService";
 import type { Equipo, EquipoFormData } from "../../types/Equipo";
+import type { Court } from "../../types/Court";
+import { fetchCourts } from "../../api/courtService";
 import AvatarUpload from "../../components/common/AvatarUpload";
 import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
@@ -75,7 +77,29 @@ export default function AddEditEquipo({ open, onClose, equipo }: Props) {
   const isEditing = !!equipo;
   const { user } = useAuth();
   const teamSports = (user?.sports ?? []).filter(s => isTeamSport(s));
+  const hasFutbol = teamSports.includes("FUTBOL");
   const showSportSelector = teamSports.length > 1;
+
+  const { data: courts = [] } = useQuery<Court[]>({
+    queryKey: ["courtsData"],
+    queryFn: () => fetchCourts(),
+    enabled: open && hasFutbol,
+  });
+
+  const sportOptions: { value: string; label: string }[] = [];
+  for (const s of teamSports) {
+    if (s === "FUTBOL") {
+      const futbolTypes = [...new Set(courts.filter(c => c.sport === "FUTBOL").map(c => c.type as string))]
+        .filter(t => t.startsWith("FUTBOL")).sort();
+      if (futbolTypes.length > 0) {
+        futbolTypes.forEach(t => sportOptions.push({ value: t, label: SPORT_LABELS[t] ?? t }));
+      } else {
+        sportOptions.push({ value: "FUTBOL", label: SPORT_LABELS["FUTBOL"] ?? "Fútbol" });
+      }
+    } else {
+      sportOptions.push({ value: s, label: SPORT_LABELS[s] ?? s });
+    }
+  }
 
   useEffect(() => {
     if (equipo) {
@@ -218,8 +242,8 @@ export default function AddEditEquipo({ open, onClose, equipo }: Props) {
                   sx={{ height: 40, fontSize: "0.875rem" }}
                 >
                   <MenuItem value=""><em>Sin especificar</em></MenuItem>
-                  {teamSports.map(s => (
-                    <MenuItem key={s} value={s}>{SPORT_LABELS[s] ?? s}</MenuItem>
+                  {sportOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                   ))}
                 </Select>
               </Box>

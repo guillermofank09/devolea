@@ -25,7 +25,8 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SearchIcon from "@mui/icons-material/Search";
-import type { TournamentMatch, Pair, TournamentDetail } from "../../types/Tournament";
+import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam } from "../../types/Tournament";
+import { isTeamSport } from "../tournaments/AddEditTournament";
 import type { DaySchedule } from "../../types/ClubProfile";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
 import type { PublicBookingSlot, PublicCourt, PublicProfesor } from "../../api/publicService";
@@ -74,8 +75,14 @@ const COLORS = {
 function pairLabel(pair: Pair | null | undefined): string {
   if (!pair) return "BYE";
   const p1 = pair.player1.name.split(" ")[0];
+  if (!pair.player2) return p1;
   const p2 = pair.player2.name.split(" ")[0];
   return `${p1} / ${p2}`;
+}
+
+function teamLabel(team: TournamentTeam | null | undefined): string {
+  if (!team) return "BYE";
+  return team.equipo.name;
 }
 
 // ─── live status colors ───────────────────────────────────────────────────────
@@ -88,12 +95,14 @@ const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: s
 
 // ─── round-robin match list ───────────────────────────────────────────────────
 
-function RoundRobinList({ matches }: { matches: TournamentMatch[] }) {
+function RoundRobinList({ matches, teamMode = false }: { matches: TournamentMatch[]; teamMode?: boolean }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
       {matches.map(m => {
         const live = m.liveStatus ? LIVE_STATUS_COLORS[m.liveStatus] : null;
         const isCompleted = m.status === "COMPLETED";
+        const label1 = teamMode ? teamLabel(m.team1) : pairLabel(m.pair1);
+        const label2 = teamMode ? teamLabel(m.team2) : pairLabel(m.pair2);
         return (
           <Paper
             key={m.id}
@@ -117,9 +126,9 @@ function RoundRobinList({ matches }: { matches: TournamentMatch[] }) {
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: COLORS.text }}>
-                    {pairLabel(m.pair1)}
+                    {label1}
                     <Typography component="span" variant="caption" sx={{ mx: 1, color: "text.disabled", fontWeight: 400 }}>vs</Typography>
-                    {pairLabel(m.pair2)}
+                    {label2}
                   </Typography>
                 </Box>
                 {m.result && (
@@ -172,7 +181,7 @@ const TOURNAMENT_GRADIENTS = [
   "linear-gradient(135deg, #0f172a 0%, #0a2e1a 100%)",  // verde bosque
 ];
 
-function TournamentCard({ username, tournament, index }: { username: string; tournament: { id: number; name: string; startDate: string; endDate: string; category: string; format?: string; status: string; sex?: string }; index: number }) {
+function TournamentCard({ username, tournament, index }: { username: string; tournament: { id: number; name: string; startDate: string; endDate: string; category: string; format?: string; status: string; sex?: string; sport?: string }; index: number }) {
   const { data, isLoading } = useQuery<TournamentDetail>({
     queryKey: ["publicTournamentDetail", username, tournament.id],
     queryFn: () => fetchPublicTournamentDetail(username, tournament.id),
@@ -182,6 +191,9 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
   const gradient = TOURNAMENT_GRADIENTS[index % TOURNAMENT_GRADIENTS.length];
   const isBracket = data?.format === "BRACKET";
   const hasMatches = (data?.matches.length ?? 0) > 0;
+  const teamMode = isTeamSport(data?.sport ?? tournament.sport ?? "");
+  const hasEntrants = teamMode ? (data?.teams?.length ?? 0) > 0 : (data?.pairs.length ?? 0) > 0;
+  const unit = teamMode ? "equipos" : "parejas";
 
   return (
     <Paper elevation={0} sx={{ borderRadius: 4, overflow: "clip", border: "1px solid", borderColor: COLORS.lightBorder, bgcolor: "#fff", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)" }}>
@@ -228,18 +240,23 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
         {isLoading && <PageLoader />}
         {!isLoading && data && !hasMatches && (
           <Box sx={{ textAlign: "center", py: 2 }}>
-            <Typography variant="body2" color="text.secondary" mb={data.pairs.length > 0 ? 2 : 0}>
-              {data.pairs.length === 0 ? "El torneo aún no tiene parejas inscriptas." : "El fixture aún no fue generado."}
+            <Typography variant="body2" color="text.secondary" mb={hasEntrants ? 2 : 0}>
+              {!hasEntrants ? `El torneo aún no tiene ${unit} inscriptos.` : "El fixture aún no fue generado."}
             </Typography>
-            {data.pairs.length > 0 && (
+            {hasEntrants && (
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5, display: "block" }}>
-                  Parejas inscriptas
+                  {teamMode ? "Equipos inscriptos" : "Parejas inscriptas"}
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-                  {data.pairs.map(p => (
-                    <Chip key={p.id} size="small" label={`${p.player1.name} / ${p.player2.name}`} variant="outlined" sx={{ borderRadius: 2, borderColor: COLORS.lightBorder }} />
-                  ))}
+                  {teamMode
+                    ? (data.teams ?? []).map(t => (
+                        <Chip key={t.id} size="small" label={t.equipo.name} variant="outlined" sx={{ borderRadius: 2, borderColor: COLORS.lightBorder }} />
+                      ))
+                    : data.pairs.map(p => (
+                        <Chip key={p.id} size="small" label={p.player2 ? `${p.player1.name} / ${p.player2.name}` : p.player1.name} variant="outlined" sx={{ borderRadius: 2, borderColor: COLORS.lightBorder }} />
+                      ))
+                  }
                 </Box>
               </Box>
             )}
@@ -248,8 +265,8 @@ function TournamentCard({ username, tournament, index }: { username: string; tou
         {!isLoading && data && hasMatches && (
           <Box sx={{ overflow: "auto", WebkitOverflowScrolling: "touch", touchAction: "pan-x" }}>
             {isBracket
-              ? <BracketView matches={data.matches} sex={data.sex} readOnly />
-              : <RoundRobinList matches={data.matches} />
+              ? <BracketView matches={data.matches} sex={data.sex} readOnly teamMode={teamMode} />
+              : <RoundRobinList matches={data.matches} teamMode={teamMode} />
             }
           </Box>
         )}

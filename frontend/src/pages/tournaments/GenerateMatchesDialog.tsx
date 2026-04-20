@@ -24,7 +24,9 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { generateMatches } from "../../api/tournamentService";
 import { fetchCourts } from "../../api/courtService";
+import type { Court } from "../../types/Court";
 import { fetchBookingsByCourt } from "../../api/bookingService";
+import { useAuth } from "../../context/AuthContext";
 import { fetchProfile } from "../../api/profileService";
 import { fetchSettings } from "../../api/settingsService";
 import type { DaySchedule } from "../../types/ClubProfile";
@@ -80,9 +82,12 @@ interface Props {
   onGenerated: () => void;
   teamMode?: boolean;
   tennisMode?: boolean;
+  sport?: string;
 }
 
-export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated, teamMode = false, tennisMode = false }: Props) {
+export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated, teamMode = false, tennisMode = false, sport }: Props) {
+  const { user } = useAuth();
+  const multipleSports = (user?.sports ?? []).length > 1;
   const [date, setDate] = useState("");
   const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
@@ -116,11 +121,18 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
 
   const matchDuration = settings?.tournamentMatchDuration ?? 60;
 
-  const { data: courts = [] } = useQuery<{ id: number; name: string }[]>({
+  const { data: allCourts = [] } = useQuery<Court[]>({
     queryKey: ["courtsData"],
     queryFn: () => fetchCourts(),
     enabled: open,
   });
+
+  const courts = sport && multipleSports
+    ? allCourts.filter(c => {
+        if (sport.startsWith("FUTBOL")) return c.sport === "FUTBOL" && c.type === sport;
+        return c.sport === sport;
+      })
+    : allCourts;
 
   const { data: profile } = useQuery({
     queryKey: ["clubProfile"],

@@ -64,6 +64,7 @@ export const updateMatch = (matchId: number, data: {
   team2Id?: number | null;
   winnerId?: number | null;
   result?: string;
+  goals?: { playerName: string; teamId: number; minute: number }[] | null;
   status?: string;
   courtId?: number | null;
   liveStatus?: string | null;

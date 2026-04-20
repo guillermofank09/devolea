@@ -5,6 +5,7 @@ export interface CreateEquipoDto {
   name: string;
   city?: string;
   sex?: "MASCULINO" | "FEMENINO";
+  sport?: string;
   avatarUrl?: string;
 }
 

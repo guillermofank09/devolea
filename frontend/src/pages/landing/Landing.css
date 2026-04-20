@@ -54,6 +54,21 @@
   justify-content: space-between;
 }
 
+.lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lp-btn-wa {
+  padding: 9px 20px;
+  font-size: 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 .lp-btn-primary {
   background: #F5AD27;
@@ -160,39 +175,39 @@
   height: 52px;
   top: 18%;
   left: 8%;
-  opacity: 0.9;
+  opacity: 0.92;
   animation: ballFloat1 6s ease-in-out infinite, ballSpin 8s linear infinite;
-  filter: drop-shadow(0 8px 24px rgba(245, 173, 39, 0.5));
+  filter: drop-shadow(0 8px 20px rgba(245, 173, 39, 0.55));
 }
 
 .lp-ball-2 {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   top: 55%;
   right: 7%;
-  opacity: 0.7;
+  opacity: 0.82;
   animation: ballFloat2 8s ease-in-out infinite 1s, ballSpin 6s linear infinite reverse;
-  filter: drop-shadow(0 6px 16px rgba(245, 173, 39, 0.4));
+  filter: drop-shadow(0 6px 16px rgba(200, 85, 0, 0.5));
 }
 
 .lp-ball-3 {
-  width: 22px;
-  height: 22px;
-  top: 75%;
-  left: 14%;
-  opacity: 0.5;
+  width: 40px;
+  height: 40px;
+  top: 72%;
+  left: 11%;
+  opacity: 0.72;
   animation: ballFloat1 10s ease-in-out infinite 2s, ballSpin 5s linear infinite;
-  filter: drop-shadow(0 4px 10px rgba(245, 173, 39, 0.3));
+  filter: drop-shadow(0 5px 14px rgba(180, 196, 216, 0.55));
 }
 
 .lp-ball-4 {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   top: 12%;
   right: 15%;
-  opacity: 0.35;
+  opacity: 0.45;
   animation: ballFloat2 7s ease-in-out infinite 0.5s, ballSpin 10s linear infinite reverse;
-  filter: drop-shadow(0 10px 28px rgba(245, 173, 39, 0.3));
+  filter: drop-shadow(0 10px 28px rgba(160, 175, 192, 0.3));
 }
 
 @keyframes ballFloat1 {
@@ -218,8 +233,8 @@
 
 /* when combined with float, we need compound transforms */
 .lp-ball-1 { animation: ballBounce1 6s ease-in-out infinite, ballGlow 3s ease-in-out infinite alternate; }
-.lp-ball-2 { animation: ballBounce2 8s ease-in-out infinite 1s, ballGlow 4s ease-in-out infinite alternate 0.5s; }
-.lp-ball-3 { animation: ballBounce1 10s ease-in-out infinite 2s; }
+.lp-ball-2 { animation: ballBounce2 8s ease-in-out infinite 1s, ballGlowOrange 4s ease-in-out infinite alternate 0.5s; }
+.lp-ball-3 { animation: ballBounce1 10s ease-in-out infinite 2s, ballGlowWhite 4s ease-in-out infinite alternate 1s; }
 .lp-ball-4 { animation: ballBounce2 7s ease-in-out infinite 0.5s; }
 
 @keyframes ballBounce1 {
@@ -242,6 +257,16 @@
 @keyframes ballGlow {
   from { filter: drop-shadow(0 6px 16px rgba(245, 173, 39, 0.4)); }
   to   { filter: drop-shadow(0 12px 32px rgba(245, 173, 39, 0.7)); }
+}
+
+@keyframes ballGlowOrange {
+  from { filter: drop-shadow(0 6px 16px rgba(200, 96, 16, 0.35)); }
+  to   { filter: drop-shadow(0 12px 32px rgba(200, 96, 16, 0.65)); }
+}
+
+@keyframes ballGlowWhite {
+  from { filter: drop-shadow(0 4px 12px rgba(220, 225, 232, 0.25)); }
+  to   { filter: drop-shadow(0 8px 24px rgba(220, 225, 232, 0.55)); }
 }
 
 /* ── Court lines ───────────────────────────────────────────────────────────── */
@@ -428,7 +453,7 @@
   background: #ffffff;
   border: 1.5px solid #e8eaf0;
   border-radius: 20px;
-  padding: 32px 28px;
+  padding: 28px 28px 32px;
   transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
   animation: cardIn 0.5s ease both;
 }
@@ -444,11 +469,21 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.lp-card-emoji {
-  font-size: 32px;
-  display: block;
-  margin-bottom: 16px;
-  line-height: 1;
+.lp-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  transition: background 220ms ease;
+}
+
+.lp-card:hover .lp-card-icon {
+  background: #1a1a1a;
 }
 
 .lp-card-title {

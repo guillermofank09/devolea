@@ -511,6 +511,7 @@ export default function TournamentDetail() {
         onClose={() => setAddTeamOpen(false)}
         tournamentId={Number(id)}
         existingTeams={data.teams ?? []}
+        sport={data.sport}
       />
 
       <AddPlayerDialog
@@ -551,6 +552,7 @@ export default function TournamentDetail() {
         onGenerated={() => {}}
         teamMode={teamMode}
         tennisMode={tennisMode}
+        sport={data.sport}
       />
 
 
@@ -563,6 +565,7 @@ export default function TournamentDetail() {
           teams={data.teams ?? []}
           teamMode={teamMode}
           tournamentId={Number(id)}
+          sport={data.sport}
           totalRounds={isBracket && bracketMatches.length > 0 ? Math.max(...bracketMatches.map(m => m.round)) : undefined}
         />
       )}

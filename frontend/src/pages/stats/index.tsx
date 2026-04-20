@@ -32,6 +32,7 @@ import { fetchRevenue, fetchProfesorStats, fetchPlayerStats } from "../../api/st
 import PageLoader from "../../components/common/PageLoader";
 import type { CourtOccupancy, OccupancySummary, PlayerCategoryEntry } from "../../api/statsService";
 import PageHeader from "../../components/common/PageHeader";
+import { useAuth } from "../../context/AuthContext";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
@@ -431,6 +432,10 @@ type Period = "daily" | "weekly" | "monthly";
 
 export default function Stats() {
   const [period, setPeriod] = useState<Period>("monthly");
+  const { user } = useAuth();
+  const sports = user?.sports ?? ["PADEL"];
+  const hasPadel = sports.includes("PADEL");
+  const hasRacketSport = sports.includes("PADEL") || sports.includes("TENIS");
 
   const { data, isPending, isError } = useQuery({
     queryKey: ["stats", "revenue"],
@@ -596,35 +601,41 @@ export default function Stats() {
       </Grid>
 
       {/* Row 2: Profesor billing + Player distribution */}
-      <Grid container spacing={3} alignItems="flex-start" sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
+      {(hasRacketSport || hasPadel) && (
+        <Grid container spacing={3} alignItems="flex-start" sx={{ mb: 3 }}>
+          {hasRacketSport && (
+            <Grid size={{ xs: 12, md: hasPadel ? 7 : 12 }}>
+              <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
+            </Grid>
+          )}
+          {hasPadel && (
+            <Grid size={{ xs: 12, md: hasRacketSport ? 5 : 12 }}>
+              <Card elevation={0} sx={cardSx}>
+                <CardContent sx={{ p: 3 }}>
+                  <ChartHeader
+                    icon={<PeopleAltIcon />}
+                    title="Jugadores por Categoría"
+                    meta={!playerPending && !playerError && playerData && (
+                      <Typography variant="caption" color="text.secondary">
+                        {playerData.reduce((s, d) => s + d.total, 0)} en total
+                      </Typography>
+                    )}
+                  />
+                  {playerPending && <PageLoader />}
+                  {playerError && (
+                    <Alert severity="error" sx={{ borderRadius: 2 }}>
+                      No se pudieron cargar los datos de jugadores.
+                    </Alert>
+                  )}
+                  {!playerPending && !playerError && (
+                    <PlayerCategoryChart data={playerData ?? []} />
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
         </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Card elevation={0} sx={cardSx}>
-            <CardContent sx={{ p: 3 }}>
-              <ChartHeader
-                icon={<PeopleAltIcon />}
-                title="Jugadores por Categoría"
-                meta={!playerPending && !playerError && playerData && (
-                  <Typography variant="caption" color="text.secondary">
-                    {playerData.reduce((s, d) => s + d.total, 0)} en total
-                  </Typography>
-                )}
-              />
-              {playerPending && <PageLoader />}
-              {playerError && (
-                <Alert severity="error" sx={{ borderRadius: 2 }}>
-                  No se pudieron cargar los datos de jugadores.
-                </Alert>
-              )}
-              {!playerPending && !playerError && (
-                <PlayerCategoryChart data={playerData ?? []} />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      )}
     </Box>
   );
 }

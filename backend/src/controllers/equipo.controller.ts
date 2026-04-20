@@ -8,11 +8,11 @@ function getService() {
 }
 
 export const createEquipo = async (req: Request, res: Response) => {
-  const { name, city, sex, avatarUrl } = req.body;
+  const { name, city, sex, sport, avatarUrl } = req.body;
   if (!name) { res.status(400).json({ error: "El nombre es requerido" }); return; }
   const userId = req.authUser!.sub;
   try {
-    const equipo = await getService().create({ name, city, sex, avatarUrl }, userId);
+    const equipo = await getService().create({ name, city, sex, sport, avatarUrl }, userId);
     res.status(201).json(equipo);
   } catch {
     res.status(500).json({ error: "Error al crear el equipo" });
@@ -40,9 +40,9 @@ export const getEquipoById = async (req: Request, res: Response) => {
 };
 
 export const updateEquipo = async (req: Request, res: Response) => {
-  const { name, city, sex, avatarUrl } = req.body;
+  const { name, city, sex, sport, avatarUrl } = req.body;
   try {
-    const equipo = await getService().update(Number(req.params.id), { name, city, sex, avatarUrl });
+    const equipo = await getService().update(Number(req.params.id), { name, city, sex, sport, avatarUrl });
     if (!equipo) { res.status(404).json({ error: "Equipo no encontrado" }); return; }
     res.json(equipo);
   } catch {

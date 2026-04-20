@@ -6,6 +6,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import type { Equipo } from "../../types/Equipo";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
+import { SPORT_LABELS } from "../tournaments/AddEditTournament";
 
 interface Props {
   equipos: Equipo[];
@@ -35,7 +36,7 @@ function MobileList({ equipos, onEdit, onDelete }: Props) {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="body2" fontWeight={700} noWrap>{e.name}</Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {[e.city, e.sex === "MASCULINO" ? "Masculino" : e.sex === "FEMENINO" ? "Femenino" : null]
+                {[e.city, e.sex === "MASCULINO" ? "Masculino" : e.sex === "FEMENINO" ? "Femenino" : null, e.sport ? (SPORT_LABELS[e.sport] ?? e.sport) : null]
                   .filter(Boolean).join(" · ") || "—"}
               </Typography>
             </Box>
@@ -69,13 +70,14 @@ export default function EquipoTable({ equipos, onEdit, onDelete }: Props) {
             <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Equipo</TableCell>
             <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Ciudad</TableCell>
             <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Sexo</TableCell>
+            <TableCell sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Deporte</TableCell>
             <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>Acciones</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {equipos.length === 0 && (
             <TableRow>
-              <TableCell colSpan={4} align="center" sx={{ py: 5, color: "text.disabled" }}>
+              <TableCell colSpan={5} align="center" sx={{ py: 5, color: "text.disabled" }}>
                 No hay equipos
               </TableCell>
             </TableRow>
@@ -94,6 +96,11 @@ export default function EquipoTable({ equipos, onEdit, onDelete }: Props) {
               <TableCell>
                 <Typography variant="body2" color="text.secondary">
                   {e.sex === "MASCULINO" ? "Masculino" : e.sex === "FEMENINO" ? "Femenino" : "—"}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="body2" color="text.secondary">
+                  {e.sport ? (SPORT_LABELS[e.sport] ?? e.sport) : "—"}
                 </Typography>
               </TableCell>
               <TableCell align="right">
