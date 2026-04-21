@@ -83,6 +83,7 @@
   transition: background 150ms ease, transform 120ms ease, box-shadow 150ms ease;
   white-space: nowrap;
   letter-spacing: -0.1px;
+  text-decoration: none;
 }
 
 .lp-btn-primary:hover {
@@ -454,6 +455,7 @@
   border: 1.5px solid #e8eaf0;
   border-radius: 20px;
   padding: 28px 28px 32px;
+  text-align: center;
   transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
   animation: cardIn 0.5s ease both;
 }
@@ -470,20 +472,19 @@
 }
 
 .lp-card-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: #111111;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin: 0 auto 22px;
   flex-shrink: 0;
-  transition: background 220ms ease;
+  transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
 .lp-card:hover .lp-card-icon {
-  background: #1a1a1a;
+  transform: scale(1.08);
 }
 
 .lp-card-title {

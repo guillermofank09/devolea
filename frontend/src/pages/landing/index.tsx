@@ -143,96 +143,145 @@ function FootballBall({ className }: { className?: string }) {
 }
 
 // ─── Feature icons ────────────────────────────────────────────────────────────
-const IC = "#F5AD27";
-const SW = "1.75";
 
-const IconCalendar = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect x="3" y="4" width="18" height="17" rx="2.5" stroke={IC} strokeWidth={SW}/>
-    <path d="M3 9h18" stroke={IC} strokeWidth={SW}/>
-    <path d="M8 2v4M16 2v4" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <rect x="7" y="13" width="3" height="3" rx="0.75" fill={IC}/>
-    <rect x="14" y="13" width="3" height="3" rx="0.75" fill={IC}/>
-    <rect x="7" y="17" width="3" height="2" rx="0.75" fill={IC} opacity="0.45"/>
+const C = "#F5AD27";
+
+// Canchas y horarios — top-down court view with a clock badge
+const IconCourt = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* Court outline */}
+    <rect x="3" y="9" width="26" height="22" rx="3" fill={C} opacity="0.1" stroke={C} strokeWidth="2"/>
+    {/* Center horizontal line */}
+    <line x1="3" y1="20" x2="29" y2="20" stroke={C} strokeWidth="1.5"/>
+    {/* Center vertical line */}
+    <line x1="16" y1="9" x2="16" y2="31" stroke={C} strokeWidth="1.5"/>
+    {/* Left service lines */}
+    <line x1="3" y1="14" x2="16" y2="14" stroke={C} strokeWidth="1" opacity="0.5"/>
+    <line x1="3" y1="26" x2="16" y2="26" stroke={C} strokeWidth="1" opacity="0.5"/>
+    {/* Clock badge */}
+    <circle cx="33" cy="10" r="7" fill="white" stroke={C} strokeWidth="2.2"/>
+    <path d="M33 7.5V11l2 1.5" stroke={C} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-const IconTrophy = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M8 3h8v7a4 4 0 01-8 0V3z" stroke={IC} strokeWidth={SW} strokeLinejoin="round"/>
-    <path d="M8 6H5a2 2 0 100 4h3M16 6h3a2 2 0 010 4h-3" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <path d="M12 14v4" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <path d="M9 21h6" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <circle cx="12" cy="10" r="1.5" fill={IC} opacity="0.6"/>
+// Torneos y fixtures — tournament bracket diagram
+const IconBracket = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* 4 team bars */}
+    <line x1="2" y1="8"  x2="13" y2="8"  stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    <line x1="2" y1="17" x2="13" y2="17" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    <line x1="2" y1="26" x2="13" y2="26" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    <line x1="2" y1="35" x2="13" y2="35" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    {/* Vertical joins R1 */}
+    <path d="M13 8v9M13 26v9" stroke={C} strokeWidth="1.8" strokeLinecap="round"/>
+    {/* Semi bars */}
+    <line x1="13" y1="12.5" x2="26" y2="12.5" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    <line x1="13" y1="30.5" x2="26" y2="30.5" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    {/* Vertical join R2 */}
+    <path d="M26 12.5v18" stroke={C} strokeWidth="1.8" strokeLinecap="round"/>
+    {/* Final bar */}
+    <line x1="26" y1="21.5" x2="36" y2="21.5" stroke={C} strokeWidth="3.5" strokeLinecap="round"/>
+    {/* Gold star at finish */}
+    <circle cx="36" cy="21.5" r="3.5" fill={C}/>
   </svg>
 );
 
-const IconPeople = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <circle cx="8.5" cy="7" r="3" stroke={IC} strokeWidth={SW}/>
-    <path d="M2 20c0-3.5 2.9-6.5 6.5-6.5S15 16.5 15 20" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <circle cx="17" cy="8" r="2.5" stroke={IC} strokeWidth={SW} opacity="0.7"/>
-    <path d="M19.5 20c0-2.8-1.5-5-3.5-6" stroke={IC} strokeWidth={SW} strokeLinecap="round" opacity="0.7"/>
+// Jugadores y profesores — sports jersey (very specific to sports context)
+const IconJersey = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* Jersey body */}
+    <path d="M13 6h14l4 8H31v20H9V14H5l4-8z" fill={C} opacity="0.2" stroke={C} strokeWidth="2.2" strokeLinejoin="round"/>
+    {/* Collar */}
+    <path d="M14 6c0 3 3 5 6 5s6-2 6-5" stroke={C} strokeWidth="2" strokeLinecap="round" fill="none"/>
+    {/* Jersey number */}
+    <text x="20" y="27" textAnchor="middle" fontSize="10" fontWeight="800" fill={C} fontFamily="Inter,sans-serif">10</text>
   </svg>
 );
 
-const IconGlobe = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <circle cx="12" cy="12" r="9" stroke={IC} strokeWidth={SW}/>
-    <path d="M12 3c-2.8 3.2-4 6-4 9s1.2 5.8 4 9" stroke={IC} strokeWidth={SW}/>
-    <path d="M12 3c2.8 3.2 4 6 4 9s-1.2 5.8-4 9" stroke={IC} strokeWidth={SW}/>
-    <path d="M3.5 9.5h17M3.5 14.5h17" stroke={IC} strokeWidth={SW} opacity="0.7"/>
+// Información pública — megaphone / announcement
+const IconMegaphone = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* Speaker grille */}
+    <rect x="4" y="15" width="8" height="11" rx="2.5" fill={C} opacity="0.25" stroke={C} strokeWidth="2"/>
+    {/* Horn body */}
+    <path d="M12 15L30 7v27L12 26z" fill={C} opacity="0.15" stroke={C} strokeWidth="2.2" strokeLinejoin="round"/>
+    {/* Sound waves */}
+    <path d="M33 13.5c2 2.5 2 11 0 13.5" stroke={C} strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <path d="M36 10c3.5 4 3.5 16.5 0 21" stroke={C} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.45"/>
+    {/* Handle */}
+    <path d="M8 26l-2 6" stroke={C} strokeWidth="2.2" strokeLinecap="round"/>
   </svg>
 );
 
-const IconMoney = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect x="2" y="6" width="20" height="13" rx="2.5" stroke={IC} strokeWidth={SW}/>
-    <path d="M2 10.5h20" stroke={IC} strokeWidth={SW} opacity="0.7"/>
-    <circle cx="12" cy="15" r="2.2" stroke={IC} strokeWidth={SW}/>
-    <circle cx="6" cy="15" r="1" fill={IC} opacity="0.5"/>
-    <circle cx="18" cy="15" r="1" fill={IC} opacity="0.5"/>
+// Precios e ingresos — banknote with upward arrow
+const IconBanknote = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* Bill */}
+    <rect x="3" y="13" width="34" height="20" rx="4" fill={C} opacity="0.12" stroke={C} strokeWidth="2.2"/>
+    {/* Coin circle */}
+    <circle cx="20" cy="23" r="5.5" fill={C} opacity="0.2" stroke={C} strokeWidth="2"/>
+    {/* $ sign */}
+    <path d="M20 19v8M18.2 21h3a1.5 1.5 0 010 3h-2.2a1.5 1.5 0 000 3H21" stroke={C} strokeWidth="1.8" strokeLinecap="round"/>
+    {/* Corner dots */}
+    <circle cx="9" cy="23" r="2" fill={C} opacity="0.4"/>
+    <circle cx="31" cy="23" r="2" fill={C} opacity="0.4"/>
+    {/* Rising arrow (income) */}
+    <path d="M30 9l3-4 3 4" stroke={C} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <line x1="33" y1="5" x2="33" y2="13" stroke={C} strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
 
-const IconChart = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M3 20h18" stroke={IC} strokeWidth={SW} strokeLinecap="round"/>
-    <rect x="4.5" y="12" width="4" height="8" rx="1" fill={IC} opacity="0.5"/>
-    <rect x="10" y="6.5" width="4" height="13.5" rx="1" fill={IC}/>
-    <rect x="15.5" y="9.5" width="4" height="10.5" rx="1" fill={IC} opacity="0.7"/>
+// Estadísticas — dashboard with multiple KPI tiles
+const IconDashboard = () => (
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+    {/* Outer dashboard frame */}
+    <rect x="3" y="5" width="34" height="30" rx="4" fill={C} opacity="0.08" stroke={C} strokeWidth="2"/>
+    {/* Top bar */}
+    <rect x="3" y="5" width="34" height="7" rx="4" fill={C} opacity="0.2"/>
+    {/* Three KPI tiles */}
+    <rect x="7" y="16" width="8" height="7" rx="2" fill={C} opacity="0.35"/>
+    <rect x="17" y="16" width="8" height="7" rx="2" fill={C} opacity="0.6"/>
+    <rect x="27" y="16" width="8" height="7" rx="2" fill={C}/>
+    {/* Sparkline / trend */}
+    <path d="M7 29l5-3 6 2 6-5 8-2" stroke={C} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 // ─── Feature data ────────────────────────────────────────────────────────────
-const FEATURES: { icon: React.ReactNode; title: string; desc: string }[] = [
+const FEATURES: { icon: React.ReactNode; title: string; desc: string; color: string }[] = [
   {
-    icon: <IconCalendar />,
+    icon: <IconCourt />,
+    color: "#F5AD27",
     title: "Canchas y horarios",
-    desc: "Calendario visual para gestionar reservas, detectar conflictos automáticamente y configurar turnos fijos semanales.",
+    desc: "Vista de cancha con horarios disponibles, detección de conflictos y turnos fijos semanales.",
   },
   {
-    icon: <IconTrophy />,
+    icon: <IconBracket />,
+    color: "#F5AD27",
     title: "Torneos y fixtures",
-    desc: "Creá torneos, generá el fixture, registrá resultados y llevá el seguimiento de posiciones en tiempo real.",
+    desc: "Generá el fixture automáticamente, registrá resultados y seguí posiciones en tiempo real.",
   },
   {
-    icon: <IconPeople />,
+    icon: <IconJersey />,
+    color: "#F5AD27",
     title: "Jugadores y profesores",
-    desc: "Registrá jugadores con categoría y contacto. Visualizá los horarios de clases de cada profesor en su propio calendario.",
+    desc: "Registrá jugadores con categoría y contacto. Visualizá los horarios de clases de cada profesor.",
   },
   {
-    icon: <IconGlobe />,
+    icon: <IconMegaphone />,
+    color: "#F5AD27",
     title: "Información pública",
     desc: "Compartí horarios disponibles y torneos en curso con tus clientes sin que necesiten registrarse.",
   },
   {
-    icon: <IconMoney />,
+    icon: <IconBanknote />,
+    color: "#F5AD27",
     title: "Precios e ingresos",
-    desc: "Configurá tarifas por hora para jugadores y clases. Ajustá el precio por reserva y llevá el control de ingresos.",
+    desc: "Configurá tarifas por cancha y clase. Ajustá el precio por reserva y controlá tus ingresos.",
   },
   {
-    icon: <IconChart />,
+    icon: <IconDashboard />,
+    color: "#F5AD27",
     title: "Estadísticas",
     desc: "Visualizá la ocupación de cada cancha y los ingresos del día, semana y mes con gráficos claros.",
   },
@@ -323,7 +372,7 @@ export default function Landing() {
           <div className="lp-grid">
             {FEATURES.map((f, i) => (
               <div className="lp-card" key={f.title} style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="lp-card-icon">{f.icon}</div>
+                <div className="lp-card-icon" style={{ background: f.color + "18", border: `1.5px solid ${f.color}30` }}>{f.icon}</div>
                 <h3 className="lp-card-title">{f.title}</h3>
                 <p className="lp-card-desc">{f.desc}</p>
               </div>
