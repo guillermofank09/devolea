@@ -21,6 +21,7 @@ import RepeatIcon from "@mui/icons-material/Repeat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBookingsByProfesor, cancelBooking, cancelBookingGroup } from "../../api/bookingService";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
+import PageLoader from "../../components/common/PageLoader";
 import { stringToColor } from "../../utils/uiUtils";
 import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
@@ -106,7 +107,7 @@ export default function ProfesorScheduleModal({ profesor, open, onClose }: Props
                 <Typography variant={isMobile ? "subtitle1" : "h6"} component="span" fontWeight={700} noWrap>
                   {profesor.name}
                 </Typography>
-                {isFetching && <CircularProgress size={16} />}
+                {isFetching && <PageLoader size={16} />}
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                 Horarios de clases reservados · hacé clic en un bloque para cancelar

@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Fab,
   FormControl,
   InputAdornment,
@@ -26,6 +25,7 @@ import AddEditPlayer from "./AddEditPlayer";
 import DeleteDialog from "../../components/common/DeleteDialog";
 import PageHeader from "../../components/common/PageHeader";
 import TableSkeleton from "../../components/common/TableSkeleton";
+import PageLoader from "../../components/common/PageLoader";
 
 const ALL_CATEGORIES = (Object.keys(CATEGORY_ORDER) as PlayerCategory[]).sort(
   (a, b) => CATEGORY_ORDER[a] - CATEGORY_ORDER[b]
@@ -228,7 +228,7 @@ export default function Players() {
                 <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
               )}
             </Typography>
-            {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+            {isFetching && !isPending && <PageLoader size={14} />}
             {hasActiveFilters && (
               <Typography
                 variant="caption"

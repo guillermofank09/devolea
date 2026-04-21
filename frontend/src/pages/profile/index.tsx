@@ -346,12 +346,12 @@ export default function Profile() {
                       />
                       {logoUploading && (
                         <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(255,255,255,0.6)" }}>
-                          <CircularProgress size={24} />
+                          <PageLoader size={24} />
                         </Box>
                       )}
                     </Box>
                   ) : logoUploading ? (
-                    <CircularProgress size={24} />
+                    <PageLoader size={24} />
                   ) : (
                     <>
                       <UploadIcon sx={{ color: "text.disabled", fontSize: 22 }} />
@@ -474,7 +474,7 @@ export default function Profile() {
                       ...params.InputProps,
                       endAdornment: (
                         <>
-                          {addrLoading && <CircularProgress size={16} sx={{ mr: 1 }} />}
+                          {addrLoading && <PageLoader size={16} />}
                           {params.InputProps.endAdornment}
                         </>
                       ),

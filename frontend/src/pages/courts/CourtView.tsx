@@ -28,6 +28,7 @@ import type { CalendarEvent } from "../../types/Event";
 import type { Booking } from "../../types/Booking";
 import type { Court } from "../../types/Court";
 import BookingDialog from "./BookingDialog";
+import PageLoader from "../../components/common/PageLoader";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 
 const STATUS_LABEL: Record<Court["status"], string> = {
@@ -186,7 +187,7 @@ const CourtView = ({
                 {!isMobile && (
                   <Chip label={TYPE_LABEL[court.type] ?? court.type} variant="outlined" size="small" />
                 )}
-                {isFetching && <CircularProgress size={16} />}
+                {isFetching && <PageLoader size={16} />}
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                 {isMobile

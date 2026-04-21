@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Fab,
   FormControl,
   InputAdornment,
@@ -21,6 +20,7 @@ import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfesores, deleteProfesor } from "../../api/profesorService";
 import TableSkeleton from "../../components/common/TableSkeleton";
+import PageLoader from "../../components/common/PageLoader";
 import type { Profesor, ProfesorSex } from "../../types/Profesor";
 import ProfesorTable from "./ProfesorTable";
 import AddEditProfesor from "./AddEditProfesor";
@@ -174,7 +174,7 @@ export default function Profesores() {
                 <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
               )}
             </Typography>
-            {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+            {isFetching && !isPending && <PageLoader size={14} />}
             {sexFilter !== "" && (
               <Typography
                 variant="caption"

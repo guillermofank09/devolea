@@ -5,7 +5,31 @@ const spin = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
-export default function PageLoader() {
+interface Props {
+  /** If provided, renders as an inline spinner at that pixel size instead of full-screen overlay */
+  size?: number;
+}
+
+export default function PageLoader({ size }: Props = {}) {
+  if (size != null) {
+    return (
+      <Box
+        component="img"
+        src="/favicon.ico"
+        alt="Cargando…"
+        sx={{
+          width: size,
+          height: size,
+          animation: `${spin} 0.9s linear infinite`,
+          borderRadius: "50%",
+          display: "inline-block",
+          verticalAlign: "middle",
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
   return (
     <Box
       sx={{

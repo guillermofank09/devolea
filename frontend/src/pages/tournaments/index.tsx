@@ -7,7 +7,6 @@ import {
   CardActions,
   CardContent,
   Chip,
-  CircularProgress,
   Fab,
   FormControl,
   Grid,
@@ -277,7 +276,7 @@ export default function Tournaments() {
               <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
             )}
           </Typography>
-          {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+          {isFetching && !isPending && <PageLoader size={14} />}
           {hasActiveFilters && (
             <Typography
               variant="caption"

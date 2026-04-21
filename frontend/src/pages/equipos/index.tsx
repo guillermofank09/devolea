@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Alert, Box, Button, CircularProgress, Fab,
+  Alert, Box, Button, Fab,
   FormControl, InputAdornment, MenuItem, OutlinedInput, Select, Typography,
   useMediaQuery, useTheme,
 } from "@mui/material";
@@ -11,6 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchEquipos, deleteEquipo } from "../../api/equipoService";
 import TableSkeleton from "../../components/common/TableSkeleton";
+import PageLoader from "../../components/common/PageLoader";
 import type { Equipo, EquipoSex } from "../../types/Equipo";
 import EquipoTable from "./EquipoTable";
 import AddEditEquipo from "./AddEditEquipo";
@@ -147,7 +148,7 @@ export default function Equipos() {
                 <> · <span style={{ color: "#aaa" }}>{data.length} en total</span></>
               )}
             </Typography>
-            {isFetching && !isPending && <CircularProgress size={14} sx={{ color: "text.disabled" }} />}
+            {isFetching && !isPending && <PageLoader size={14} />}
             {sexFilter !== "" && (
               <Typography
                 variant="caption" color="text.disabled"

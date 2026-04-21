@@ -22,6 +22,7 @@ import type { TournamentTeam } from "../../types/Tournament";
 import type { Equipo } from "../../types/Equipo";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import { FORM_LABEL_SX } from "../../styles/formStyles";
+import PageLoader from "../../components/common/PageLoader";
 
 interface Props {
   open: boolean;
@@ -84,7 +85,7 @@ export default function AddTeamDialog({ open, onClose, tournamentId, existingTea
           <Box>
             <FormLabel sx={FORM_LABEL_SX}>Equipo</FormLabel>
             {isPending ? (
-              <CircularProgress size={20} />
+              <PageLoader size={20} />
             ) : available.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 No hay equipos disponibles para agregar.
