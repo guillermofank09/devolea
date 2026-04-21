@@ -52,6 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 
 .lp-nav-actions {
@@ -456,19 +457,21 @@
   border-radius: 20px;
   padding: 28px 28px 32px;
   text-align: center;
-  transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
-  animation: cardIn 0.5s ease both;
+  /* initial hidden state — revealed by IntersectionObserver */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.45s ease, transform 0.45s ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
-.lp-card:hover {
+.lp-card--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lp-card--visible:hover {
   border-color: #F5AD27;
   transform: translateY(-4px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-}
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 .lp-card-icon {
@@ -633,6 +636,178 @@
   background: rgba(255,255,255,0.12);
 }
 
+/* ── Phone frame ───────────────────────────────────────────────────────────── */
+.lp-phone {
+  width: 105px;
+  background: #1e1e1e;
+  border-radius: 24px;
+  padding: 10px 7px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 24px 60px rgba(0,0,0,0.6);
+  margin-left: 20px;
+  z-index: 2;
+  position: relative;
+  flex-shrink: 0;
+  animation: laptopFloat 6s ease-in-out infinite 1.5s;
+}
+
+.lp-phone-island {
+  width: 34px;
+  height: 9px;
+  background: #000;
+  border-radius: 5px;
+  margin: 0 auto 6px;
+}
+
+.lp-phone-screen {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #111;
+}
+
+/* Show the mobile screenshot in full — no cropping */
+.lp-phone-screen .lp-screenshot {
+  object-fit: contain;
+  height: auto;
+}
+
+.lp-phone-home {
+  width: 30px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  margin: 8px auto 0;
+}
+
+
+/* ─── Hero note ─────────────────────────────────────────────────────────────── */
+.lp-hero-note {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.38);
+  margin: 18px 0 0;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Trust strip ───────────────────────────────────────────────────────────── */
+.lp-trust-strip {
+  background: #ffffff;
+  border-bottom: 1px solid #ebebeb;
+  padding: 36px 24px;
+}
+
+.lp-trust-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.lp-trust-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.lp-trust-num {
+  font-family: 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: #111111;
+  line-height: 1;
+  letter-spacing: -1px;
+  display: block;
+}
+
+.lp-trust-desc {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  display: block;
+  text-align: center;
+}
+
+.lp-show-mobile { display: none; }
+
+.lp-trust-vline {
+  width: 1px;
+  height: 44px;
+  background: #e8eaf0;
+  flex-shrink: 0;
+}
+
+/* trust-strip mobile handled in main responsive block below */
+
+/* ─── How it works ──────────────────────────────────────────────────────────── */
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  position: relative;
+}
+
+/* Connector line between step numbers */
+.lp-steps::before {
+  content: '';
+  position: absolute;
+  top: 27px; /* half of step-num height */
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 2px;
+  background: linear-gradient(to right, #F5AD27 0%, #F5AD27 100%);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.lp-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.lp-step-num {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #F5AD27;
+  color: #111111;
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(245, 173, 39, 0.35);
+}
+
+.lp-step-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111111;
+  margin: 0 0 10px;
+  letter-spacing: -0.3px;
+  text-transform: none;
+}
+
+.lp-step-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.68;
+  margin: 0;
+}
+
+/* steps mobile handled in main responsive block below */
 
 /* ─── CTA section ───────────────────────────────────────────────────────────── */
 .lp-cta-section {
@@ -651,89 +826,420 @@
 .lp-cta .lp-section-title { margin: 0; }
 .lp-cta .lp-section-sub   { margin: 0; }
 
-/* ─── Footer ────────────────────────────────────────────────────────────────── */
-.lp-footer {
-  background: #0a0a0a;
-  padding: 32px 24px;
+.lp-cta-actions {
   display: flex;
-  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
 }
 
-.lp-footer-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* cta-actions mobile handled in main responsive block below */
 
 .lp-footer-text {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.35);
   margin: 0;
   text-align: center;
 }
 
-/* ─── Responsive ────────────────────────────────────────────────────────────── */
-@media (max-width: 1000px) {
-  .lp-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* ─── Nav links ─────────────────────────────────────────────────────────────── */
+.lp-nav-links {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
+.lp-nav-links a {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.55);
+  text-decoration: none;
+  transition: color 150ms ease;
+  white-space: nowrap;
+}
+
+.lp-nav-links a:hover { color: #111111; }
+
+@media (max-width: 860px) {
+  .lp-nav-links { display: none; }
+}
+
+/* ─── Pricing ────────────────────────────────────────────────────────────────── */
+.lp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.lp-pricing-card {
+  background: #ffffff;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 24px;
+  padding: 36px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+
+.lp-pricing-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+}
+
+.lp-pricing-card--featured {
+  border: 2px solid #F5AD27;
+  box-shadow: 0 8px 40px rgba(245, 173, 39, 0.18);
+  transform: translateY(-8px);
+  position: relative;
+}
+
+.lp-pricing-card--featured:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 16px 52px rgba(245, 173, 39, 0.24);
+}
+
+.lp-pricing-badge {
+  display: inline-block;
+  background: #F5AD27;
+  color: #111111;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.lp-pricing-courts {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #F5AD27;
+  margin: 0 0 6px;
+}
+
+.lp-pricing-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111111;
+  margin: 0 0 20px;
+  letter-spacing: -0.3px;
+  text-transform: none;
+}
+
+.lp-pricing-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.lp-pricing-currency {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111111;
+  line-height: 1;
+}
+
+.lp-pricing-price {
+  font-family: 'Inter', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.lp-pricing-period {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  align-self: flex-end;
+  padding-bottom: 4px;
+}
+
+.lp-pricing-sub {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.lp-pricing-features {
+  list-style: none;
+  padding: 20px 0;
+  margin: 0 0 28px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  text-align: left;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lp-pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.lp-pricing-features li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background: #F5AD27;
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%23111' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
+
+.lp-pricing-cta {
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  box-sizing: border-box;
+}
+
+.lp-pricing-note {
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 28px;
+}
+
+/* pricing mobile handled in main responsive block below */
+
+/* ─── Footer (improved) ──────────────────────────────────────────────────────── */
+.lp-footer {
+  background: #0a0a0a;
+  padding: 64px 24px 0;
+}
+
+.lp-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 240px;
+}
+
+.lp-footer-tagline {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.lp-footer-cols {
+  display: flex;
+  gap: 56px;
+}
+
+.lp-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lp-footer-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 0 4px;
+}
+
+.lp-footer-link {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition: color 150ms ease;
+  line-height: 1;
+}
+
+.lp-footer-link:hover { color: #ffffff; }
+
+.lp-footer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+}
+
+.lp-footer-bottom {
+  padding: 20px 0;
+  text-align: center;
+}
+
+/* footer mobile handled in main responsive block below */
+
+/* ─── prefers-reduced-motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lp-ball-1,
+  .lp-ball-2,
+  .lp-ball-3,
+  .lp-ball-4   { animation: none; }
+
+  .lp-laptop   { animation: none; }
+  .lp-phone    { animation: none; }
+
+  .lp-card     { opacity: 1; transform: none; transition: none; }
+  .lp-card--visible { opacity: 1; transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — mobile-first breakpoints
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet: 2-col feature grid ───────────────────────────────────────────── */
+@media (max-width: 1000px) {
+  .lp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Tablet: split section stacks, pricing grid stacks ───────────────────── */
 @media (max-width: 860px) {
   .lp-split {
     grid-template-columns: 1fr;
-    gap: 52px;
+    gap: 40px;
   }
+  .lp-screens-wrap { order: -1; justify-content: center; }
 
-  .lp-screens-wrap {
-    order: -1;
-  }
-}
-
-@media (max-width: 860px) {
   .lp-laptop-top  { width: 260px; }
   .lp-laptop-base { width: 294px; }
+  .lp-phone       { width: 85px; border-radius: 20px; margin-left: 14px; }
+
+  .lp-pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .lp-pricing-card--featured { transform: none; }
+  .lp-pricing-card--featured:hover { transform: translateY(-3px); }
+
+  .lp-section-header { margin-bottom: 48px; }
 }
 
-@media (max-width: 600px) {
-  .lp-nav-inner {
-    padding: 0 20px;
-  }
-
-  .lp-hero {
-    padding: 90px 20px 72px;
-  }
-
-  .lp-hero-title {
-    letter-spacing: -1.5px;
-  }
-
-  .lp-grid {
+/* ── Mobile: steps horizontal layout, footer stacks ─────────────────────── */
+@media (max-width: 700px) {
+  .lp-steps {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 32px;
   }
+  .lp-steps::before { display: none; }
+  .lp-step { flex-direction: row; text-align: left; gap: 18px; align-items: flex-start; }
+  .lp-step-num { margin-bottom: 0; flex-shrink: 0; width: 44px; height: 44px; font-size: 18px; }
+  .lp-step-copy { flex: 1; }
 
-  .lp-section {
-    padding: 64px 20px;
+  .lp-footer-inner { flex-direction: column; gap: 32px; }
+  .lp-footer-cols  { gap: 32px; }
+}
+
+/* ── Mobile: primary breakpoint ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Navbar */
+  .lp-nav-inner { padding: 0 16px; }
+  .lp-btn-wa { padding: 7px 14px; font-size: 13px; }
+  .lp-btn-outline.lp-nav-login { display: none; }
+
+  /* Hero */
+  .lp-hero { padding: 86px 20px 64px; }
+  .lp-hero-title { letter-spacing: -1.5px; }
+  .lp-hero-sub { font-size: 15px; margin-bottom: 32px; }
+  .lp-ball-4 { display: none; }
+
+  /* Trust strip — force single row, compact, top-aligned */
+  .lp-trust-strip { padding: 20px 16px; }
+  .lp-trust-row {
+    flex-wrap: nowrap;
+    gap: 0;
+    justify-content: space-between;
+    align-items: flex-start;  /* numbers all on the same baseline */
   }
-
-  .lp-footer-inner {
-    flex-direction: column;
+  .lp-trust-stat {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
     align-items: center;
-    gap: 8px;
+    text-align: center;
+    padding: 0 4px;
+  }
+  .lp-trust-num      { font-size: 16px; letter-spacing: -0.5px; }
+  .lp-trust-desc     { font-size: 10px; line-height: 1.3; }
+  .lp-show-mobile    { display: inline; }
+  .lp-hide-mobile    { display: none; }
+  .lp-trust-vline {
+    width: 1px;
+    height: 32px;
+    background: #e0e2e8;
+    flex-shrink: 0;
+    margin: 4px 4px 0;  /* top margin aligns with the number row */
   }
 
-  .lp-ball-4 {
-    display: none;
-  }
+  /* Sections */
+  .lp-section { padding: 56px 20px; }
+  .lp-section-header { margin-bottom: 36px; }
+  .lp-section-sub { font-size: 15px; }
 
-  .lp-btn-wa {
-    display: none;
-  }
+  /* Feature cards */
+  .lp-grid { grid-template-columns: 1fr; gap: 12px; }
+  .lp-card { padding: 22px 20px 26px; }
+  .lp-card-icon { width: 58px; height: 58px; border-radius: 14px; }
 
-  .lp-laptop-top  { width: 220px; }
-  .lp-laptop-base { width: 248px; }
+  /* Pricing */
+  .lp-pricing-card { padding: 28px 20px; }
+  .lp-pricing-price { font-size: 34px; }
+
+  /* Public sharing */
+  .lp-split { gap: 32px; }
+  .lp-laptop-top  { width: 200px; }
+  .lp-laptop-base { width: 226px; }
+  .lp-phone       { width: 64px; border-radius: 14px; margin-left: 10px; padding: 7px 5px 9px; }
+  .lp-phone-island { width: 22px; height: 7px; }
+  .lp-phone-home  { width: 20px; margin-top: 5px; }
+
+  /* CTA section */
+  .lp-cta-section { padding: 64px 20px; }
+  .lp-cta-actions { flex-direction: column; align-items: stretch; width: 100%; }
+  .lp-cta-actions .lp-btn-primary,
+  .lp-cta-actions .lp-btn-outline { width: 100%; text-align: center; }
+}
+
+/* ── Extra small: stack hero CTAs ────────────────────────────────────────── */
+@media (max-width: 420px) {
+  .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .lp-hero-cta .lp-btn-primary,
+  .lp-hero-cta .lp-btn-ghost { width: 100%; text-align: center; justify-content: center; }
+  .lp-btn-xl { padding: 14px 20px; font-size: 15px; }
+  .lp-trust-num  { font-size: 14px; }
+  .lp-trust-desc { font-size: 9px; }
+  .lp-trust-vline { margin-top: 3px; }
 }

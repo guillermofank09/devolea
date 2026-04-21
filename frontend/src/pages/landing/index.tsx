@@ -1,7 +1,8 @@
-import type React from "react";
+import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import screenshotDesktop from "../../assets/desktop-screenshot.png";
+import screenshotMobile from "../../assets/mobile-screenshot.png";
 import "./Landing.css";
 
 // ─── Sport ball SVGs ─────────────────────────────────────────────────────────
@@ -248,7 +249,7 @@ const IconDashboard = () => (
 );
 
 // ─── Feature data ────────────────────────────────────────────────────────────
-const FEATURES: { icon: React.ReactNode; title: string; desc: string; color: string }[] = [
+const FEATURES: { icon: ReactNode; title: string; desc: string; color: string }[] = [
   {
     icon: <IconCourt />,
     color: "#F5AD27",
@@ -287,9 +288,46 @@ const FEATURES: { icon: React.ReactNode; title: string; desc: string; color: str
   },
 ];
 
+// ─── Shared WhatsApp URL ──────────────────────────────────────────────────────
+const WA_URL = `https://wa.me/${import.meta.env.VITE_CONTACT_PHONE}?text=${encodeURIComponent("Hola! Me gustaría iniciar el período de prueba con Devolea para ver como funciona la aplicación en mi Club")}`;
+
+// ─── How it works steps ───────────────────────────────────────────────────────
+const STEPS = [
+  {
+    title: "Registrá tu complejo",
+    desc: "Creá tu cuenta en minutos, configurá el nombre, los deportes que ofrecés y agregá tus canchas.",
+  },
+  {
+    title: "Configurá horarios y precios",
+    desc: "Definí los turnos disponibles, las tarifas por cancha y los horarios de clases con profesores.",
+  },
+  {
+    title: "Empezá a gestionar",
+    desc: "Tomá reservas, creá torneos y compartí la disponibilidad con tus clientes desde el día uno.",
+  },
+];
+
 // ─── Landing page ────────────────────────────────────────────────────────────
 export default function Landing() {
   const navigate = useNavigate();
+
+  // Cambio 6 — animate cards when they enter the viewport
+  useEffect(() => {
+    const cards = document.querySelectorAll(".lp-card");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("lp-card--visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    cards.forEach((c) => observer.observe(c));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="lp">
@@ -297,16 +335,22 @@ export default function Landing() {
       <nav className="lp-nav">
         <div className="lp-nav-inner">
           <img src={logo} alt="Devolea" className="lp-nav-logo" />
+          {/* Cambio 11 — anchor links in desktop nav */}
+          <div className="lp-nav-links">
+            <a href="#features">Funcionalidades</a>
+            <a href="#como-funciona">Cómo funciona</a>
+            <a href="#precios">Precios</a>
+          </div>
           <div className="lp-nav-actions">
             <a
               className="lp-btn-primary lp-btn-wa"
-              href={`https://wa.me/${import.meta.env.VITE_CONTACT_PHONE}?text=${encodeURIComponent("Hola! Me gustaría iniciar el período de prueba con Devolea para ver como funciona la aplicación en mi Club")}`}
+              href={WA_URL}
               target="_blank"
               rel="noopener noreferrer"
             >
               Prueba Devolea
             </a>
-            <button className="lp-btn-outline" onClick={() => navigate("/login")}>
+            <button className="lp-btn-outline lp-nav-login" onClick={() => navigate("/login")}>
               Iniciar sesión
             </button>
           </div>
@@ -339,16 +383,19 @@ export default function Landing() {
             Reservas, torneos, jugadores y estadísticas.
           </p>
           <div className="lp-hero-cta">
-            <button className="lp-btn-primary" onClick={() => navigate("/login")}>
-              Comenzar ahora
-            </button>
-            <button
-              className="lp-btn-ghost"
-              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+            <a
+              className="lp-btn-primary lp-btn-xl"
+              href={WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              Ver funcionalidades ↓
+              Quiero una prueba gratuita
+            </a>
+            <button className="lp-btn-ghost" onClick={() => navigate("/login")}>
+              Ya tengo cuenta →
             </button>
           </div>
+          <p className="lp-hero-note">Sin tarjeta de crédito · Configuración en minutos</p>
         </div>
 
         <div className="lp-hero-scroll-hint" aria-hidden>
@@ -357,6 +404,36 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ── Trust strip ────────────────────────────────────────────────── */}
+      <div className="lp-trust-strip">
+        <div className="lp-container">
+          <div className="lp-trust-row">
+            <div className="lp-trust-stat">
+              <span className="lp-trust-num">5 min</span>
+              <span className="lp-trust-desc">para empezar</span>
+            </div>
+            <div className="lp-trust-vline" />
+            <div className="lp-trust-stat">
+              <span className="lp-trust-num">Multiples</span>
+              <span className="lp-trust-desc">
+                <span className="lp-hide-mobile">deportes soportados</span>
+                <span className="lp-show-mobile">deportes</span>
+              </span>
+            </div>
+            <div className="lp-trust-vline" />
+            <div className="lp-trust-stat">
+              <span className="lp-trust-num">100%</span>
+              <span className="lp-trust-desc">desde el celular</span>
+            </div>
+            <div className="lp-trust-vline" />
+            <div className="lp-trust-stat">
+              <span className="lp-trust-num">Gratis</span>
+              <span className="lp-trust-desc">para probar</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ── Features ───────────────────────────────────────────────────── */}
       <section className="lp-section lp-section-light" id="features">
@@ -371,13 +448,107 @@ export default function Landing() {
 
           <div className="lp-grid">
             {FEATURES.map((f, i) => (
-              <div className="lp-card" key={f.title} style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="lp-card" key={f.title} style={{ transitionDelay: `${i * 80}ms` }}>
                 <div className="lp-card-icon" style={{ background: f.color + "18", border: `1.5px solid ${f.color}30` }}>{f.icon}</div>
                 <h3 className="lp-card-title">{f.title}</h3>
                 <p className="lp-card-desc">{f.desc}</p>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── How it works ───────────────────────────────────────────────── */}
+      <section className="lp-section" id="como-funciona">
+        <div className="lp-container">
+          <div className="lp-section-header">
+            <p className="lp-eyebrow">¿Cómo funciona?</p>
+            <h2 className="lp-section-title">Configurá tu complejo en 3 pasos</h2>
+            <p className="lp-section-sub">Sin instalaciones ni configuraciones complejas.</p>
+          </div>
+          <div className="lp-steps">
+            {STEPS.map((step, i) => (
+              <div className="lp-step" key={i}>
+                <div className="lp-step-num">{i + 1}</div>
+                <div className="lp-step-copy">
+                  <h3 className="lp-step-title">{step.title}</h3>
+                  <p className="lp-step-desc">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pricing ────────────────────────────────────────────────────── */}
+      <section className="lp-section lp-section-light" id="precios">
+        <div className="lp-container">
+          <div className="lp-section-header">
+            <p className="lp-eyebrow">Precios</p>
+            <h2 className="lp-section-title">Elegí tu plan</h2>
+            <p className="lp-section-sub">Todos los planes incluyen 2 semanas de prueba gratuita. Sin tarjeta de crédito.</p>
+          </div>
+          <div className="lp-pricing-grid">
+            {[
+              {
+                name: "Starter",
+                courts: "Hasta 2 canchas",
+                price: "29.999",
+                desc: "Para complejos pequeños que quieren empezar a organizarse.",
+                featured: false,
+              },
+              {
+                name: "Pro",
+                courts: "Hasta 5 canchas",
+                price: "49.999",
+                desc: "El más elegido. Ideal para complejos medianos en crecimiento.",
+                featured: true,
+              },
+              {
+                name: "Full",
+                courts: "8 canchas o más",
+                price: "69.000",
+                desc: "Para grandes complejos con alta demanda y múltiples deportes.",
+                featured: false,
+              },
+            ].map((plan) => (
+              <div
+                key={plan.name}
+                className={`lp-pricing-card${plan.featured ? " lp-pricing-card--featured" : ""}`}
+              >
+                {plan.featured && <span className="lp-pricing-badge">Más popular</span>}
+                <p className="lp-pricing-courts">{plan.courts}</p>
+                <h3 className="lp-pricing-name">{plan.name}</h3>
+                <div className="lp-pricing-amount">
+                  <span className="lp-pricing-currency">$</span>
+                  <span className="lp-pricing-price">{plan.price}</span>
+                  <span className="lp-pricing-period">ARS/mes</span>
+                </div>
+                <p className="lp-pricing-sub">{plan.desc}</p>
+                <ul className="lp-pricing-features">
+                  {[
+                    "Reservas y turnos fijos",
+                    "Torneos y fixtures",
+                    "Jugadores y profesores",
+                    "Estadísticas e informes",
+                    "Acceso público para clientes",
+                    "Soporte personalizado",
+                  ].map((feat) => (
+                    <li key={feat}>{feat}</li>
+                  ))}
+                </ul>
+                <a
+                  className={plan.featured ? "lp-btn-primary" : "lp-btn-outline lp-pricing-cta"}
+                  href={WA_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Empezar prueba gratis
+                </a>
+              </div>
+            ))}
+          </div>
+          <p className="lp-pricing-note">Todos los planes incluyen 2 semanas de prueba · Sin permanencia · Cancelás cuando quieras</p>
         </div>
       </section>
 
@@ -404,6 +575,15 @@ export default function Landing() {
                 <li key={item}>{item}</li>
               ))}
             </ul>
+            <a
+              className="lp-btn-primary"
+              href={WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginTop: 24, alignSelf: "flex-start" }}
+            >
+              Probá gratis →
+            </a>
           </div>
 
           {/* Screenshots */}
@@ -421,6 +601,14 @@ export default function Landing() {
               </div>
             </div>
 
+            {/* Phone frame */}
+            <div className="lp-phone">
+              <div className="lp-phone-island" />
+              <div className="lp-phone-screen">
+                <img src={screenshotMobile} alt="Vista mobile" className="lp-screenshot" />
+              </div>
+              <div className="lp-phone-home" />
+            </div>
           </div>
         </div>
       </section>
@@ -428,28 +616,32 @@ export default function Landing() {
       {/* ── CTA ────────────────────────────────────────────────────────── */}
       <section className="lp-cta-section">
         <div className="lp-container lp-cta">
-          <h2 className="lp-section-title">Empezá hoy mismo</h2>
+          <p className="lp-eyebrow">Sin compromisos</p>
+          <h2 className="lp-section-title">Empezá tu prueba gratuita hoy</h2>
           <p className="lp-section-sub">
-            Configurá tu complejo en minutos y comenzá a gestionar tus canchas de forma profesional.
+            Sin tarjeta de crédito. Sin contratos. Probá todas las funciones durante el período de prueba y decidís después.
           </p>
-          <a
-            className="lp-btn-primary lp-btn-xl"
-            href={`https://wa.me/${import.meta.env.VITE_CONTACT_PHONE}?text=${encodeURIComponent("Hola! Me gustaría iniciar el período de prueba con Devolea para ver como funciona la aplicación en mi Club")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Prueba Devolea
-          </a>
+          <div className="lp-cta-actions">
+            <a
+              className="lp-btn-primary lp-btn-xl"
+              href={WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Escribinos por WhatsApp
+            </a>
+            <button className="lp-btn-outline lp-btn-xl" onClick={() => navigate("/login")}>
+              Ya tengo cuenta →
+            </button>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="lp-footer">
-        <div className="lp-footer-inner">
-          <p className="lp-footer-text">
-            © {new Date().getFullYear()} Devolea · Software de Gestión de Canchas y Torneos
-          </p>
-        </div>
+          <div className="lp-footer-bottom">
+            <p className="lp-footer-text">© {new Date().getFullYear()} Devolea · Todos los derechos reservados</p>
+          </div>
       </footer>
     </div>
   );
