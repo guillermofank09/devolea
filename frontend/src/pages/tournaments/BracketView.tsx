@@ -234,7 +234,7 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
 
   return (
     <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 4, alignItems: "flex-start" }}>
-      <Box sx={{ flex: 1, minWidth: 0, overflow: "auto", WebkitOverflowScrolling: "touch", touchAction: "pan-x", pb: 2 }}>
+      <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto", overflowY: "visible", pb: 2 }}>
         {bracketContent}
       </Box>
       {(champion || championLabel) && (

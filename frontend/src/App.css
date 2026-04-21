@@ -33,7 +33,7 @@ body {
 .page-main {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;   /* prevent horizontal overflow breaking touch scroll */
+  overflow-x: clip;     /* clip stray overflow without creating a scroll container, so children with overflow-x:auto still work */
   padding: 2rem;
   /* iOS safe area for home indicator / bottom bar */
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
