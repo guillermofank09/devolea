@@ -1175,6 +1175,8 @@
   .lp-hero-title { letter-spacing: -1.5px; }
   .lp-hero-sub { font-size: 15px; margin-bottom: 32px; }
   .lp-ball-4 { display: none; }
+  .lp-hero-cta .lp-btn-ghost { display: none; }
+  .lp-hero-cta .lp-btn-primary { width: 100%; max-width: 340px; justify-content: center; }
 
   /* Trust strip — force single row, compact, top-aligned */
   .lp-trust-strip { padding: 20px 16px; }
@@ -1236,8 +1238,7 @@
 /* ── Extra small: stack hero CTAs ────────────────────────────────────────── */
 @media (max-width: 420px) {
   .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
-  .lp-hero-cta .lp-btn-primary,
-  .lp-hero-cta .lp-btn-ghost { width: 100%; text-align: center; justify-content: center; }
+  .lp-hero-cta .lp-btn-primary { width: 100%; max-width: 100%; text-align: center; justify-content: center; }
   .lp-btn-xl { padding: 14px 20px; font-size: 15px; }
   .lp-trust-num  { font-size: 14px; }
   .lp-trust-desc { font-size: 9px; }
