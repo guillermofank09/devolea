@@ -22,6 +22,7 @@ import SportsVolleyballIcon from "@mui/icons-material/SportsVolleyball";
 import SportsBasketballIcon from "@mui/icons-material/SportsBasketball";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Court } from "../../types/Court";
+import type { Booking } from "../../types/Booking";
 import { deleteCourt } from "../../api/courtService";
 import { SPORT_LABEL } from "../../constants/sports";
 import CourtStatusDialog from "./CourtStatusDialog";
@@ -31,6 +32,7 @@ interface Props {
   court: Court;
   onSelect: (court: Court) => void;
   hourlyRate?: number;
+  todayBookings?: Booking[];
 }
 
 const STATUS_CONFIG: Record<
@@ -66,7 +68,11 @@ const TYPE_CONFIG: Partial<Record<Court["type"], { label: string; icon: React.Re
   PARQUET:     { label: "Parquet",    icon: <RoofingIcon sx={{ fontSize: 13, mr: 0.5 }} /> },
 };
 
-export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
+function fmtTime(d: Date) {
+  return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+export default function CourtCard({ court, onSelect, hourlyRate, todayBookings = [] }: Props) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -74,6 +80,12 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
   const { name, status, type, sport } = court;
   const { label, borderColor, chipColor } = STATUS_CONFIG[status] ?? STATUS_CONFIG["AVAILABLE"];
   const typeInfo = TYPE_CONFIG[type];
+
+  const now = new Date();
+  const busyBooking = todayBookings.find(
+    (b) => new Date(b.startTime) <= now && new Date(b.endTime) > now,
+  );
+  const nextBooking = todayBookings.find((b) => new Date(b.startTime) > now);
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteCourt(court.id),
@@ -144,6 +156,17 @@ export default function CourtCard({ court, onSelect, hourlyRate }: Props) {
               ${hourlyRate}/hora
             </Typography>
           )}
+
+          {/* Real-time occupancy */}
+          {busyBooking ? (
+            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "#d32f2f", fontWeight: 600 }}>
+              Ocupada hasta {fmtTime(new Date(busyBooking.endTime))}
+            </Typography>
+          ) : nextBooking ? (
+            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "text.secondary" }}>
+              Próxima: {fmtTime(new Date(nextBooking.startTime))}
+            </Typography>
+          ) : null}
         </CardContent>
 
         <Divider sx={{ mx: 2, my: 1.25 }} />

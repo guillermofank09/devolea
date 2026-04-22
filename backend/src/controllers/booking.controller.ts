@@ -31,6 +31,16 @@ export const createBooking = async (req: Request, res: Response) => {
   }
 };
 
+export const getTodayBookings = async (req: Request, res: Response) => {
+  const userId = req.authUser!.sub;
+  try {
+    const bookings = await getService().getTodayBookings(userId);
+    res.json(bookings);
+  } catch {
+    res.status(500).json({ error: "Error al obtener reservas de hoy" });
+  }
+};
+
 export const getBookingsByProfesor = async (req: Request, res: Response) => {
   const profesorId = Number(req.params.profesorId);
   if (isNaN(profesorId)) { res.status(400).json({ error: "profesorId inválido" }); return; }

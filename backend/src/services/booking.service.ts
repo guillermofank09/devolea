@@ -85,6 +85,21 @@ export class BookingService {
     return created;
   }
 
+  async getTodayBookings(userId: number): Promise<Booking[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    return await this.repo.find({
+      where: {
+        userId,
+        status: "CONFIRMED",
+        startTime: Between(startOfDay, endOfDay),
+      },
+      order: { startTime: "ASC" },
+    });
+  }
+
   async getByCourtId(courtId: number): Promise<Booking[]> {
     return await this.repo.find({
       where: { court: { id: courtId }, status: Not("CANCELLED") },

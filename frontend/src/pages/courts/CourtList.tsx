@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Court, CourtStatus } from "../../types/Court";
+import type { Booking } from "../../types/Booking";
 import type { AppSettings } from "../../types/AppSettings";
 import { fetchSettings } from "../../api/settingsService";
 import CourtCard from "./CourtCard";
@@ -25,9 +26,11 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 export default function CourtList({
   onSelect,
   courts,
+  todayBookings = [],
 }: {
   onSelect: (court: Court) => void;
   courts: Court[];
+  todayBookings?: Booking[];
 }) {
   const [filter, setFilter] = useState<FilterStatus>("ALL");
 
@@ -77,7 +80,12 @@ export default function CourtList({
       <Grid container spacing={2}>
         {filtered.map((court: Court) => (
           <Grid key={court.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <CourtCard court={court} onSelect={onSelect} hourlyRate={settings?.hourlyRate} />
+            <CourtCard
+              court={court}
+              onSelect={onSelect}
+              hourlyRate={settings?.hourlyRate}
+              todayBookings={todayBookings.filter((b) => b.court.id === court.id)}
+            />
           </Grid>
         ))}
       </Grid>
