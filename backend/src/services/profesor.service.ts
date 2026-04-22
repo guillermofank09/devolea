@@ -9,6 +9,7 @@ export interface CreateProfesorDto {
   schedule?: object[];
   avatarUrl?: string;
   sport?: string;
+  sports?: string[];
   birthDate?: string;
 }
 

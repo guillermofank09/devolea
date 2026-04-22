@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
+  FormGroup,
   FormLabel,
   InputAdornment,
   TextField,
@@ -36,7 +39,7 @@ import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
-const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "", birthDate: "" };
+const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "", birthDate: "", sports: [] };
 
 const FUTBOL_TYPE_LABEL: Record<string, string> = {
   FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
@@ -79,11 +82,9 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   });
 
   const sportOptions = toProfesorSportOptions(courts, clubSports);
-  const defaultSport = sportOptions[0]?.key ?? "PADEL";
 
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
   const [hourlyRateStr, setHourlyRateStr] = useState("");
-  const [sport, setSport] = useState<string>(defaultSport);
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
@@ -92,23 +93,22 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const isEditing = !!profesor;
 
   useEffect(() => {
-    if (!open || sportOptions.length === 0) return;
+    if (!open) return;
     if (profesor) {
-      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "", birthDate: profesor.birthDate ?? "" });
+      const savedSports = profesor.sports?.length
+        ? profesor.sports.filter(s => sportOptions.some(o => o.key === s))
+        : (profesor.sport ? [profesor.sport] : []);
+      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "", birthDate: profesor.birthDate ?? "", sports: savedSports });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
-      // Use the saved sport only if it still matches a valid option; otherwise fall back to default
-      const validSport = sportOptions.some(o => o.key === profesor.sport) ? profesor.sport! : defaultSport;
-      setSport(validSport);
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
       setForm(EMPTY);
       setHourlyRateStr("");
-      setSport(defaultSport);
       setSchedule(DEFAULT_HOURS);
     }
     setError(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profesor, open, defaultSport]);
+  }, [profesor, open]);
 
   const mutation = useMutation({
     mutationFn: (data: ProfesorFormData) => {
@@ -118,7 +118,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
         avatarUrl: data.avatarUrl || undefined,
         birthDate: data.birthDate || undefined,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
-        sport,
+        sports: data.sports ?? [],
         schedule,
       };
       return isEditing ? updateProfesor(profesor!.id, payload) : createProfesor(payload);
@@ -185,39 +185,33 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               disabled={mutation.isPending}
             />
 
-            {sportOptions.length > 1 && (
+            {sportOptions.length > 0 && (
               <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
-                <ToggleButtonGroup
-                  exclusive
-                  value={sport}
-                  onChange={(_, v) => { if (v) setSport(v); }}
-                  size="small"
-                  disabled={mutation.isPending}
-                  sx={{ flexWrap: "wrap", gap: 0.5 }}
-                >
-                  {sportOptions.map(({ key, label }) => (
-                    <ToggleButton
-                      key={key}
-                      value={key}
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        fontSize: "0.8rem",
-                        borderRadius: "8px !important",
-                        border: "1.5px solid !important",
-                        px: 1.5,
-                        "&.Mui-selected": {
-                          bgcolor: "rgba(245,173,39,0.15)",
-                          borderColor: "#F5AD27 !important",
-                          color: "#b07d00",
-                        },
-                      }}
-                    >
-                      {label}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
+                <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
+                <FormGroup row>
+                  {sportOptions.map(({ key, label }) => {
+                    const checked = (form.sports ?? []).includes(key);
+                    return (
+                      <FormControlLabel
+                        key={key}
+                        disabled={mutation.isPending}
+                        control={
+                          <Checkbox
+                            checked={checked}
+                            onChange={() => setForm(p => {
+                              const current = p.sports ?? [];
+                              return { ...p, sports: checked ? current.filter(s => s !== key) : [...current, key] };
+                            })}
+                            size="small"
+                            sx={{ color: "text.secondary", "&.Mui-checked": { color: "#F5AD27" } }}
+                          />
+                        }
+                        label={label}
+                        sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.875rem", fontWeight: 500 } }}
+                      />
+                    );
+                  })}
+                </FormGroup>
               </Box>
             )}
 

@@ -33,6 +33,16 @@ export class Profesor {
   @Column({ type: "varchar", nullable: true, default: "PADEL" })
   sport?: string;
 
+  @Column({
+    type: "text",
+    nullable: true,
+    transformer: {
+      to: (v: string[] | null | undefined) => (v?.length ? JSON.stringify(v) : null),
+      from: (v: string | null) => (v ? JSON.parse(v) : null),
+    },
+  })
+  sports?: string[] | null;
+
   @Column({ type: "date", nullable: true })
   birthDate?: string;
 

@@ -352,7 +352,10 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
                 options={
                   courtSport
                     ? profesores.filter(
-                        (p) => !p.sport || p.sport === courtSport,
+                        (p) =>
+                          (!p.sports?.length && !p.sport) ||
+                          p.sports?.includes(courtSport) ||
+                          p.sport === courtSport,
                       )
                     : profesores
                 }
