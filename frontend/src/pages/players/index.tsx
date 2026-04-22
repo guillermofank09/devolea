@@ -210,13 +210,26 @@ export default function Players() {
           </Stack>
 
           {newToday.length > 0 && (
-            <Chip
-              icon={<PersonAddIcon sx={{ fontSize: "0.85rem !important" }} />}
-              label={`${newToday.length} ${newToday.length === 1 ? "jugador nuevo hoy" : "jugadores nuevos hoy"}`}
-              size="small"
-              color="success"
-              sx={{ fontWeight: 600, fontSize: "0.72rem" }}
-            />
+            <Tooltip
+              title={
+                <Box sx={{ py: 0.25 }}>
+                  {newToday.map((p) => (
+                    <Typography key={p.id} variant="caption" display="block">
+                      {p.name}
+                    </Typography>
+                  ))}
+                </Box>
+              }
+              arrow
+            >
+              <Chip
+                icon={<PersonAddIcon sx={{ fontSize: "0.85rem !important" }} />}
+                label={`${newToday.length} ${newToday.length === 1 ? "jugador nuevo hoy" : "jugadores nuevos hoy"}`}
+                size="small"
+                color="success"
+                sx={{ fontWeight: 600, fontSize: "0.72rem", cursor: "default" }}
+              />
+            </Tooltip>
           )}
 
           {birthdayToday.length > 0 && (
