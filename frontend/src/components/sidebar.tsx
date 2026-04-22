@@ -11,7 +11,6 @@ import {
   faChartBar,
   faAngleLeft,
   faAngleRight,
-  faExternalLinkAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
 export type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos' | 'stats';
@@ -25,7 +24,6 @@ interface Props {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   sports?: string[];
-  username?: string;
 }
 
 const ALL_NAV_ITEMS: { key: NavKey; label: string; icon: IconProp; requiredSports?: string[] }[] = [
@@ -44,7 +42,6 @@ const Sidebar: React.FC<Props> = ({
   mobileOpen = false,
   onMobileClose,
   sports = [],
-  username,
 }) => {
   const [active, setActive] = useState<NavKey>(initialActive);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -91,20 +88,6 @@ const Sidebar: React.FC<Props> = ({
 
       {/* Footer */}
       <div className="sb-footer">
-        {username && (
-          <a
-            href={`/${username}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sb-public-btn"
-            title="Ver página pública"
-          >
-            <span className="sb-item-icon" aria-hidden="true">
-              <FontAwesomeIcon icon={faExternalLinkAlt} />
-            </span>
-            {!collapsed && <span className="sb-item-label">Página pública</span>}
-          </a>
-        )}
         <button
           className="sb-collapse-btn"
           onClick={() => setCollapsed(c => !c)}
@@ -112,7 +95,6 @@ const Sidebar: React.FC<Props> = ({
           title={collapsed ? 'Expandir' : 'Colapsar'}
         >
           <FontAwesomeIcon icon={collapsed ? faAngleRight : faAngleLeft} />
-          {!collapsed && <span className="sb-collapse-label">Colapsar</span>}
         </button>
       </div>
     </aside>
