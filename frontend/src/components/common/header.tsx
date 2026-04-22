@@ -18,6 +18,7 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "../../context/AuthContext";
 
@@ -144,7 +145,7 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
                 <ListItemIcon sx={{ minWidth: 36 }}>
                   <PersonOutlineIcon fontSize="small" />
                 </ListItemIcon>
-                <Typography variant="body2" fontWeight={500}>Gestión de Perfil</Typography>
+                <Typography variant="body2" fontWeight={500}>Mi Club</Typography>
               </MenuItem>
 
               <MenuItem onClick={() => go("/settings")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
@@ -160,6 +161,22 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
                 </ListItemIcon>
                 <Typography variant="body2" fontWeight={500}>Estadísticas</Typography>
               </MenuItem>
+
+              {user?.username && (
+                <MenuItem
+                  component="a"
+                  href={`/${user.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleClose}
+                  sx={{ py: 1.25, px: 2, gap: 0.5 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <OpenInNewIcon fontSize="small" />
+                  </ListItemIcon>
+                  <Typography variant="body2" fontWeight={500}>Ver página pública</Typography>
+                </MenuItem>
+              )}
             </>
           )}
 

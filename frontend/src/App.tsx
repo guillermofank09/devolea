@@ -23,7 +23,7 @@ import { useAuth } from './context/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
 import './App.css';
 
-type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos';
+type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos' | 'stats';
 
 // Paths that belong to the authenticated app — everything else is a public club page
 const PROTECTED_PREFIXES = ['/players', '/tournaments', '/profile', '/settings', '/profesores', '/equipos', '/stats', '/logout', '/admin'];
@@ -107,6 +107,7 @@ function ProtectedApp() {
     location.pathname.startsWith('/tournaments') ? 'torneos' :
     location.pathname.startsWith('/profesores') ? 'profesores' :
     location.pathname.startsWith('/equipos') ? 'equipos' :
+    location.pathname.startsWith('/stats') ? 'stats' :
     'canchas';
 
   const handleSelect = (key: NavKey) => {
@@ -115,6 +116,7 @@ function ProtectedApp() {
     else if (key === 'torneos') navigate('/tournaments');
     else if (key === 'profesores') navigate('/profesores');
     else if (key === 'equipos') navigate('/equipos');
+    else if (key === 'stats') navigate('/stats');
   };
 
   return (
@@ -128,6 +130,7 @@ function ProtectedApp() {
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           sports={user?.sports ?? []}
+          username={user?.username}
         />
         {mobileOpen && (
           <div className="sb-backdrop" onClick={() => setMobileOpen(false)} />

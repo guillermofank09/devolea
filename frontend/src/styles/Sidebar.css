@@ -132,6 +132,34 @@
   overflow: hidden;
 }
 
+.sb-public-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sb-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sb-public-btn:hover {
+  background: var(--sb-hover);
+  color: var(--sb-text);
+}
+
+.sb-public-btn .sb-item-icon {
+  font-size: 14px;
+}
+
 .sb-collapse-btn {
   display: flex;
   align-items: center;
@@ -146,7 +174,7 @@
   font-weight: 500;
   transition: background 150ms ease, color 150ms ease;
   white-space: nowrap;
-  width: 100%;
+  flex-shrink: 0;
 }
 
 .sb-collapse-btn:hover {
