@@ -4,7 +4,6 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -33,21 +32,12 @@ import { fetchPlayers } from "../../api/playerService";
 import { fetchProfesores } from "../../api/profesorService";
 import { createBooking } from "../../api/bookingService";
 import { fetchSettings } from "../../api/settingsService";
-import type { Player, PlayerCategory } from "../../types/Player";
+import type { Player } from "../../types/Player";
 import type { Profesor } from "../../types/Profesor";
 import type { AppSettings } from "../../types/AppSettings";
 import AddEditPlayer from "../players/AddEditPlayer";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 
-const CATEGORY_LABEL: Record<PlayerCategory, string> = {
-  PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
-  QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "S/C",
-};
-
-const CATEGORY_COLOR: Record<PlayerCategory, "error" | "warning" | "success" | "info" | "primary" | "secondary" | "default"> = {
-  PRIMERA: "error", SEGUNDA: "warning", TERCERA: "success", CUARTA: "info",
-  QUINTA: "primary", SEXTA: "secondary", SEPTIMA: "default", SIN_CATEGORIA: "default",
-};
 
 const formatDate = (d: Date) =>
   d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -329,7 +319,6 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
                           <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
                           <Typography variant="caption" color="text.secondary">{p.city}</Typography>
                         </Box>
-                        <Chip label={CATEGORY_LABEL[p.category]} color={CATEGORY_COLOR[p.category]} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
                       </Box>
                     </li>
                   );
@@ -344,9 +333,11 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
                     </Avatar>
                     <Box>
                       <Typography variant="body2" fontWeight={700}>{selectedPlayer.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {selectedPlayer.city} · Cat. {CATEGORY_LABEL[selectedPlayer.category]}
-                      </Typography>
+                      {selectedPlayer.city && (
+                        <Typography variant="caption" color="text.secondary">
+                          {selectedPlayer.city}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </>
