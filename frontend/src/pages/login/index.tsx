@@ -23,11 +23,11 @@ const CONTACT_PHONE = import.meta.env.VITE_CONTACT_PHONE ?? "";
 
 const WA_RESET = CONTACT_PHONE
   ? `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent("Hola! Necesito recuperar el acceso a mi cuenta de Devolea.")}`
-  : null;
+  : "#";
 
 const WA_NEW = CONTACT_PHONE
   ? `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent("Hola! Me gustaría registrar mi club en Devolea.")}`
-  : null;
+  : "#";
 
 export default function Login() {
   const { login } = useAuth();
@@ -92,19 +92,17 @@ export default function Login() {
         {error && (
           <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
             {error}
-            {WA_RESET && (
-              <Box sx={{ mt: 0.75 }}>
-                <Box
-                  component="a"
-                  href={WA_RESET}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ fontSize: "0.8rem", color: "inherit", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
-                >
-                  ¿Olvidaste tu contraseña? Contactanos
-                </Box>
+            <Box sx={{ mt: 0.75 }}>
+              <Box
+                component="a"
+                href={WA_RESET}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ fontSize: "0.8rem", color: "inherit", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
+              >
+                ¿Olvidaste tu contraseña? Contactanos
               </Box>
-            )}
+            </Box>
           </Alert>
         )}
 
@@ -130,17 +128,15 @@ export default function Login() {
               <FormLabel sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" }}>
                 Contraseña
               </FormLabel>
-              {WA_RESET && (
-                <Box
-                  component="a"
-                  href={WA_RESET}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ fontSize: "0.75rem", color: "text.disabled", textDecoration: "none", fontWeight: 500, cursor: "pointer", "&:hover": { color: "text.secondary" } }}
-                >
-                  ¿Olvidaste tu contraseña?
-                </Box>
-              )}
+              <Box
+                component="a"
+                href={WA_RESET}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ fontSize: "0.75rem", color: "text.disabled", textDecoration: "none", fontWeight: 500, cursor: "pointer", "&:hover": { color: "text.secondary" } }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Box>
             </Box>
             <TextField
               type={showPass ? "text" : "password"}
@@ -178,33 +174,29 @@ export default function Login() {
           </Button>
         </Box>
 
-        {WA_NEW && (
-          <>
-            <Divider sx={{ my: 3 }}>
-              <Typography variant="caption" color="text.disabled">¿Todavía no tenés cuenta?</Typography>
-            </Divider>
-            <Button
-              component="a"
-              href={WA_NEW}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="outlined"
-              fullWidth
-              startIcon={<WhatsAppIcon sx={{ color: "#25d366" }} />}
-              sx={{
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: 2,
-                py: 1.25,
-                borderColor: "divider",
-                color: "text.secondary",
-                "&:hover": { borderColor: "#25d366", bgcolor: "rgba(37,211,102,0.04)", color: "text.primary" },
-              }}
-            >
-              Registrá tu club
-            </Button>
-          </>
-        )}
+        <Divider sx={{ my: 3 }}>
+          <Typography variant="caption" color="text.disabled">¿Todavía no tenés cuenta?</Typography>
+        </Divider>
+        <Button
+          component="a"
+          href={WA_NEW}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="outlined"
+          fullWidth
+          startIcon={<WhatsAppIcon sx={{ color: "#25d366" }} />}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: 2,
+            py: 1.25,
+            borderColor: "divider",
+            color: "text.secondary",
+            "&:hover": { borderColor: "#25d366", bgcolor: "rgba(37,211,102,0.04)", color: "text.primary" },
+          }}
+        >
+          Registrá tu club
+        </Button>
       </Box>
     </Box>
   );
