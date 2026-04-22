@@ -163,17 +163,17 @@ export default function OnboardingTour({ onDone }: Props) {
         next: "Siguiente",
         skip: "Saltar tour",
       }}
+      options={{
+        primaryColor: "#F5AD27",
+        textColor: "#111",
+        zIndex: 10000,
+      }}
       styles={{
-        options: {
-          primaryColor: "#F5AD27",
-          textColor: "#111",
-          zIndex: 10000,
-        },
         tooltip: {
           borderRadius: 12,
           padding: "16px 20px",
         },
-        buttonNext: {
+        buttonPrimary: {
           borderRadius: 8,
           fontWeight: 700,
           fontSize: "0.8rem",
