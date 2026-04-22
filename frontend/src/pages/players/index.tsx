@@ -3,16 +3,21 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Fab,
   FormControl,
   InputAdornment,
   MenuItem,
   OutlinedInput,
+  Paper,
   Select,
+  Stack,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import GroupIcon from "@mui/icons-material/Group";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -85,6 +90,12 @@ export default function Players() {
   });
 
   const hasActiveFilters = categoryFilter !== "" || sexFilter !== "";
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const newToday = (data ?? []).filter(
+    (p) => p.createdAt && new Date(p.createdAt) >= todayStart,
+  );
 
   // Shared filter selects (used in both desktop and mobile)
   const categorySelect = (
@@ -164,6 +175,41 @@ export default function Players() {
         subtitle="Gestioná los jugadores registrados en el club"
         action={isMobile ? undefined : desktopAction}
       />
+
+      {data && data.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            border: "1.5px solid",
+            borderColor: "divider",
+            borderRadius: 3,
+            px: { xs: 2, sm: 2.5 },
+            py: 1.5,
+            mb: 3,
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Typography variant="body2" fontWeight={600}>
+              {data.length} {data.length === 1 ? "jugador registrado" : "jugadores registrados"}
+            </Typography>
+          </Stack>
+
+          {newToday.length > 0 && (
+            <Chip
+              icon={<PersonAddIcon sx={{ fontSize: "0.85rem !important" }} />}
+              label={`${newToday.length} ${newToday.length === 1 ? "jugador nuevo hoy" : "jugadores nuevos hoy"}`}
+              size="small"
+              color="success"
+              sx={{ fontWeight: 600, fontSize: "0.72rem" }}
+            />
+          )}
+        </Paper>
+      )}
 
       {/* Mobile: search + filters */}
       {isMobile && (
