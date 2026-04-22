@@ -163,15 +163,12 @@ export default function CourtCard({ court, onSelect, hourlyRate, todayBookings =
               Ocupada hasta {fmtTime(new Date(busyBooking.endTime))}
             </Typography>
           ) : nextBooking ? (
-            <Tooltip
-              title={nextBooking.player?.name ?? nextBooking.profesor?.name ?? ""}
-              arrow
-              disableHoverListener={!nextBooking.player?.name && !nextBooking.profesor?.name}
-            >
-              <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "text.secondary", cursor: "default" }}>
-                Próxima: {fmtTime(new Date(nextBooking.startTime))}
-              </Typography>
-            </Tooltip>
+            <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "text.secondary" }}>
+              Próxima: {fmtTime(new Date(nextBooking.startTime))}
+              {(nextBooking.player?.name ?? nextBooking.profesor?.name) && (
+                <> · {nextBooking.player?.name ?? nextBooking.profesor?.name}</>
+              )}
+            </Typography>
           ) : null}
         </CardContent>
 
