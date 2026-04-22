@@ -31,6 +31,19 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     let businessHours: unknown[] = [];
     try { businessHours = JSON.parse(profile.businessHoursJson || "[]"); } catch {}
 
+    const courts = await AppDataSource.getRepository(Court).find({
+      where: { userId: user.id },
+      select: ["name", "sport"],
+    });
+
+    // Group court names by sport
+    const courtsBySport: Record<string, string[]> = {};
+    for (const c of courts) {
+      const sport = c.sport ?? "OTRO";
+      if (!courtsBySport[sport]) courtsBySport[sport] = [];
+      courtsBySport[sport].push(c.name);
+    }
+
     res.json({
       clubName: profile.clubName,
       address: profile.address,
@@ -40,6 +53,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       logoBase64: profile.logoUrl ? null : profile.logoBase64, // omit heavy base64 when URL exists
       phone: profile.phone ?? null,
       businessHours,
+      courtsBySport,
       showTournaments: settings?.showTournaments ?? true,
       showCourts:      settings?.showCourts      ?? true,
       showProfesores:  settings?.showProfesores   ?? true,

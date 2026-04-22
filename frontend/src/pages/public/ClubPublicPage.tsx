@@ -1516,9 +1516,38 @@ export default function ClubPublicPage() {
 
             {/* Club info — mobile tab */}
             {(!subSection || subSection === null) && (
-              <Box id="section-club" sx={{ display: { xs: "block", md: "none" } }}>
+              <Box id="section-club" sx={{ display: { xs: "block", md: "none" }, pb: 2 }}>
+
+                {/* Club description card */}
+                {profile.courtsBySport && Object.keys(profile.courtsBySport).length > 0 && (
+                  <Box sx={{ mx: 2, mt: 2, mb: 1.5, p: 2, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#fff" }}>
+                    <Typography variant="body2" sx={{ color: COLORS.muted, mb: 1.5, lineHeight: 1.5 }}>
+                      Club Deportivo con canchas de{" "}
+                      <Typography component="span" fontWeight={700} sx={{ color: COLORS.text }}>
+                        {Object.keys(profile.courtsBySport)
+                          .map(s => SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s)
+                          .join(", ")}
+                      </Typography>
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      {Object.entries(profile.courtsBySport).map(([sport, names]) => (
+                        <Box key={sport}>
+                          <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.07em", color: COLORS.accent, display: "block", mb: 0.5 }}>
+                            {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                            {names.map(name => (
+                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.72rem", fontWeight: 600, bgcolor: "#f1f5f9", color: COLORS.text }} />
+                            ))}
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
                 {/* Today status banner */}
-                <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
+                <Box sx={{ px: 2, pt: profile.courtsBySport && Object.keys(profile.courtsBySport).length > 0 ? 0 : 2, pb: 1.5 }}>
                   <Box sx={{
                     display: "flex", alignItems: "center", gap: 1.5,
                     px: 2, py: 1.5, borderRadius: 3,
@@ -1538,14 +1567,6 @@ export default function ClubPublicPage() {
                     </Box>
                   </Box>
                 </Box>
-
-                {/* Address */}
-                {profile.address && (
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, px: 2, pb: 1.5 }}>
-                    <LocationOnIcon sx={{ fontSize: 16, color: COLORS.muted, mt: "2px", flexShrink: 0 }} />
-                    <Typography variant="body2" sx={{ color: COLORS.muted, lineHeight: 1.5 }}>{profile.address}</Typography>
-                  </Box>
-                )}
 
                 {/* Full schedule */}
                 <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
@@ -1570,10 +1591,16 @@ export default function ClubPublicPage() {
                   })}
                 </Box>
 
-                {/* Map */}
+                {/* Map + address */}
                 {profile.latitude && profile.longitude && profile.address && (
-                  <Box sx={{ mx: 2, mb: 2, borderRadius: 3, overflow: "hidden", height: 200, border: `1px solid ${COLORS.lightBorder}` }}>
-                    <GoogleMapView lat={profile.latitude} lng={profile.longitude} height={200} interactive />
+                  <Box sx={{ mx: 2 }}>
+                    <Box sx={{ borderRadius: 3, overflow: "hidden", height: 200, border: `1px solid ${COLORS.lightBorder}`, mb: 1 }}>
+                      <GoogleMapView lat={profile.latitude} lng={profile.longitude} height={200} interactive />
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                      <LocationOnIcon sx={{ fontSize: 15, color: COLORS.muted, mt: "2px", flexShrink: 0 }} />
+                      <Typography variant="caption" sx={{ color: COLORS.muted, lineHeight: 1.5 }}>{profile.address}</Typography>
+                    </Box>
                   </Box>
                 )}
               </Box>
