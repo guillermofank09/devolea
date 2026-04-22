@@ -8,6 +8,7 @@ export interface CreateProfesorDto {
   sex?: "MASCULINO" | "FEMENINO";
   schedule?: object[];
   avatarUrl?: string;
+  city?: string;
   sport?: string;
   sports?: string[];
   birthDate?: string;

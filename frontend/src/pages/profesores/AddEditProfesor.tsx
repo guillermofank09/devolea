@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -39,7 +40,22 @@ import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
-const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "", birthDate: "", sports: [] };
+interface CityOption { label: string; }
+
+async function searchCities(query: string): Promise<CityOption[]> {
+  if (query.trim().length < 2) return [];
+  const url = `https://apis.datos.gob.ar/georef/api/localidades?nombre=${encodeURIComponent(query)}&campos=nombre,provincia.nombre&max=10&orden=nombre`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const seen = new Set<string>();
+  return (data.localidades ?? []).reduce((acc: CityOption[], loc: any) => {
+    const label = `${loc.nombre}, ${loc.provincia.nombre}`;
+    if (!seen.has(label.toLowerCase())) { seen.add(label.toLowerCase()); acc.push({ label }); }
+    return acc;
+  }, []);
+}
+
+const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "", city: "", birthDate: "", sports: [] };
 
 const FUTBOL_TYPE_LABEL: Record<string, string> = {
   FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
@@ -87,10 +103,26 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const [hourlyRateStr, setHourlyRateStr] = useState("");
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [error, setError] = useState<string | null>(null);
+  const [cityInput, setCityInput] = useState("");
+  const [cityOptions, setCityOptions] = useState<CityOption[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
   const isEditing = !!profesor;
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (cityInput.trim().length < 2) { setCityOptions([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setCityLoading(true);
+      try { setCityOptions(await searchCities(cityInput)); }
+      catch { setCityOptions([]); }
+      finally { setCityLoading(false); }
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [cityInput]);
 
   useEffect(() => {
     if (!open) return;
@@ -98,14 +130,17 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
       const savedSports = profesor.sports?.length
         ? profesor.sports.filter(s => sportOptions.some(o => o.key === s))
         : (profesor.sport ? [profesor.sport] : []);
-      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "", birthDate: profesor.birthDate ?? "", sports: savedSports });
+      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "", city: profesor.city ?? "", birthDate: profesor.birthDate ?? "", sports: savedSports });
+      setCityInput(profesor.city ?? "");
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
       setForm(EMPTY);
+      setCityInput("");
       setHourlyRateStr("");
       setSchedule(DEFAULT_HOURS);
     }
+    setCityOptions([]);
     setError(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profesor, open]);
@@ -185,37 +220,44 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               disabled={mutation.isPending}
             />
 
-            {sportOptions.length > 0 && (
+            {/* Ciudad + Fecha de nacimiento */}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
-                <FormGroup row>
-                  {sportOptions.map(({ key, label }) => {
-                    const checked = (form.sports ?? []).includes(key);
-                    return (
-                      <FormControlLabel
-                        key={key}
-                        disabled={mutation.isPending}
-                        control={
-                          <Checkbox
-                            checked={checked}
-                            onChange={() => setForm(p => {
-                              const current = p.sports ?? [];
-                              return { ...p, sports: checked ? current.filter(s => s !== key) : [...current, key] };
-                            })}
-                            size="small"
-                            sx={{ color: "text.secondary", "&.Mui-checked": { color: "#F5AD27" } }}
-                          />
-                        }
-                        label={label}
-                        sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.875rem", fontWeight: 500 } }}
-                      />
-                    );
-                  })}
-                </FormGroup>
+                <FormLabel sx={FORM_LABEL_SX}>Ciudad</FormLabel>
+                <Autocomplete
+                  freeSolo
+                  options={cityOptions}
+                  getOptionLabel={(opt) => typeof opt === "string" ? opt : opt.label}
+                  inputValue={cityInput}
+                  onInputChange={(_, value) => { setCityInput(value); setForm(p => ({ ...p, city: value })); }}
+                  onChange={(_, value) => {
+                    const val = !value ? "" : typeof value === "string" ? value : value.label;
+                    setForm(p => ({ ...p, city: val }));
+                    setCityInput(val);
+                    setCityOptions([]);
+                  }}
+                  loading={cityLoading}
+                  noOptionsText="Sin resultados"
+                  filterOptions={(x) => x}
+                  disabled={mutation.isPending}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      placeholder="Ej: Buenos Aires"
+                      sx={FORM_INPUT_SX}
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>{cityLoading && <CircularProgress size={14} />}{params.InputProps.endAdornment}</>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
               </Box>
-            )}
-
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
                 <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
@@ -224,13 +266,44 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                     onChange={d => setForm(p => ({ ...p, birthDate: d ? format(d, "yyyy-MM-dd") : "" }))}
                     maxDate={new Date()}
                     disabled={mutation.isPending}
-                    slotProps={{
-                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
-                    }}
+                    slotProps={{ textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX } }}
                   />
                 </LocalizationProvider>
               </Box>
-              <Box>
+            </Box>
+
+            {/* Deportes + Precio */}
+            <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+              {sportOptions.length > 0 && (
+                <Box sx={{ flex: 1 }}>
+                  <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
+                  <FormGroup row>
+                    {sportOptions.map(({ key, label }) => {
+                      const checked = (form.sports ?? []).includes(key);
+                      return (
+                        <FormControlLabel
+                          key={key}
+                          disabled={mutation.isPending}
+                          control={
+                            <Checkbox
+                              checked={checked}
+                              onChange={() => setForm(p => {
+                                const current = p.sports ?? [];
+                                return { ...p, sports: checked ? current.filter(s => s !== key) : [...current, key] };
+                              })}
+                              size="small"
+                              sx={{ color: "text.secondary", "&.Mui-checked": { color: "#F5AD27" } }}
+                            />
+                          }
+                          label={label}
+                          sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.875rem", fontWeight: 500 } }}
+                        />
+                      );
+                    })}
+                  </FormGroup>
+                </Box>
+              )}
+              <Box sx={{ width: sportOptions.length > 0 ? 160 : "100%" }}>
                 <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
                 <TextField
                   fullWidth

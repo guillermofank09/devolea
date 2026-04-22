@@ -30,6 +30,9 @@ export class Profesor {
   @Column({ type: "varchar", nullable: true })
   avatarUrl?: string;
 
+  @Column({ type: "varchar", nullable: true })
+  city?: string;
+
   @Column({ type: "varchar", nullable: true, default: "PADEL" })
   sport?: string;
 
