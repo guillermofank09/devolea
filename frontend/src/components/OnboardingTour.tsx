@@ -151,10 +151,6 @@ export default function OnboardingTour({ onDone }: Props) {
       run={run}
       stepIndex={stepIndex}
       continuous
-      showProgress
-      showSkipButton
-      disableOverlayClose
-      disableScrolling
       onEvent={handleCallback}
       locale={{
         back: "Anterior",
@@ -167,6 +163,10 @@ export default function OnboardingTour({ onDone }: Props) {
         primaryColor: "#F5AD27",
         textColor: "#111",
         zIndex: 10000,
+        showProgress: true,
+        buttons: ["back", "close", "primary", "skip"],
+        overlayClickAction: false,
+        skipScroll: true,
       }}
       styles={{
         tooltip: {
