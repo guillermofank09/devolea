@@ -225,64 +225,6 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
               />
             </Box>
 
-            {/* Ciudad + Fecha */}
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Ciudad</FormLabel>
-                <Autocomplete
-                  freeSolo
-                  options={cityOptions}
-                  getOptionLabel={(opt) => typeof opt === "string" ? opt : opt.label}
-                  inputValue={cityInput}
-                  onInputChange={(_, value) => { setCityInput(value); set("city", value); }}
-                  onChange={(_, value) => {
-                    if (!value) { set("city", ""); setCityInput(""); }
-                    else if (typeof value === "string") { set("city", value); setCityInput(value); }
-                    else { set("city", value.label); setCityInput(value.label); }
-                    setCityOptions([]);
-                  }}
-                  loading={cityLoading}
-                  noOptionsText="Sin resultados"
-                  filterOptions={(x) => x}
-                  disabled={mutation.isPending}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      placeholder="Ej: Buenos Aires"
-                      sx={FORM_INPUT_SX}
-                      slotProps={{
-                        input: {
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {cityLoading && <CircularProgress size={14} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        },
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
-                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-                  <DatePicker
-                    value={form.birthDate ? parseISO(form.birthDate) : null}
-                    onChange={d => set("birthDate", d ? format(d, "yyyy-MM-dd") : "")}
-                    maxDate={new Date()}
-                    disabled={mutation.isPending}
-                    slotProps={{
-                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
-                    }}
-                  />
-                </LocalizationProvider>
-              </Box>
-            </Box>
-
             {/* Teléfono */}
             <PhoneField
               value={form.phone ?? ""}
@@ -377,6 +319,64 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
                 <ToggleButton value="MASCULINO">Masculino</ToggleButton>
                 <ToggleButton value="FEMENINO">Femenino</ToggleButton>
               </ToggleButtonGroup>
+            </Box>
+
+            {/* Ciudad + Fecha */}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Ciudad</FormLabel>
+                <Autocomplete
+                  freeSolo
+                  options={cityOptions}
+                  getOptionLabel={(opt) => typeof opt === "string" ? opt : opt.label}
+                  inputValue={cityInput}
+                  onInputChange={(_, value) => { setCityInput(value); set("city", value); }}
+                  onChange={(_, value) => {
+                    if (!value) { set("city", ""); setCityInput(""); }
+                    else if (typeof value === "string") { set("city", value); setCityInput(value); }
+                    else { set("city", value.label); setCityInput(value.label); }
+                    setCityOptions([]);
+                  }}
+                  loading={cityLoading}
+                  noOptionsText="Sin resultados"
+                  filterOptions={(x) => x}
+                  disabled={mutation.isPending}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      placeholder="Ej: Buenos Aires"
+                      sx={FORM_INPUT_SX}
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {cityLoading && <CircularProgress size={14} />}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Box>
+
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+                  <DatePicker
+                    value={form.birthDate ? parseISO(form.birthDate) : null}
+                    onChange={d => set("birthDate", d ? format(d, "yyyy-MM-dd") : "")}
+                    maxDate={new Date()}
+                    disabled={mutation.isPending}
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
             </Box>
 
           </Box>
