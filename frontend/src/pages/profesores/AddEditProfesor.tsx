@@ -185,6 +185,21 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               disabled={mutation.isPending}
             />
 
+            <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+                <DatePicker
+                  value={form.birthDate ? parseISO(form.birthDate) : null}
+                  onChange={d => setForm(p => ({ ...p, birthDate: d ? format(d, "yyyy-MM-dd") : "" }))}
+                  maxDate={new Date()}
+                  disabled={mutation.isPending}
+                  slotProps={{
+                    textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                  }}
+                />
+              </LocalizationProvider>
+            </Box>
+
             {sportOptions.length > 1 && (
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
@@ -222,6 +237,29 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
             )}
 
             <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
+              <TextField
+                fullWidth
+                size="small"
+                type="text"
+                inputMode="decimal"
+                value={hourlyRateStr}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === "" || /^\d*\.?\d*$/.test(v))
+                    setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
+                }}
+                placeholder="0"
+                disabled={mutation.isPending}
+                slotProps={{
+                  input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                }}
+                helperText="Tarifa propia. Vacío = precio general."
+                sx={FORM_INPUT_SX}
+              />
+            </Box>
+
+            <Box>
               <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
               <ToggleButtonGroup
                 value={form.sex || null}
@@ -251,45 +289,6 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 <ToggleButton value="MASCULINO">Masculino</ToggleButton>
                 <ToggleButton value="FEMENINO">Femenino</ToggleButton>
               </ToggleButtonGroup>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Box sx={{ flex: 1 }}>
-                <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="text"
-                  inputMode="decimal"
-                  value={hourlyRateStr}
-                  onChange={e => {
-                    const v = e.target.value;
-                    if (v === "" || /^\d*\.?\d*$/.test(v))
-                      setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
-                  }}
-                  placeholder="0"
-                  disabled={mutation.isPending}
-                  slotProps={{
-                    input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                  }}
-                  helperText="Tarifa propia. Vacío = precio general."
-                  sx={FORM_INPUT_SX}
-                />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
-                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-                  <DatePicker
-                    value={form.birthDate ? parseISO(form.birthDate) : null}
-                    onChange={d => setForm(p => ({ ...p, birthDate: d ? format(d, "yyyy-MM-dd") : "" }))}
-                    maxDate={new Date()}
-                    disabled={mutation.isPending}
-                    slotProps={{
-                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
-                    }}
-                  />
-                </LocalizationProvider>
-              </Box>
             </Box>
 
             <Box>
