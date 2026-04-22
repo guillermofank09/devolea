@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
   FormLabel,
   IconButton,
   InputAdornment,
@@ -174,38 +173,27 @@ export default function Login() {
           </Button>
         </Box>
 
-        <Divider sx={{ my: 3 }} />
-
-        <Box
-          component="a"
-          href={WA_NEW}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            px: 2,
-            py: 1.5,
-            borderRadius: 2,
-            border: "1.5px solid",
-            borderColor: "divider",
-            textDecoration: "none",
-            cursor: "pointer",
-            transition: "border-color 0.15s, background 0.15s",
-            "&:hover": { borderColor: "#25d366", bgcolor: "rgba(37,211,102,0.04)" },
-          }}
-        >
-          <WhatsAppIcon sx={{ color: "#25d366", fontSize: 22, flexShrink: 0 }} />
-          <Box>
-            <Typography variant="body2" fontWeight={700} sx={{ color: "text.primary", lineHeight: 1.2 }}>
-              Registrá tu club
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              ¿Todavía no tenés cuenta? Escribinos
-            </Typography>
+        <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
+          ¿No tenés cuenta?{" "}
+          <Box
+            component="a"
+            href={WA_NEW}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              color: "text.primary",
+              fontWeight: 700,
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            <WhatsAppIcon sx={{ fontSize: 15, color: "#25d366" }} />
+            Escribinos
           </Box>
-        </Box>
+        </Typography>
       </Box>
     </Box>
   );
