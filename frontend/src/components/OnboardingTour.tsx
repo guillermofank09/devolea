@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Joyride, type CallBackProps, ACTIONS, EVENTS, STATUS } from "react-joyride";
+import { Joyride, type EventData, ACTIONS, EVENTS, STATUS } from "react-joyride";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 
@@ -121,7 +121,7 @@ export default function OnboardingTour({ onDone }: Props) {
   const [run, setRun] = useState(true);
 
   const handleCallback = useCallback(
-    (data: CallBackProps) => {
+    (data: EventData) => {
       const { action, index, type, status } = data;
 
       if (
@@ -155,7 +155,7 @@ export default function OnboardingTour({ onDone }: Props) {
       showSkipButton
       disableOverlayClose
       disableScrolling
-      callback={handleCallback}
+      onEvent={handleCallback}
       locale={{
         back: "Anterior",
         close: "Cerrar",
