@@ -32,9 +32,10 @@ interface Props {
   onClose: () => void;
   tournamentId: number;
   existingPairs: Pair[];
+  sport?: string;
 }
 
-export default function AddPlayerDialog({ open, onClose, tournamentId, existingPairs }: Props) {
+export default function AddPlayerDialog({ open, onClose, tournamentId, existingPairs, sport }: Props) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [paid, setPaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +62,15 @@ export default function AddPlayerDialog({ open, onClose, tournamentId, existingP
   });
 
   const usedIds = existingPairs.map(p => p.player1.id);
-  const filtered = inputValue.trim()
-    ? players.filter(p => p.name.toLowerCase().includes(inputValue.toLowerCase()))
+  const sportFiltered = sport
+    ? players.filter(p => {
+        const playerSports = p.sports?.length ? p.sports : (p.sport ? [p.sport] : []);
+        return playerSports.includes(sport);
+      })
     : players;
+  const filtered = inputValue.trim()
+    ? sportFiltered.filter(p => p.name.toLowerCase().includes(inputValue.toLowerCase()))
+    : sportFiltered;
   const showCreate = inputValue.trim().length > 0 && !players.some(p => p.name.toLowerCase() === inputValue.toLowerCase());
   const options: Option[] = [...filtered, ...(showCreate ? [{ id: CREATE_OPTION_ID as typeof CREATE_OPTION_ID, name: inputValue.trim() }] : [])];
 

@@ -118,9 +118,11 @@ interface Props {
   tournamentId: number;
   totalRounds?: number;
   sport?: string;
+  tournamentStartDate?: string;
+  tournamentEndDate?: string;
 }
 
-export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds, sport }: Props) {
+export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds, sport, tournamentStartDate, tournamentEndDate }: Props) {
   const { user } = useAuth();
   const isFootball = sport?.startsWith("FUTBOL") ?? false;
   const isVirtual = match.id < 0;
@@ -164,7 +166,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   });
   // Show football players first, then those without sport set
   const players = allPlayers
-    .filter(p => !p.sport || p.sport === "FUTBOL")
+    .filter(p => !p.sports?.length || p.sports.includes("FUTBOL"))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
@@ -840,6 +842,11 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
               onSelectEvent={() => {}}
               initialDate={calendarInitialDate}
               height="100%"
+              highlightedDateRange={
+                tournamentStartDate && tournamentEndDate
+                  ? { start: tournamentStartDate, end: tournamentEndDate }
+                  : undefined
+              }
             />
           </Box>
         )}

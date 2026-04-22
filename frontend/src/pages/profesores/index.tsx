@@ -25,7 +25,7 @@ import type { Profesor, ProfesorSex } from "../../types/Profesor";
 import ProfesorTable from "./ProfesorTable";
 import AddEditProfesor from "./AddEditProfesor";
 import ProfesorScheduleModal from "./ProfesorScheduleModal";
-import DeleteConfirmation from "../courts/DeleteCourt";
+import DeleteDialog from "../../components/common/DeleteDialog";
 import PageHeader from "../../components/common/PageHeader";
 
 const selectSx = { borderRadius: 2, backgroundColor: "white" };
@@ -197,10 +197,13 @@ export default function Profesores() {
 
       <AddEditProfesor open={addEditOpen} onClose={handleCloseForm} profesor={selected} />
 
-      <DeleteConfirmation
+      <DeleteDialog
         open={!!deleteTarget}
+        title="Eliminar profesor"
+        description={`¿Estás seguro de que querés eliminar a ${deleteTarget?.name ?? "este profesor"}? Esta acción no se puede deshacer.`}
+        loading={deleteMutation.isPending}
         onClose={() => setDeleteTarget(null)}
-        onDelete={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
 
       <ProfesorScheduleModal

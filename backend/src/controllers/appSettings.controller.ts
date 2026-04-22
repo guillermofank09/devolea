@@ -15,6 +15,8 @@ export async function getSettings(req: Request, res: Response) {
 
 export async function saveSettings(req: Request, res: Response) {
   const userId = req.authUser!.sub;
-  const settings = await getService().save(req.body, userId);
+  // Strip virtual (parsed) fields — only the *Json columns exist on the entity
+  const { sportPrices, sportClassPrices, tournamentDurations, tournamentSets, ...rest } = req.body;
+  const settings = await getService().save(rest, userId);
   res.json(settings);
 }

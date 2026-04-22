@@ -22,8 +22,11 @@ export class Player {
   @Column()
   category!: PlayerCategory;
 
-  @Column()
-  city!: string;
+  @Column({ type: "varchar", nullable: true })
+  tenisCategory?: PlayerCategory;
+
+  @Column({ type: "varchar", nullable: true })
+  city?: string;
 
   @Column()
   sex!: PlayerSex;
@@ -33,6 +36,9 @@ export class Player {
 
   @Column({ type: "varchar", nullable: true })
   sport?: string;
+
+  @Column({ type: "simple-array", nullable: true })
+  sports?: string[];
 
   @Column({ type: "varchar", nullable: true })
   phone?: string;

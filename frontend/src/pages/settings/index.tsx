@@ -32,14 +32,15 @@ import PageLoader from "../../components/common/PageLoader";
 import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
-const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
+const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL", "BASQUET", "VOLEY"];
 const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
 
 const FUTBOL_TYPE_LABEL: Record<string, string> = {
   FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
 };
 
-/** Builds price rows from actual courts: Fútbol → one row per unique court type, others → one row per sport */
+
+/** Court price rows derived from actual courts in the system */
 function toPriceRows(courts: Court[], sports: string[]): { key: string; label: string }[] {
   const seen = new Set<string>();
   const rows: { key: string; label: string }[] = [];
@@ -56,6 +57,7 @@ function toPriceRows(courts: Court[], sports: string[]): { key: string; label: s
   }
   return rows;
 }
+
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({
@@ -177,33 +179,27 @@ export default function Settings() {
       <Grid container spacing={3} alignItems="flex-start">
         {/* ── Left column ── */}
         <Grid size={{ xs: 12, md: 6 }}>
-          {/* ── Precios ── */}
-          <Section icon={<MonetizationOnOutlinedIcon />} title="Precios">
+          {/* ── Precios de canchas ── */}
+          <Section icon={<MonetizationOnOutlinedIcon />} title="Precios de canchas">
             {(() => {
               const courtRows = toPriceRows(courts, clubSports);
-              const classKeySet = new Set(toPriceRows(courts, sportsWithClass).map(r => r.key));
-              const hasClass = classKeySet.size > 0;
+              if (courtRows.length === 0) {
+                return (
+                  <Typography variant="body2" color="text.secondary">
+                    No hay canchas cargadas. Agregá canchas para configurar sus precios.
+                  </Typography>
+                );
+              }
               const showLabels = courtRows.length > 1;
-              const inputSx = { width: { xs: "100%", sm: 150 } };
+              const inputSx = { width: { xs: "100%", sm: 160 } };
               return (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  {/* Column headers */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    {showLabels && <Box sx={{ minWidth: 90 }} />}
-                    <Typography variant="caption" color="text.disabled" fontWeight={700}
-                      sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem", flex: 1 }}>
-                      Cancha / hora
-                    </Typography>
-                    {hasClass && (
-                      <Typography variant="caption" color="text.disabled" fontWeight={700}
-                        sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem", flex: 1 }}>
-                        Clase / hora
-                      </Typography>
-                    )}
-                  </Box>
-
+                  <Typography variant="caption" color="text.disabled" fontWeight={700}
+                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
+                    Precio / hora
+                  </Typography>
                   {courtRows.map(row => (
-                    <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" } }}>
+                    <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       {showLabels && (
                         <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
                       )}
@@ -220,31 +216,52 @@ export default function Settings() {
                         slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
                         sx={inputSx}
                       />
-                      {hasClass && (
-                        classKeySet.has(row.key) ? (
-                          <TextField
-                            type="text" inputMode="decimal" size="small" placeholder="0"
-                            value={sportClassPrices[row.key] != null ? String(sportClassPrices[row.key]) : ""}
-                            onChange={e => {
-                              const raw = e.target.value;
-                              if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-                                const val = raw.replace(/^0+(\d)/, "$1");
-                                setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
-                              }
-                            }}
-                            slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                            sx={inputSx}
-                          />
-                        ) : (
-                          <Box sx={inputSx} />
-                        )
-                      )}
                     </Box>
                   ))}
                 </Box>
               );
             })()}
           </Section>
+
+          {/* ── Precios de clases / entrenamiento ── */}
+          {toPriceRows(courts, sportsWithClass).length > 0 && (() => {
+            const classRows = toPriceRows(courts, sportsWithClass);
+            const showLabels = classRows.length > 1;
+            const inputSx = { width: { xs: "100%", sm: 160 } };
+            return (
+              <Section icon={<SchoolOutlinedIcon />} title="Precios de clases">
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: "0.82rem" }}>
+                    Precio por hora de clase o entrenamiento con profesor. Se aplica automáticamente al crear reservas de profesores.
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled" fontWeight={700}
+                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
+                    Precio / hora
+                  </Typography>
+                  {classRows.map(row => (
+                    <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      {showLabels && (
+                        <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
+                      )}
+                      <TextField
+                        type="text" inputMode="decimal" size="small" placeholder="0"
+                        value={sportClassPrices[row.key] != null ? String(sportClassPrices[row.key]) : ""}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                            const val = raw.replace(/^0+(\d)/, "$1");
+                            setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
+                          }
+                        }}
+                        slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
+                        sx={inputSx}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </Section>
+            );
+          })()}
 
           {/* ── Torneos ── */}
           <Section icon={<EmojiEventsOutlinedIcon />} title="Torneos">

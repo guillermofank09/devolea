@@ -42,6 +42,11 @@ import DeleteDialog from "../../../components/common/DeleteDialog";
 import PageLoader from "../../../components/common/PageLoader";
 import FormLabel from "@mui/material/FormLabel";
 import { FORM_LABEL_SX } from "../../../styles/formStyles";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { es } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
 import { SPORTS, SPORT_LABEL } from "../../../constants/sports";
 import Checkbox from "@mui/material/Checkbox";
 import SportsIcon from "@mui/icons-material/Sports";
@@ -118,14 +123,15 @@ function PaymentDialog({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
           <Box>
             <FormLabel sx={FORM_LABEL_SX}>Último pago</FormLabel>
-            <TextField
-              type="date"
-              value={dateValue}
-              onChange={e => setDateValue(e.target.value)}
-              fullWidth
-              size="small"
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <DatePicker
+                value={dateValue ? parseISO(dateValue) : null}
+                onChange={d => setDateValue(d ? format(d, "yyyy-MM-dd") : "")}
+                slotProps={{
+                  textField: { fullWidth: true, size: "small" },
+                }}
+              />
+            </LocalizationProvider>
           </Box>
           {nextDate && (
             <Box sx={{ bgcolor: "grey.50", borderRadius: 2, px: 2, py: 1.5, border: "1px solid", borderColor: "divider" }}>

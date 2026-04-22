@@ -8,6 +8,7 @@ export interface CreateProfesorDto {
   sex?: "MASCULINO" | "FEMENINO";
   schedule?: object[];
   avatarUrl?: string;
+  sport?: string;
 }
 
 export class ProfesorService {

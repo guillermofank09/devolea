@@ -93,13 +93,18 @@ function formatDateLabel(dateStr: string): string {
 type Option = Player | { id: typeof CREATE_OPTION_ID; name: string };
 
 function PlayerSelector({
-  label, players, isFetching, value, onChange, disabledIds, onCreatePlayer,
+  label, players, isFetching, value, onChange, disabledIds, onCreatePlayer, sport,
 }: {
   label: string; players: Player[]; isFetching: boolean;
   value: Player | null; onChange: (p: Player | null) => void;
   disabledIds: number[]; onCreatePlayer: (name: string) => void;
+  sport?: string;
 }) {
   const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    setInputValue(value?.name ?? "");
+  }, [value]);
   const filtered = useMemo(
     () => inputValue.trim() ? players.filter(p => p.name.toLowerCase().includes(inputValue.toLowerCase())) : players,
     [players, inputValue]
@@ -158,7 +163,7 @@ function PlayerSelector({
                 <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
                 <Typography variant="caption" color="text.secondary">{p.city}</Typography>
               </Box>
-              <Chip label={CATEGORY_LABEL[p.category]} color={CATEGORY_COLOR[p.category]} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
+              {(() => { const cat = sport === "TENIS" ? (p.tenisCategory ?? p.category) : p.category; return <Chip label={CATEGORY_LABEL[cat]} color={CATEGORY_COLOR[cat]} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />; })()}
             </Box>
           </li>
         );
@@ -174,10 +179,11 @@ interface Props {
   existingPairs: Pair[];
   tournamentCategory: TournamentCategory;
   tournamentStartDate: string;
+  sport?: string;
 }
 
 export default function AddPairDialog({
-  open, onClose, tournamentId, existingPairs, tournamentCategory, tournamentStartDate,
+  open, onClose, tournamentId, existingPairs, tournamentCategory, tournamentStartDate, sport,
 }: Props) {
   const [player1, setPlayer1] = useState<Player | null>(null);
   const [player2, setPlayer2] = useState<Player | null>(null);
@@ -249,6 +255,12 @@ export default function AddPairDialog({
     });
   }, [selectedDate, profile, matchDuration, courts, courtBookingResults]);
 
+  const sportFiltered = sport
+    ? players.filter(p => {
+        const playerSports = p.sports?.length ? p.sports : (p.sport ? [p.sport] : []);
+        return playerSports.includes(sport);
+      })
+    : players;
   const usedInTournament = existingPairs.flatMap(p => [p.player1.id, ...(p.player2 ? [p.player2.id] : [])]);
   const disabledForP1 = [...usedInTournament, ...(player2 ? [player2.id] : [])];
   const disabledForP2 = [...usedInTournament, ...(player1 ? [player1.id] : [])];
@@ -257,12 +269,14 @@ export default function AddPairDialog({
     if (tournamentCategory === "SIN_CATEGORIA") return [];
     const warnings: string[] = [];
     for (const p of [player1, player2]) {
-      if (p && p.category !== tournamentCategory) {
-        warnings.push(`${p.name} está en categoría ${CATEGORY_LABEL[p.category as PlayerCategory]}, distinta a la del torneo (${CATEGORY_LABEL[tournamentCategory as PlayerCategory]}).`);
+      if (!p) continue;
+      const playerCat = sport === "TENIS" ? (p.tenisCategory ?? p.category) : p.category;
+      if (playerCat !== tournamentCategory) {
+        warnings.push(`${p.name} está en categoría ${CATEGORY_LABEL[playerCat as PlayerCategory]}, distinta a la del torneo (${CATEGORY_LABEL[tournamentCategory as PlayerCategory]}).`);
       }
     }
     return warnings;
-  }, [player1, player2, tournamentCategory]);
+  }, [player1, player2, tournamentCategory, sport]);
 
   const mutation = useMutation({
     mutationFn: () => addPair(tournamentId, player1!.id, player2!.id, {
@@ -291,8 +305,9 @@ export default function AddPairDialog({
 
   const handlePlayerCreated = (newPlayer: Player) => {
     queryClient.invalidateQueries({ queryKey: ["playersData"] });
-    if (creatingForSlot === 1) setPlayer1(newPlayer);
-    else setPlayer2(newPlayer);
+    if (creatingForSlot === 1) { setPlayer1(newPlayer); }
+    else { setPlayer2(newPlayer); }
+    setCreatePlayerOpen(false);
   };
 
   const isValid = player1 && player2 && player1.id !== player2.id;
@@ -312,12 +327,13 @@ export default function AddPairDialog({
               <Box sx={{ mt: 1, mb: 1.5 }}>
                 <PlayerSelector
                   label=""
-                  players={players}
+                  players={sportFiltered}
                   isFetching={isFetching}
                   value={player1}
                   onChange={p => { setPlayer1(p); setError(null); }}
                   disabledIds={disabledForP1}
                   onCreatePlayer={name => handleCreatePlayer(1, name)}
+                  sport={sport}
                 />
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -334,7 +350,7 @@ export default function AddPairDialog({
               <Box sx={{ mt: 1, mb: 1.5 }}>
                 <PlayerSelector
                   label=""
-                  players={players}
+                  players={sportFiltered}
                   isFetching={isFetching}
                   value={player2}
                   onChange={p => { setPlayer2(p); setError(null); }}

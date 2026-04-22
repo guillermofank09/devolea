@@ -4,11 +4,12 @@ import { Player, PlayerCategory, PlayerSex } from "../entities/Player";
 export interface CreatePlayerDto {
   name: string;
   category: PlayerCategory;
+  tenisCategory?: PlayerCategory;
   city: string;
   sex: PlayerSex;
   birthDate?: string;
   phone?: string;
-  sport?: string;
+  sports?: string[];
   avatarUrl?: string;
 }
 

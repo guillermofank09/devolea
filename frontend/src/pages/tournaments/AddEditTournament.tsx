@@ -15,6 +15,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { es } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTournament, updateTournament } from "../../api/tournamentService";
 import type { Tournament, TournamentCategory, TournamentSex, TournamentFormData } from "../../types/Tournament";
@@ -22,6 +27,9 @@ import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import { fetchCourts } from "../../api/courtService";
 import type { Court } from "../../types/Court";
+
+const toDate = (s: string): Date | null => (s ? parseISO(s) : null);
+const fromDate = (d: Date | null): string => (d ? format(d, "yyyy-MM-dd") : "");
 
 export function isTeamSport(sport?: string | null): boolean {
   if (!sport) return false;
@@ -60,14 +68,6 @@ const EMPTY: TournamentFormData = {
   sport: "",
 };
 
-const dateSx = {
-  ...FORM_INPUT_SX,
-  "& input[type='date']::-webkit-calendar-picker-indicator": {
-    opacity: 0.5,
-    cursor: "pointer",
-    "&:hover": { opacity: 1 },
-  },
-};
 
 interface Props {
   open: boolean;
@@ -135,8 +135,11 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
       if (field === "startDate" && next.endDate && next.endDate < value) {
         next.endDate = "";
       }
-      if (field === "sport" && value && !prev.name.trim()) {
-        next.name = `Torneo ${SPORT_LABELS[value] ?? value}`;
+      if (field === "sport" && value) {
+        const prevAutoName = prev.sport ? `Torneo ${SPORT_LABELS[prev.sport] ?? prev.sport}` : "";
+        if (!prev.name.trim() || prev.name === prevAutoName) {
+          next.name = `Torneo ${SPORT_LABELS[value] ?? value}`;
+        }
       }
       if (field === "sport" && value && value !== "PADEL" && value !== "TENIS") {
         next.category = "SIN_CATEGORIA";
@@ -258,31 +261,31 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
               );
             })()}
 
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Fecha de inicio</FormLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="date"
-                  value={form.startDate}
-                  onChange={e => set("startDate", e.target.value)}
-                  sx={dateSx}
-                />
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                <Box>
+                  <FormLabel sx={FORM_LABEL_SX}>Fecha de inicio</FormLabel>
+                  <DatePicker
+                    value={toDate(form.startDate)}
+                    onChange={d => set("startDate", fromDate(d))}
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <FormLabel sx={FORM_LABEL_SX}>Fecha de fin</FormLabel>
+                  <DatePicker
+                    value={toDate(form.endDate)}
+                    onChange={d => set("endDate", fromDate(d))}
+                    minDate={toDate(form.startDate) ?? undefined}
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                    }}
+                  />
+                </Box>
               </Box>
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Fecha de fin</FormLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="date"
-                  value={form.endDate}
-                  onChange={e => set("endDate", e.target.value)}
-                  inputProps={{ min: form.startDate || undefined }}
-                  sx={dateSx}
-                />
-              </Box>
-            </Box>
+            </LocalizationProvider>
 
             {error && (
               <Typography variant="body2" color="error">{error}</Typography>

@@ -165,6 +165,24 @@
   background: rgba(245, 173, 39, 0.05) !important;
 }
 
+/* Tournament date range highlight — same amber tint as rbc-today */
+.rbc-day-tournament {
+  background: rgba(245, 173, 39, 0.05) !important;
+}
+.rbc-slot-tournament {
+  background: rgba(245, 173, 39, 0.05) !important;
+}
+.rbc-time-header-cell .rbc-day-tournament {
+  background: rgba(245, 173, 39, 0.08) !important;
+}
+
+/* Disabled nav button */
+.cal-btn--disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Hide all-day row */
 .rbc-allday-cell {
   display: none;

@@ -13,13 +13,17 @@ import {
   FormControlLabel,
   FormGroup,
   FormLabel,
-  OutlinedInput,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { es } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { generateMatches } from "../../api/tournamentService";
@@ -88,7 +92,7 @@ interface Props {
 export default function GenerateMatchesDialog({ open, onClose, pairCount, tournamentId, tournamentStartDate, onGenerated, teamMode = false, tennisMode = false, sport }: Props) {
   const { user } = useAuth();
   const multipleSports = (user?.sports ?? []).length > 1;
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(tournamentStartDate ?? "");
   const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -237,18 +241,19 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
 
           <Box>
             <FormLabel sx={FORM_LABEL_SX}>Fecha</FormLabel>
-            <OutlinedInput
-              fullWidth
-              size="small"
-              type="date"
-              value={date}
-              onChange={e => {
-                setDate(e.target.value);
-                setStartTime("");
-                setError(null);
-              }}
-              sx={{ fontSize: "0.875rem" }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <DatePicker
+                value={date ? parseISO(date) : null}
+                onChange={d => {
+                  setDate(d ? format(d, "yyyy-MM-dd") : "");
+                  setStartTime("");
+                  setError(null);
+                }}
+                slotProps={{
+                  textField: { fullWidth: true, size: "small", sx: { fontSize: "0.875rem" } },
+                }}
+              />
+            </LocalizationProvider>
           </Box>
 
           <Box>

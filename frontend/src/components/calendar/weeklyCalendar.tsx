@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { Calendar, Views } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { localizer } from "./calendarConfig";
@@ -13,6 +13,8 @@ interface Props {
   onSelectEvent: (event: CalendarEvent) => void;
   initialDate?: Date;
   height?: string | number;
+  /** Restrict and highlight days within this date range (e.g. tournament start/end) */
+  highlightedDateRange?: { start: string; end: string };
 }
 
 const spanishMessages = {
@@ -34,11 +36,14 @@ function isSameDay(a: Date, b: Date) {
     a.getDate() === b.getDate();
 }
 
+// ── Date range context (shared with toolbar) ──────────────────────────────────
+
+interface DateRange { start: Date | null; end: Date | null }
+const DateRangeCtx = createContext<DateRange>({ start: null, end: null });
+
 // ── Custom event block ────────────────────────────────────────────────────────
 
-interface EventProps {
-  event: CalendarEvent;
-}
+interface EventProps { event: CalendarEvent }
 
 function EventBlock({ event }: EventProps) {
   const initials = getInitials(event.title);
@@ -76,6 +81,8 @@ interface ToolbarProps {
 
 function CustomToolbar({ date, label, onNavigate, onView, view, views }: ToolbarProps) {
   const isMobile = useMediaQuery("(max-width:600px)");
+  const { start: rangeStart, end: rangeEnd } = useContext(DateRangeCtx);
+  const hasRange = !!rangeStart && !!rangeEnd;
 
   const viewLabels: Record<string, string> = {
     day: "Día",
@@ -86,24 +93,72 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
 
   const today = new Date();
 
-  // 7-day strip centred on the currently viewed date
-  const strip = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - 3 + i);
-    return d;
-  });
+  // Determine if prev/next are at the boundary
+  const step = view === "week" ? 7 : 1;
+
+  const prevDate = new Date(date);
+  prevDate.setDate(prevDate.getDate() - step);
+  prevDate.setHours(0, 0, 0, 0);
+  const isPrevDisabled = hasRange && prevDate < rangeStart!;
+
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + step);
+  nextDate.setHours(0, 0, 0, 0);
+  const isNextDisabled = hasRange && nextDate > rangeEnd!;
+
+  // Mobile day strip: all tournament days if ≤ 7, else 7 centered on current date
+  const strip = useMemo(() => {
+    if (hasRange) {
+      const days: Date[] = [];
+      const d = new Date(rangeStart!);
+      d.setHours(0, 0, 0, 0);
+      const end = new Date(rangeEnd!);
+      end.setHours(0, 0, 0, 0);
+      while (d <= end) {
+        days.push(new Date(d));
+        d.setDate(d.getDate() + 1);
+      }
+      if (days.length <= 7) return days;
+      // More than 7 days: show 7 centered on current date, clamped to range
+      const center = new Date(date);
+      center.setHours(0, 0, 0, 0);
+      const result: Date[] = [];
+      for (let i = -3; i <= 3; i++) {
+        const candidate = new Date(center);
+        candidate.setDate(center.getDate() + i);
+        if (candidate >= rangeStart! && candidate <= rangeEnd!) {
+          result.push(candidate);
+        }
+      }
+      return result;
+    }
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - 3 + i);
+      return d;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, rangeStart, rangeEnd, hasRange]);
 
   return (
     <div className="cal-toolbar">
       {/* Row 1: ‹ [label] › */}
       <div className="cal-toolbar__nav">
-        <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("PREV")}>‹</button>
+        <button
+          className={`cal-btn cal-btn--icon${isPrevDisabled ? " cal-btn--disabled" : ""}`}
+          onClick={() => !isPrevDisabled && onNavigate("PREV")}
+          aria-disabled={isPrevDisabled}
+        >‹</button>
         <span className="cal-toolbar__label">{label}</span>
-        <button className="cal-btn cal-btn--icon" onClick={() => onNavigate("NEXT")}>›</button>
+        <button
+          className={`cal-btn cal-btn--icon${isNextDisabled ? " cal-btn--disabled" : ""}`}
+          onClick={() => !isNextDisabled && onNavigate("NEXT")}
+          aria-disabled={isNextDisabled}
+        >›</button>
       </div>
 
-      {/* Mobile: 7-day quick-access strip */}
+      {/* Mobile: day strip */}
       {isMobile && (
         <div className="cal-day-strip">
           {strip.map((d, i) => {
@@ -126,7 +181,9 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
       {/* Row 2: Hoy + view switcher — hidden on mobile */}
       {!isMobile && (
         <div className="cal-toolbar__controls">
-          <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
+          {!hasRange && (
+            <button className="cal-btn cal-btn--today" onClick={() => onNavigate("TODAY")}>Hoy</button>
+          )}
           <div className="cal-toolbar__views">
             {views.map((v) => (
               <button
@@ -146,9 +203,38 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
-export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, initialDate, height }: Props) {
+export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, initialDate, height, highlightedDateRange }: Props) {
   const isMobile = useMediaQuery("(max-width:600px)");
-  const [date, setDate] = useState(initialDate ?? new Date());
+
+  const highlightStart = useMemo(
+    () => highlightedDateRange ? new Date(highlightedDateRange.start + "T00:00:00") : null,
+    [highlightedDateRange?.start],
+  );
+  const highlightEnd = useMemo(
+    () => highlightedDateRange ? new Date(highlightedDateRange.end + "T23:59:59") : null,
+    [highlightedDateRange?.end],
+  );
+
+  // When a range is provided, start at the tournament start; otherwise use initialDate
+  const [date, setDate] = useState(highlightStart ?? initialDate ?? new Date());
+
+  const clampToRange = (d: Date): Date => {
+    if (!highlightStart || !highlightEnd) return d;
+    if (d < highlightStart) return new Date(highlightStart);
+    if (d > highlightEnd) return new Date(highlightEnd);
+    return d;
+  };
+
+  const isHighlighted = (d: Date) => {
+    if (!highlightStart || !highlightEnd) return false;
+    return d >= highlightStart && d <= highlightEnd;
+  };
+
+  const dayPropGetter = (d: Date) =>
+    isHighlighted(d) ? { className: "rbc-day-tournament" } : {};
+
+  const slotPropGetter = (d: Date) =>
+    isHighlighted(d) ? { className: "rbc-slot-tournament" } : {};
 
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {
@@ -160,34 +246,47 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, in
     },
   });
 
+  const handleNavigate = (newDate: Date) => {
+    setDate(clampToRange(newDate));
+  };
+
+  const dateRange = useMemo<DateRange>(
+    () => ({ start: highlightStart, end: highlightEnd }),
+    [highlightStart, highlightEnd],
+  );
+
   return (
-    <div className="calendarWrapper" style={height !== undefined ? { height } : undefined}>
-      <Calendar
-        localizer={localizer}
-        culture="es"
-        events={events}
-        date={date}
-        onNavigate={(newDate) => setDate(newDate)}
-        defaultView={isMobile ? Views.DAY : Views.WEEK}
-        views={isMobile ? [Views.DAY, Views.WEEK] : [Views.DAY, Views.WEEK, Views.MONTH]}
-        messages={spanishMessages}
-        step={60}
-        timeslots={1}
-        selectable
-        startAccessor="start"
-        endAccessor="end"
-        onSelectSlot={onSelectSlot}
-        onSelectEvent={onSelectEvent}
-        eventPropGetter={eventPropGetter}
-        popup
-        className="calendar"
-        min={new Date(0, 0, 0, 7, 0)}
-        max={new Date(0, 0, 0, 23, 0)}
-        components={{
-          event: EventBlock as any,
-          toolbar: CustomToolbar as any,
-        }}
-      />
-    </div>
+    <DateRangeCtx.Provider value={dateRange}>
+      <div className="calendarWrapper" style={height !== undefined ? { height } : undefined}>
+        <Calendar
+          localizer={localizer}
+          culture="es"
+          events={events}
+          date={date}
+          onNavigate={handleNavigate}
+          defaultView={isMobile ? Views.DAY : Views.WEEK}
+          views={isMobile ? [Views.DAY, Views.WEEK] : [Views.DAY, Views.WEEK, Views.MONTH]}
+          messages={spanishMessages}
+          step={60}
+          timeslots={1}
+          selectable
+          startAccessor="start"
+          endAccessor="end"
+          onSelectSlot={onSelectSlot}
+          onSelectEvent={onSelectEvent}
+          eventPropGetter={eventPropGetter}
+          dayPropGetter={dayPropGetter}
+          slotPropGetter={slotPropGetter}
+          popup
+          className="calendar"
+          min={new Date(0, 0, 0, 7, 0)}
+          max={new Date(0, 0, 0, 23, 0)}
+          components={{
+            event: EventBlock as any,
+            toolbar: CustomToolbar as any,
+          }}
+        />
+      </div>
+    </DateRangeCtx.Provider>
   );
 }

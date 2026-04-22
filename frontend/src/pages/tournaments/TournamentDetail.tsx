@@ -428,7 +428,7 @@ export default function TournamentDetail() {
               {canTriggerRepechaje && (
                 <RepechajeButton tournamentId={Number(id)} />
               )}
-              {hasMatches && isBracket && (
+              {hasMatches && isBracket && !round1Done && (
                 <Button
                   size="small"
                   variant="contained"
@@ -519,6 +519,7 @@ export default function TournamentDetail() {
         onClose={() => setAddPlayerOpen(false)}
         tournamentId={Number(id)}
         existingPairs={data.pairs}
+        sport={data.sport}
       />
 
       <AddPairDialog
@@ -528,6 +529,7 @@ export default function TournamentDetail() {
         existingPairs={data.pairs}
         tournamentCategory={data.category}
         tournamentStartDate={data.startDate}
+        sport={data.sport}
       />
 
       {editPairTarget && (
@@ -567,6 +569,8 @@ export default function TournamentDetail() {
           tournamentId={Number(id)}
           sport={data.sport}
           totalRounds={isBracket && bracketMatches.length > 0 ? Math.max(...bracketMatches.map(m => m.round)) : undefined}
+          tournamentStartDate={data.startDate}
+          tournamentEndDate={data.endDate}
         />
       )}
 

@@ -12,23 +12,26 @@ export type PlayerCategory =
 export interface Player {
   id: number;
   name: string;
-  category: PlayerCategory;
-  city: string;
+  category: PlayerCategory;       // Pádel category
+  tenisCategory?: PlayerCategory; // Tenis category
+  city?: string;
   sex: PlayerSex;
   birthDate?: string; // YYYY-MM-DD
   phone?: string;
-  sport?: string;
+  sports?: string[];
+  sport?: string;     // legacy: backend may still return singular
   avatarUrl?: string;
   createdAt: string;
 }
 
 export interface PlayerFormData {
   name: string;
-  category: PlayerCategory;
-  city: string;
+  category: PlayerCategory;       // Pádel category
+  tenisCategory?: PlayerCategory; // Tenis category
+  city?: string;
   sex: PlayerSex;
   birthDate?: string;
-  phone: string;
-  sport?: string;
+  phone?: string;
+  sports?: string[];
   avatarUrl?: string;
 }
