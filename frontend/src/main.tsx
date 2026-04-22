@@ -7,6 +7,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext';
+import { APIProvider } from '@vis.gl/react-google-maps';
 import axios from 'axios';
 
 axios.interceptors.request.use(config => {
@@ -26,7 +27,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""} libraries={["places", "geocoding"]}>
+            <App />
+          </APIProvider>
         </QueryClientProvider>
       </AuthProvider>
     </BrowserRouter>,

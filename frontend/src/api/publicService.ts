@@ -7,6 +7,9 @@ export interface PublicProfesor {
   id: number;
   name: string;
   phone: string | null;
+  sex: "MASCULINO" | "FEMENINO" | null;
+  avatarUrl: string | null;
+  sport: string | null;
   schedule: DaySchedule[] | null;
 }
 
@@ -29,8 +32,19 @@ export interface PublicProfile {
 export const fetchPublicProfile = (username: string): Promise<PublicProfile> =>
   axios.get(`${BASE}/public/${username}`).then(r => r.data);
 
-export const fetchPublicTournaments = (username: string): Promise<Tournament[]> =>
-  axios.get(`${BASE}/public/${username}/tournaments`).then(r => r.data);
+export interface PaginatedTournaments {
+  data: Tournament[];
+  total: number;
+  page: number;
+  totalPages: number;
+  availableSports: string[];
+}
+
+export const fetchPublicTournaments = (
+  username: string,
+  params: { page?: number; search?: string; sport?: string } = {},
+): Promise<PaginatedTournaments> =>
+  axios.get(`${BASE}/public/${username}/tournaments`, { params }).then(r => r.data);
 
 export const fetchPublicTournamentDetail = (username: string, tournamentId: number): Promise<TournamentDetail> =>
   axios.get(`${BASE}/public/${username}/tournaments/${tournamentId}`).then(r => r.data);
@@ -40,6 +54,7 @@ export interface PublicCourt {
   name: string;
   type: string;
   status: string;
+  sport: string;
 }
 
 export interface PublicBookingSlot {
@@ -51,10 +66,28 @@ export interface PublicBookingSlot {
 export interface PublicCourtsData {
   courts: PublicCourt[];
   bookings: PublicBookingSlot[];
+  total: number;
+  totalPages: number;
+  availableSports: string[];
 }
 
-export const fetchPublicCourts = (username: string, from: string, to: string): Promise<PublicCourtsData> =>
-  axios.get(`${BASE}/public/${username}/courts`, { params: { from, to } }).then(r => r.data);
+export const fetchPublicCourts = (
+  username: string,
+  from: string,
+  to: string,
+  params: { page?: number; sport?: string } = {},
+): Promise<PublicCourtsData> =>
+  axios.get(`${BASE}/public/${username}/courts`, { params: { from, to, ...params } }).then(r => r.data);
 
-export const fetchPublicProfesores = (username: string): Promise<PublicProfesor[]> =>
-  axios.get(`${BASE}/public/${username}/profesores`).then(r => r.data);
+export interface PaginatedProfesores {
+  data: PublicProfesor[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const fetchPublicProfesores = (
+  username: string,
+  params: { page?: number; search?: string } = {},
+): Promise<PaginatedProfesores> =>
+  axios.get(`${BASE}/public/${username}/profesores`, { params }).then(r => r.data);

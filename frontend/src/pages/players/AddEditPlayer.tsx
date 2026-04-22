@@ -8,6 +8,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
   FormLabel,
   MenuItem,
   Select,
@@ -17,6 +20,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { es } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlayer, updatePlayer } from "../../api/playerService";
 import type { Player, PlayerCategory, PlayerFormData, PlayerSex } from "../../types/Player";
@@ -58,7 +66,7 @@ async function searchCities(query: string): Promise<CityOption[]> {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CATEGORIES: { value: PlayerCategory; label: string }[] = [
+const PADEL_CATEGORIES: { value: PlayerCategory; label: string }[] = [
   { value: "SIN_CATEGORIA", label: "Sin Categoría" },
   { value: "PRIMERA",       label: "1ra" },
   { value: "SEGUNDA",       label: "2da" },
@@ -69,14 +77,23 @@ const CATEGORIES: { value: PlayerCategory; label: string }[] = [
   { value: "SEPTIMA",       label: "7ma" },
 ];
 
+const TENIS_CATEGORIES: { value: PlayerCategory; label: string }[] = [
+  { value: "SIN_CATEGORIA", label: "Sin Categoría" },
+  { value: "PRIMERA",       label: "1ra" },
+  { value: "SEGUNDA",       label: "2da" },
+  { value: "TERCERA",       label: "3ra" },
+  { value: "CUARTA",        label: "4ta" },
+];
+
 const EMPTY: PlayerFormData = {
   name: "",
   category: "SIN_CATEGORIA",
+  tenisCategory: "SIN_CATEGORIA",
   city: "",
   sex: "MASCULINO",
   birthDate: "",
   phone: "",
-  sport: "",
+  sports: [],
   avatarUrl: "",
 };
 
@@ -109,14 +126,15 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
       setForm({
         name: player.name,
         category: player.category,
+        tenisCategory: player.tenisCategory ?? "SIN_CATEGORIA",
         city: player.city,
         sex: player.sex,
         birthDate: player.birthDate,
         phone: player.phone ?? "",
-        sport: player.sport ?? "",
+        sports: player.sports ?? (player.sport ? [player.sport] : []),
         avatarUrl: player.avatarUrl ?? "",
       });
-      setCityInput(player.city);
+      setCityInput(player.city ?? "");
     } else {
       setForm(EMPTY);
       setCityInput("");
@@ -162,7 +180,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
     mutation.mutate(form);
   };
 
-  const isValid = form.name.trim() && form.city.trim();
+  const isValid = form.name.trim();
 
 
   return (
@@ -251,29 +269,23 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
 
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="date"
-                  value={form.birthDate}
-                  onChange={(e) => set("birthDate", e.target.value)}
-                  inputProps={{ max: new Date().toISOString().split("T")[0] }}
-                  disabled={mutation.isPending}
-                  sx={{
-                    ...FORM_INPUT_SX,
-                    "& input[type='date']::-webkit-calendar-picker-indicator": {
-                      opacity: 0.5,
-                      cursor: "pointer",
-                      "&:hover": { opacity: 1 },
-                    },
-                  }}
-                />
+                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+                  <DatePicker
+                    value={form.birthDate ? parseISO(form.birthDate) : null}
+                    onChange={d => set("birthDate", d ? format(d, "yyyy-MM-dd") : "")}
+                    maxDate={new Date()}
+                    disabled={mutation.isPending}
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                    }}
+                  />
+                </LocalizationProvider>
               </Box>
             </Box>
 
             {/* Teléfono */}
             <PhoneField
-              value={form.phone}
+              value={form.phone ?? ""}
               onChange={(val) => set("phone", val)}
               disabled={mutation.isPending}
             />
@@ -281,41 +293,57 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
             {/* Deporte — opciones según los deportes habilitados del club */}
             {showSportSelector && (
               <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={form.sport ?? ""}
-                  onChange={e => set("sport", e.target.value)}
-                  disabled={mutation.isPending}
-                  sx={{ height: 40, fontSize: "0.875rem" }}
-                >
-                  <MenuItem value=""><em>Sin especificar</em></MenuItem>
-                  {userSports.map(s => (
-                    <MenuItem key={s} value={s}>
-                      {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
+                <FormGroup row>
+                  {userSports.map(s => {
+                    const checked = (form.sports ?? []).includes(s);
+                    return (
+                      <FormControlLabel
+                        key={s}
+                        disabled={mutation.isPending}
+                        control={
+                          <Checkbox
+                            checked={checked}
+                            onChange={() => setForm(prev => {
+                              const current = prev.sports ?? [];
+                              return { ...prev, sports: checked ? current.filter(x => x !== s) : [...current, s] };
+                            })}
+                            size="small"
+                            sx={{ color: "text.secondary", "&.Mui-checked": { color: "#F5AD27" } }}
+                          />
+                        }
+                        label={SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                        sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.875rem", fontWeight: 500 } }}
+                      />
+                    );
+                  })}
+                </FormGroup>
               </Box>
             )}
 
-            {/* Categoría — solo para Pádel */}
-            {form.sport === "PADEL" && (
-              <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Categoría</FormLabel>
-                <Select
-                  fullWidth
-                  size="small"
-                  value={form.category}
-                  onChange={(e) => set("category", e.target.value)}
-                  disabled={mutation.isPending}
-                  sx={{ height: 40, fontSize: "0.875rem" }}
-                >
-                  {CATEGORIES.map((c) => (
-                    <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                  ))}
-                </Select>
+            {/* Categorías — Pádel y/o Tenis */}
+            {(form.sports?.includes("PADEL") || form.sports?.includes("TENIS")) && (
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: form.sports!.includes("PADEL") && form.sports!.includes("TENIS") ? "1fr 1fr" : "1fr" }, gap: 2 }}>
+                {form.sports?.includes("PADEL") && (
+                  <Box>
+                    <FormLabel sx={FORM_LABEL_SX}>Categoría Pádel</FormLabel>
+                    <Select fullWidth size="small" value={form.category} onChange={(e) => set("category", e.target.value)} disabled={mutation.isPending} sx={{ height: 40, fontSize: "0.875rem" }}>
+                      {PADEL_CATEGORIES.map((c) => (
+                        <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+                )}
+                {form.sports?.includes("TENIS") && (
+                  <Box>
+                    <FormLabel sx={FORM_LABEL_SX}>Categoría Tenis</FormLabel>
+                    <Select fullWidth size="small" value={form.tenisCategory ?? "SIN_CATEGORIA"} onChange={(e) => set("tenisCategory", e.target.value)} disabled={mutation.isPending} sx={{ height: 40, fontSize: "0.875rem" }}>
+                      {TENIS_CATEGORIES.map((c) => (
+                        <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+                )}
               </Box>
             )}
 

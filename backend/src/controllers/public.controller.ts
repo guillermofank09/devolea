@@ -9,7 +9,9 @@ import { Court } from "../entities/Court";
 import { Booking } from "../entities/Booking";
 import { Profesor } from "../entities/Profesor";
 import { AppSettings } from "../entities/AppSettings";
-import { Between, In } from "typeorm";
+import { Between, In, ILike, MoreThanOrEqual } from "typeorm";
+
+const PAGE_SIZE = 10;
 
 async function resolveUser(username: string): Promise<User | null> {
   return AppDataSource.getRepository(User).findOneBy({ username });
@@ -49,19 +51,43 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
 export const getPublicTournaments = async (req: Request, res: Response) => {
   const { username } = req.params;
+  const page   = Math.max(1, parseInt(req.query.page  as string) || 1);
+  const search = ((req.query.search as string) ?? "").trim();
+  const sport  = (req.query.sport  as string) ?? "";
+
   try {
     const user = await resolveUser(username);
     if (!user) return res.status(404).json({ error: "Club no encontrado" });
 
-    const tournaments = await AppDataSource.getRepository(Tournament).find({
-      where: [
-        { userId: user.id, status: "ACTIVE" },
-        { userId: user.id, status: "DRAFT" },
-      ],
-      order: { startDate: "ASC" },
-    });
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const tenDaysAgoStr = tenDaysAgo.toISOString().split("T")[0];
 
-    res.json(tournaments);
+    const base = AppDataSource.getRepository(Tournament)
+      .createQueryBuilder("t")
+      .where("t.userId = :userId", { userId: user.id })
+      .andWhere(`(t.status IN ('ACTIVE','DRAFT') OR (t.status = 'COMPLETED' AND t."endDate" >= :tenDaysAgo))`, { tenDaysAgo: tenDaysAgoStr })
+      .andWhere(qb => `EXISTS ${qb.subQuery().select("1").from(TournamentMatch, "m").where("m.tournamentId = t.id").getQuery()}`)
+      .orderBy("t.startDate", "ASC");
+
+    if (search) base.andWhere("LOWER(t.name) LIKE :search", { search: `%${search.toLowerCase()}%` });
+    if (sport)  base.andWhere("t.sport = :sport", { sport });
+
+    // Collect available sports across ALL visible tournaments (before sport filter)
+    const allSportsQb = AppDataSource.getRepository(Tournament)
+      .createQueryBuilder("t")
+      .select("DISTINCT t.sport", "sport")
+      .where("t.userId = :userId", { userId: user.id })
+      .andWhere(`(t.status IN ('ACTIVE','DRAFT') OR (t.status = 'COMPLETED' AND t."endDate" >= :tenDaysAgo))`, { tenDaysAgo: tenDaysAgoStr })
+      .andWhere(qb => `EXISTS ${qb.subQuery().select("1").from(TournamentMatch, "m").where("m.tournamentId = t.id").getQuery()}`);
+    if (search) allSportsQb.andWhere("LOWER(t.name) LIKE :search", { search: `%${search.toLowerCase()}%` });
+    const sportsRaw = await allSportsQb.getRawMany();
+    const availableSports = sportsRaw.map(r => r.sport).filter(Boolean) as string[];
+
+    const total = await base.getCount();
+    const data  = await base.skip((page - 1) * PAGE_SIZE).take(PAGE_SIZE).getMany();
+
+    res.json({ data, total, page, totalPages: Math.ceil(total / PAGE_SIZE), availableSports });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -70,16 +96,28 @@ export const getPublicTournaments = async (req: Request, res: Response) => {
 export const getPublicCourts = async (req: Request, res: Response) => {
   const { username } = req.params;
   const { from, to } = req.query as { from?: string; to?: string };
+  const page  = Math.max(1, parseInt(req.query.page as string) || 1);
+  const sport = (req.query.sport as string) ?? "";
+
   try {
     const user = await resolveUser(username);
     if (!user) return res.status(404).json({ error: "Club no encontrado" });
 
-    const courts = await AppDataSource.getRepository(Court).find({
-      where: { userId: user.id },
+    // Available sports across all courts (before sport filter)
+    const allCourts = await AppDataSource.getRepository(Court).find({ where: { userId: user.id }, select: ["sport"] });
+    const availableSports = [...new Set(allCourts.map(c => c.sport).filter(Boolean))] as string[];
+
+    const where: any = { userId: user.id };
+    if (sport) where.sport = sport;
+
+    const [courts, total] = await AppDataSource.getRepository(Court).findAndCount({
+      where,
       order: { name: "ASC" },
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
     });
 
-    if (!courts.length) return res.json({ courts: [], bookings: [] });
+    if (!courts.length) return res.json({ courts: [], bookings: [], total, totalPages: Math.ceil(total / PAGE_SIZE), availableSports });
 
     const courtIds = courts.map(c => c.id!);
     let bookings: Array<{ courtId: number; startTime: string; endTime: string }> = [];
@@ -101,8 +139,11 @@ export const getPublicCourts = async (req: Request, res: Response) => {
     }
 
     res.json({
-      courts: courts.map(c => ({ id: c.id, name: c.name, type: c.type, status: c.status })),
+      courts: courts.map(c => ({ id: c.id, name: c.name, type: c.type, status: c.status, sport: c.sport ?? null })),
       bookings,
+      total,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+      availableSports,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -111,21 +152,37 @@ export const getPublicCourts = async (req: Request, res: Response) => {
 
 export const getPublicProfesores = async (req: Request, res: Response) => {
   const { username } = req.params;
+  const page   = Math.max(1, parseInt(req.query.page  as string) || 1);
+  const search = ((req.query.search as string) ?? "").trim();
+
   try {
     const user = await resolveUser(username);
     if (!user) return res.status(404).json({ error: "Club no encontrado" });
 
-    const profesores = await AppDataSource.getRepository(Profesor).find({
-      where: { userId: user.id },
+    const where: any = { userId: user.id };
+    if (search) where.name = ILike(`%${search}%`);
+
+    const [profesores, total] = await AppDataSource.getRepository(Profesor).findAndCount({
+      where,
       order: { name: "ASC" },
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
     });
 
-    res.json(profesores.map(p => ({
-      id: p.id,
-      name: p.name,
-      phone: p.phone ?? null,
-      schedule: p.schedule ?? null,
-    })));
+    res.json({
+      data: profesores.map(p => ({
+        id: p.id,
+        name: p.name,
+        phone: p.phone ?? null,
+        sex: p.sex ?? null,
+        avatarUrl: p.avatarUrl ?? null,
+        sport: p.sport ?? null,
+        schedule: p.schedule ?? null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+    });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -141,7 +198,7 @@ export const getPublicTournamentDetail = async (req: Request, res: Response) => 
       id: Number(tournamentId),
       userId: user.id,
     });
-    if (!tournament || (tournament.status !== "ACTIVE" && tournament.status !== "DRAFT")) {
+    if (!tournament || !["ACTIVE", "DRAFT", "COMPLETED"].includes(tournament.status)) {
       return res.status(404).json({ error: "Torneo no encontrado" });
     }
 

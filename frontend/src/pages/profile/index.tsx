@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Autocomplete,
@@ -34,24 +34,8 @@ import PageLoader from "../../components/common/PageLoader";
 import BusinessHoursEditor from "../../components/common/BusinessHoursEditor";
 import PhoneField from "../../components/common/PhoneField";
 import { useAuth } from "../../context/AuthContext";
-
-// ─── Nominatim (OpenStreetMap) ────────────────────────────────────────────────
-interface NominatimPlace {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-}
-
-async function searchAddress(query: string): Promise<NominatimPlace[]> {
-  const url =
-    `https://nominatim.openstreetmap.org/search` +
-    `?q=${encodeURIComponent(query)}&format=json&limit=6&addressdetails=1`;
-  const res = await fetch(url, {
-    headers: { "Accept-Language": "es", "User-Agent": "DevoleatClubManager/1.0" },
-  });
-  return res.json();
-}
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import GoogleMapView from "../../components/common/GoogleMapView";
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -205,11 +189,25 @@ export default function Profile() {
   const [hours, setHours]           = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [snack, setSnack]           = useState(false);
 
+  // ── Google Maps / Places ──
+  const placesLib = useMapsLibrary("places");
+  const geocodingLib = useMapsLibrary("geocoding");
+  const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
+  const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
+
+  useEffect(() => {
+    if (placesLib) setAutocompleteService(new placesLib.AutocompleteService());
+  }, [placesLib]);
+
+  useEffect(() => {
+    if (geocodingLib) setGeocoder(new geocodingLib.Geocoder());
+  }, [geocodingLib]);
+
   // ── address autocomplete state ──
-  const [addrInput, setAddrInput]         = useState("");
-  const [addrOptions, setAddrOptions]     = useState<NominatimPlace[]>([]);
-  const [addrLoading, setAddrLoading]     = useState(false);
-  const [addrValue, setAddrValue]         = useState<NominatimPlace | null>(null);
+  const [addrInput, setAddrInput]   = useState("");
+  const [addrOptions, setAddrOptions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [addrValue, setAddrValue]   = useState<google.maps.places.AutocompletePrediction | null>(null);
 
   // populate when data loads
   useEffect(() => {
@@ -224,14 +222,14 @@ export default function Profile() {
     setHours(data.businessHours?.length ? data.businessHours : DEFAULT_HOURS);
   }, [data]);
 
-  // debounced Nominatim search
+  // debounced Places autocomplete search
   useEffect(() => {
-    if (addrInput.length < 3) { setAddrOptions([]); return; }
+    if (addrInput.length < 3 || !autocompleteService) { setAddrOptions([]); return; }
     const timer = setTimeout(async () => {
       setAddrLoading(true);
       try {
-        const results = await searchAddress(addrInput);
-        setAddrOptions(results);
+        const result = await autocompleteService.getPlacePredictions({ input: addrInput });
+        setAddrOptions(result.predictions ?? []);
       } catch {
         setAddrOptions([]);
       } finally {
@@ -239,7 +237,19 @@ export default function Profile() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [addrInput]);
+  }, [addrInput, autocompleteService]);
+
+  const handlePlaceSelect = useCallback(async (prediction: google.maps.places.AutocompletePrediction) => {
+    setAddrValue(prediction);
+    setAddrInput(prediction.description);
+    setAddress(prediction.description);
+    if (!geocoder) return;
+    try {
+      const result = await geocoder.geocode({ placeId: prediction.place_id });
+      const loc = result.results[0]?.geometry?.location;
+      if (loc) { setLat(loc.lat()); setLng(loc.lng()); }
+    } catch { /* lat/lng stays null */ }
+  }, [geocoder]);
 
   // ── logo upload ──
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -399,50 +409,16 @@ export default function Profile() {
                   border: "1.5px solid",
                   borderColor: "divider",
                   height: 220,
-                  position: "relative",
                 }}
               >
-                <iframe
-                  title="Ubicación del club"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, display: "block" }}
-                  src={
-                    `https://www.openstreetmap.org/export/embed.html` +
-                    `?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}` +
-                    `&layer=mapnik&marker=${lat},${lng}`
-                  }
-                  loading="lazy"
-                />
-                <Box
-                  component="a"
-                  href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
-                    position: "absolute",
-                    bottom: 6,
-                    right: 6,
-                    bgcolor: "rgba(255,255,255,0.9)",
-                    borderRadius: 1,
-                    px: 1,
-                    py: 0.25,
-                    fontSize: "0.65rem",
-                    color: "text.secondary",
-                    textDecoration: "none",
-                    backdropFilter: "blur(4px)",
-                    "&:hover": { color: "primary.main" },
-                  }}
-                >
-                  Ver en OpenStreetMap ↗
-                </Box>
+                <GoogleMapView lat={lat} lng={lng} height={220} interactive />
               </Box>
             )}
 
             <Autocomplete
               freeSolo
               options={addrOptions}
-              getOptionLabel={opt => (typeof opt === "string" ? opt : opt.display_name)}
+              getOptionLabel={opt => (typeof opt === "string" ? opt : opt.description)}
               loading={addrLoading}
               value={addrValue}
               inputValue={addrInput}
@@ -458,11 +434,7 @@ export default function Profile() {
               }}
               onChange={(_, opt) => {
                 if (!opt || typeof opt === "string") return;
-                setAddrValue(opt);
-                setAddress(opt.display_name);
-                setAddrInput(opt.display_name);
-                setLat(parseFloat(opt.lat));
-                setLng(parseFloat(opt.lon));
+                handlePlaceSelect(opt);
               }}
               renderInput={params => (
                 <TextField
@@ -484,7 +456,7 @@ export default function Profile() {
                   helperText={
                     lat && lng
                       ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`
-                      : "Escribí para buscar con OpenStreetMap (Nominatim)"
+                      : "Escribí para buscar con Google Maps"
                   }
                 />
               )}
@@ -492,7 +464,16 @@ export default function Profile() {
                 <li {...props} key={option.place_id}>
                   <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start", py: 0.25 }}>
                     <LocationOnOutlinedIcon sx={{ fontSize: 15, mt: 0.3, color: "text.secondary", flexShrink: 0 }} />
-                    <Typography variant="body2" sx={{ lineHeight: 1.4 }}>{option.display_name}</Typography>
+                    <Box>
+                      <Typography variant="body2" sx={{ lineHeight: 1.3, fontWeight: 500 }}>
+                        {option.structured_formatting?.main_text ?? option.description}
+                      </Typography>
+                      {option.structured_formatting?.secondary_text && (
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                          {option.structured_formatting.secondary_text}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                 </li>
               )}

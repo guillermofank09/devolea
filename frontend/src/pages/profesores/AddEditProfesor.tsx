@@ -17,8 +17,10 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createProfesor, updateProfesor } from "../../api/profesorService";
+import { fetchCourts } from "../../api/courtService";
+import type { Court } from "../../types/Court";
 import type { Profesor, ProfesorFormData } from "../../types/Profesor";
 import type { DaySchedule } from "../../types/ClubProfile";
 import { DEFAULT_HOURS } from "../../types/ClubProfile";
@@ -31,6 +33,30 @@ import { SPORT_LABEL } from "../../constants/sports";
 
 const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "" };
 
+const FUTBOL_TYPE_LABEL: Record<string, string> = {
+  FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
+};
+
+const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL"];
+
+function toProfesorSportOptions(courts: Court[], clubSports: string[]): { key: string; label: string }[] {
+  const seen = new Set<string>();
+  const rows: { key: string; label: string }[] = [];
+  for (const sport of clubSports) {
+    if (!SPORTS_WITH_CLASS.includes(sport)) continue;
+    const sportCourts = courts.filter(c => c.sport === sport);
+    if (sport === "FUTBOL") {
+      const types = [...new Set(sportCourts.map(c => c.type as string).filter(t => t.startsWith("FUTBOL")))];
+      for (const t of types) {
+        if (!seen.has(t)) { seen.add(t); rows.push({ key: t, label: FUTBOL_TYPE_LABEL[t] ?? t }); }
+      }
+    } else if (sportCourts.length > 0) {
+      if (!seen.has(sport)) { seen.add(sport); rows.push({ key: sport, label: SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport }); }
+    }
+  }
+  return rows;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -39,12 +65,20 @@ interface Props {
 
 export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const { user } = useAuth();
-  const PROFESOR_SPORTS = ["PADEL", "TENIS", "FUTBOL"];
-  const clubSports = (user?.sports ?? ["PADEL"]).filter(s => PROFESOR_SPORTS.includes(s));
+  const clubSports = user?.sports ?? ["PADEL"];
+
+  const { data: courts = [] } = useQuery<Court[]>({
+    queryKey: ["courtsData"],
+    queryFn: () => fetchCourts(),
+    staleTime: 60_000,
+  });
+
+  const sportOptions = toProfesorSportOptions(courts, clubSports);
+  const defaultSport = sportOptions[0]?.key ?? "PADEL";
 
   const [form, setForm] = useState<ProfesorFormData>(EMPTY);
   const [hourlyRateStr, setHourlyRateStr] = useState("");
-  const [sport, setSport] = useState<string>(clubSports[0] ?? "PADEL");
+  const [sport, setSport] = useState<string>(defaultSport);
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
@@ -53,19 +87,23 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   const isEditing = !!profesor;
 
   useEffect(() => {
+    if (!open || sportOptions.length === 0) return;
     if (profesor) {
       setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
-      setSport(profesor.sport ?? clubSports[0] ?? "PADEL");
+      // Use the saved sport only if it still matches a valid option; otherwise fall back to default
+      const validSport = sportOptions.some(o => o.key === profesor.sport) ? profesor.sport! : defaultSport;
+      setSport(validSport);
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
       setForm(EMPTY);
       setHourlyRateStr("");
-      setSport(clubSports[0] ?? "PADEL");
+      setSport(defaultSport);
       setSchedule(DEFAULT_HOURS);
     }
     setError(null);
-  }, [profesor, open]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profesor, open, defaultSport]);
 
   const mutation = useMutation({
     mutationFn: (data: ProfesorFormData) => {
@@ -173,7 +211,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               </ToggleButtonGroup>
             </Box>
 
-            {clubSports.length > 1 && (
+            {sportOptions.length > 1 && (
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
                 <ToggleButtonGroup
@@ -184,10 +222,10 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                   disabled={mutation.isPending}
                   sx={{ flexWrap: "wrap", gap: 0.5 }}
                 >
-                  {clubSports.map(s => (
+                  {sportOptions.map(({ key, label }) => (
                     <ToggleButton
-                      key={s}
-                      value={s}
+                      key={key}
+                      value={key}
                       sx={{
                         textTransform: "none",
                         fontWeight: 600,
@@ -202,7 +240,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                         },
                       }}
                     >
-                      {SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s}
+                      {label}
                     </ToggleButton>
                   ))}
                 </ToggleButtonGroup>

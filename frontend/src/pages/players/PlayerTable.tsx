@@ -82,7 +82,7 @@ function getValue(player: Player, key: SortKey): string | number {
   switch (key) {
     case "name":     return player.name.toLowerCase();
     case "category": return CATEGORY_ORDER[player.category];
-    case "city":     return player.city.toLowerCase();
+    case "city":     return (player.city ?? "").toLowerCase();
     case "sex":      return player.sex;
     case "age":      return player.birthDate ? -new Date(player.birthDate).getTime() : 0;
   }
@@ -130,18 +130,20 @@ function MobileList({ players, onEdit, onDelete }: Props) {
                 <Typography variant="body2" fontWeight={700} noWrap sx={{ maxWidth: "55vw" }}>
                   {player.name}
                 </Typography>
-                <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
-                  <Chip
-                    label={CATEGORY_LABEL[player.category]}
-                    color={CATEGORY_COLOR[player.category]}
-                    size="small"
-                    sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }}
-                  />
-                </Tooltip>
+                {player.sports?.includes("PADEL") || player.sport === "PADEL" || (!player.sports?.length && !player.sport) ? (
+                  <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
+                    <Chip label={CATEGORY_LABEL[player.category]} color={CATEGORY_COLOR[player.category]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
+                  </Tooltip>
+                ) : null}
+                {player.tenisCategory && (player.sports?.includes("TENIS") || player.sport === "TENIS") ? (
+                  <Tooltip title={`Tenis: ${CATEGORY_FULL[player.tenisCategory]}`} placement="top">
+                    <Chip label={`T: ${CATEGORY_LABEL[player.tenisCategory]}`} color={CATEGORY_COLOR[player.tenisCategory]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
+                  </Tooltip>
+                ) : null}
               </Box>
               <Typography variant="caption" color="text.secondary">
                 {player.city} · {player.sex === "MASCULINO" ? "M" : "F"}{player.birthDate ? ` · ${getAge(player.birthDate)} años` : ""}
-                {player.sport ? ` · ${SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport}` : ""}
+                {player.sports?.length ? ` · ${player.sports.map(s => SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s).join(", ")}` : player.sport ? ` · ${SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport}` : ""}
                 {player.phone ? ` · +${player.phone}` : ""}
               </Typography>
             </Box>
@@ -274,14 +276,18 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
               </TableCell>
 
               <TableCell>
-                <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
-                  <Chip
-                    label={CATEGORY_LABEL[player.category]}
-                    color={CATEGORY_COLOR[player.category]}
-                    size="small"
-                    sx={{ fontWeight: 700, minWidth: 42 }}
-                  />
-                </Tooltip>
+                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                  {(player.sports?.includes("PADEL") || player.sport === "PADEL" || (!player.sports?.length && !player.sport)) && (
+                    <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
+                      <Chip label={CATEGORY_LABEL[player.category]} color={CATEGORY_COLOR[player.category]} size="small" sx={{ fontWeight: 700, minWidth: 42 }} />
+                    </Tooltip>
+                  )}
+                  {player.tenisCategory && (player.sports?.includes("TENIS") || player.sport === "TENIS") && (
+                    <Tooltip title={`Tenis: ${CATEGORY_FULL[player.tenisCategory]}`} placement="top">
+                      <Chip label={`T: ${CATEGORY_LABEL[player.tenisCategory]}`} color={CATEGORY_COLOR[player.tenisCategory]} size="small" sx={{ fontWeight: 700, minWidth: 42 }} />
+                    </Tooltip>
+                  )}
+                </Box>
               </TableCell>
 
               <TableCell>
@@ -290,8 +296,8 @@ export default function PlayerTable({ players, onEdit, onDelete }: Props) {
 
               <TableCell>
                 <Typography variant="body2" color="text.secondary">
-                  {player.sport
-                    ? (SPORT_LABEL[player.sport as keyof typeof SPORT_LABEL] ?? player.sport)
+                  {player.sports?.length
+                    ? player.sports.map(s => SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s).join(", ")
                     : "—"}
                 </Typography>
               </TableCell>
