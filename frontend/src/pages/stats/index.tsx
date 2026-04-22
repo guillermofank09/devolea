@@ -393,7 +393,7 @@ function PlayerCategoryChart({ data }: { data: PlayerCategoryEntry[] }) {
 
 // ── Summary card ──────────────────────────────────────────────────────────────
 
-function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color?: string }) {
+function SummaryCard({ icon, label, value, bookings, color }: { icon: React.ReactNode; label: string; value: number; bookings?: number; color?: string }) {
   const accent = color ?? "#F5AD27";
   return (
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, height: "100%" }}>
@@ -415,6 +415,11 @@ function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; lab
         >
           {fmt(value)}
         </Typography>
+        {bookings != null && (
+          <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+            {bookings} {bookings === 1 ? "reserva" : "reservas"}
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );
@@ -481,13 +486,13 @@ export default function Stats() {
       {/* Summary cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day} />
+          <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day}   bookings={data.bookingTotals.day} />
         </Grid>
         <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana" value={data.totals.week} />
+          <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana" value={data.totals.week}  bookings={data.bookingTotals.week} />
         </Grid>
         <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} />
+          <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} bookings={data.bookingTotals.month} />
         </Grid>
       </Grid>
 

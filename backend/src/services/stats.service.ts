@@ -35,6 +35,11 @@ export interface RevenueStats {
     month: number;
     allTime: number;
   };
+  bookingTotals: {
+    day: number;
+    week: number;
+    month: number;
+  };
   courtOccupancy: CourtOccupancy[];
   occupancySummary: {
     availableHoursPerCourt: number;  // today's available hours per court
@@ -279,6 +284,11 @@ export class StatsService {
         week:    weekMap.get(weekKey)?.revenue   ?? 0,
         month:   monthMap.get(monthKey)?.revenue ?? 0,
         allTime,
+      },
+      bookingTotals: {
+        day:   dayMap.get(todayKey)?.bookings   ?? 0,
+        week:  weekMap.get(weekKey)?.bookings   ?? 0,
+        month: monthMap.get(monthKey)?.bookings ?? 0,
       },
       courtOccupancy,
       occupancySummary: {

@@ -38,6 +38,11 @@ export interface RevenueStats {
     month: number;
     allTime: number;
   };
+  bookingTotals: {
+    day: number;
+    week: number;
+    month: number;
+  };
   courtOccupancy: CourtOccupancy[];
   occupancySummary: OccupancySummary;
 }
