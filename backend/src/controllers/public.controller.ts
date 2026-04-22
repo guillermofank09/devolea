@@ -41,7 +41,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     for (const c of courts) {
       const sport = c.sport ?? "OTRO";
       if (!courtsBySport[sport]) courtsBySport[sport] = [];
-      courtsBySport[sport].push(c.name);
+      if (c.name) courtsBySport[sport].push(c.name);
     }
 
     res.json({
