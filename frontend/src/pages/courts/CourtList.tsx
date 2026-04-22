@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Grid,
   Box,
+  Chip,
   ToggleButtonGroup,
   ToggleButton,
   Typography,
@@ -11,6 +12,7 @@ import type { Court, CourtStatus } from "../../types/Court";
 import type { Booking } from "../../types/Booking";
 import type { AppSettings } from "../../types/AppSettings";
 import { fetchSettings } from "../../api/settingsService";
+import { SPORT_LABEL } from "../../constants/sports";
 import CourtCard from "./CourtCard";
 import EmptyState from "../../components/common/EmptyState";
 
@@ -33,6 +35,7 @@ export default function CourtList({
   todayBookings?: Booking[];
 }) {
   const [filter, setFilter] = useState<FilterStatus>("ALL");
+  const [sportFilter, setSportFilter] = useState<string | null>(null);
 
   const { data: settings } = useQuery<AppSettings>({
     queryKey: ["appSettings"],
@@ -40,24 +43,58 @@ export default function CourtList({
     staleTime: 30_000,
   });
 
-  const filtered =
-    filter === "ALL" ? courts : courts.filter((c) => c.status === filter);
+  // Derive unique sports present in courts
+  const availableSports = useMemo(() => {
+    const sports = courts.map((c) => c.sport).filter(Boolean) as string[];
+    return [...new Set(sports)];
+  }, [courts]);
+
+  const filtered = courts.filter((c) => {
+    if (filter !== "ALL" && c.status !== filter) return false;
+    if (sportFilter && c.sport !== sportFilter) return false;
+    return true;
+  });
 
   return (
     <Box>
       <Box
         sx={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 2,
           mb: 3,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          {filtered.length} {filtered.length === 1 ? "cancha" : "canchas"}
-        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Typography variant="body2" color="text.secondary">
+            {filtered.length} {filtered.length === 1 ? "cancha" : "canchas"}
+          </Typography>
+
+          {availableSports.length > 1 && (
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Chip
+                label="Todos"
+                size="small"
+                variant={sportFilter === null ? "filled" : "outlined"}
+                onClick={() => setSportFilter(null)}
+                sx={{ fontWeight: 600, fontSize: "0.72rem" }}
+              />
+              {availableSports.map((sport) => (
+                <Chip
+                  key={sport}
+                  label={SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                  size="small"
+                  variant={sportFilter === sport ? "filled" : "outlined"}
+                  onClick={() => setSportFilter(sport === sportFilter ? null : sport)}
+                  sx={{ fontWeight: 600, fontSize: "0.72rem" }}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+
         <ToggleButtonGroup
           value={filter}
           exclusive
@@ -91,7 +128,7 @@ export default function CourtList({
       </Grid>
 
       {filtered.length === 0 && (
-        <EmptyState message="No hay canchas con ese estado." />
+        <EmptyState message="No hay canchas con ese filtro." />
       )}
     </Box>
   );
