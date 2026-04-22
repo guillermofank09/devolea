@@ -3,14 +3,16 @@ import { Joyride, type EventData, ACTIONS, EVENTS, STATUS } from "react-joyride"
 import { useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 
-const STORAGE_KEY = "devolea_onboarding_done";
-
-export function isOnboardingDone(): boolean {
-  return localStorage.getItem(STORAGE_KEY) === "1";
+function storageKey(userId: number) {
+  return `devolea_onboarding_done_${userId}`;
 }
 
-function markOnboardingDone() {
-  localStorage.setItem(STORAGE_KEY, "1");
+export function isOnboardingDone(userId: number): boolean {
+  return localStorage.getItem(storageKey(userId)) === "1";
+}
+
+function markOnboardingDone(userId: number) {
+  localStorage.setItem(storageKey(userId), "1");
 }
 
 // Step content helper
@@ -112,10 +114,11 @@ const STEP_ROUTES: Record<number, string> = {
 };
 
 interface Props {
+  userId: number;
   onDone: () => void;
 }
 
-export default function OnboardingTour({ onDone }: Props) {
+export default function OnboardingTour({ userId, onDone }: Props) {
   const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
   const [run, setRun] = useState(true);
@@ -129,7 +132,7 @@ export default function OnboardingTour({ onDone }: Props) {
         status === STATUS.SKIPPED ||
         action === ACTIONS.CLOSE
       ) {
-        markOnboardingDone();
+        markOnboardingDone(userId);
         setRun(false);
         onDone();
         return;

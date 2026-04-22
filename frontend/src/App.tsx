@@ -84,7 +84,7 @@ function ProtectedApp() {
   const location = useLocation();
   const { user, isImpersonating } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showTour, setShowTour] = useState(() => !isOnboardingDone());
+  const [showTour, setShowTour] = useState(() => !!user && !isOnboardingDone(user.id));
 
   if (user?.role === "superadmin") return <SuperAdminApp />;
 
@@ -152,8 +152,8 @@ function ProtectedApp() {
           </Routes>
         </main>
       </div>
-      {showTour && !isImpersonating && (
-        <OnboardingTour onDone={() => setShowTour(false)} />
+      {showTour && !isImpersonating && user && (
+        <OnboardingTour userId={user.id} onDone={() => setShowTour(false)} />
       )}
     </div>
   );
