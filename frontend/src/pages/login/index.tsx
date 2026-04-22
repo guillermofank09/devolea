@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/logo.png";
@@ -175,24 +174,16 @@ export default function Login() {
 
         <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
           ¿No tenés cuenta?{" "}
-          <Box
+          <Typography
             component="a"
             href={WA_NEW}
             target="_blank"
             rel="noopener noreferrer"
-            sx={{
-              color: "text.primary",
-              fontWeight: 700,
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.4,
-              "&:hover": { textDecoration: "underline" },
-            }}
+            variant="body2"
+            sx={{ color: "text.primary", fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
           >
-            <WhatsAppIcon sx={{ fontSize: 15, color: "#25d366" }} />
             Escribinos
-          </Box>
+          </Typography>
         </Typography>
       </Box>
     </Box>
