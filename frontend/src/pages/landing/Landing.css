@@ -1176,7 +1176,6 @@
   .lp-hero-sub { font-size: 15px; margin-bottom: 32px; }
   .lp-ball-4 { display: none; }
   .lp-hero-cta .lp-btn-ghost { display: none; }
-  .lp-hero-cta .lp-btn-primary { width: 100%; max-width: 340px; justify-content: center; }
 
   /* Trust strip — force single row, compact, top-aligned */
   .lp-trust-strip { padding: 20px 16px; }
