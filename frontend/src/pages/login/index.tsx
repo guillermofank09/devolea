@@ -90,19 +90,18 @@ export default function Login() {
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2, fontSize: "0.875rem" }}>
             {error}
-            <Box sx={{ mt: 0.75 }}>
-              <Box
-                component="a"
-                href={WA_RESET}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ fontSize: "0.8rem", color: "inherit", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
-              >
-                ¿Olvidaste tu contraseña? Contactanos
-              </Box>
-            </Box>
+            <Typography
+              component="a"
+              href={WA_RESET}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              sx={{ display: "block", mt: 0.75, color: "inherit", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
+            >
+              ¿Olvidaste tu contraseña? Contactanos
+            </Typography>
           </Alert>
         )}
 
@@ -128,15 +127,16 @@ export default function Login() {
               <FormLabel sx={{ fontSize: "0.8rem", fontWeight: 600, color: "text.secondary" }}>
                 Contraseña
               </FormLabel>
-              <Box
+              <Typography
                 component="a"
                 href={WA_RESET}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ fontSize: "0.75rem", color: "text.disabled", textDecoration: "none", fontWeight: 500, cursor: "pointer", "&:hover": { color: "text.secondary" } }}
+                variant="caption"
+                sx={{ color: "text.disabled", textDecoration: "none", fontWeight: 500, cursor: "pointer", "&:hover": { color: "text.secondary" } }}
               >
                 ¿Olvidaste tu contraseña?
-              </Box>
+              </Typography>
             </Box>
             <TextField
               type={showPass ? "text" : "password"}
@@ -174,29 +174,38 @@ export default function Login() {
           </Button>
         </Box>
 
-        <Divider sx={{ my: 3 }}>
-          <Typography variant="caption" color="text.disabled">¿Todavía no tenés cuenta?</Typography>
-        </Divider>
-        <Button
+        <Divider sx={{ my: 3 }} />
+
+        <Box
           component="a"
           href={WA_NEW}
           target="_blank"
           rel="noopener noreferrer"
-          variant="outlined"
-          fullWidth
-          startIcon={<WhatsAppIcon sx={{ color: "#25d366" }} />}
           sx={{
-            textTransform: "none",
-            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            px: 2,
+            py: 1.5,
             borderRadius: 2,
-            py: 1.25,
+            border: "1.5px solid",
             borderColor: "divider",
-            color: "text.secondary",
-            "&:hover": { borderColor: "#25d366", bgcolor: "rgba(37,211,102,0.04)", color: "text.primary" },
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "border-color 0.15s, background 0.15s",
+            "&:hover": { borderColor: "#25d366", bgcolor: "rgba(37,211,102,0.04)" },
           }}
         >
-          Registrá tu club
-        </Button>
+          <WhatsAppIcon sx={{ color: "#25d366", fontSize: 22, flexShrink: 0 }} />
+          <Box>
+            <Typography variant="body2" fontWeight={700} sx={{ color: "text.primary", lineHeight: 1.2 }}>
+              Registrá tu club
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              ¿Todavía no tenés cuenta? Escribinos
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
