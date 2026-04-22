@@ -73,6 +73,7 @@ const Sidebar: React.FC<Props> = ({
         {NAV_ITEMS.map(item => (
           <button
             key={item.key}
+            id={`tour-nav-${item.key}`}
             className={`sb-item ${active === item.key ? 'active' : ''}`}
             onClick={() => handleSelect(item.key)}
             aria-current={active === item.key ? 'page' : undefined}

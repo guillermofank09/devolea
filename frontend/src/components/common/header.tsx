@@ -73,7 +73,7 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
         {/* User avatar + dropdown — hidden in public mode */}
         {!publicMode && (
           <Tooltip title="Mi cuenta">
-            <IconButton onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
+            <IconButton id="tour-account-btn" onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
               <Avatar
                 sx={{
                   width: 34,

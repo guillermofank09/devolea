@@ -21,6 +21,7 @@ import AdminUsers from './pages/admin/users';
 import ClubPublicPage from './pages/public/ClubPublicPage';
 import { useAuth } from './context/AuthContext';
 import { usePageTracking } from './hooks/usePageTracking';
+import OnboardingTour, { isOnboardingDone } from './components/OnboardingTour';
 import './App.css';
 
 type NavKey = 'canchas' | 'jugadores' | 'torneos' | 'profesores' | 'equipos' | 'stats';
@@ -83,6 +84,7 @@ function ProtectedApp() {
   const location = useLocation();
   const { user, isImpersonating } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showTour, setShowTour] = useState(() => !isOnboardingDone());
 
   if (user?.role === "superadmin") return <SuperAdminApp />;
 
@@ -130,7 +132,6 @@ function ProtectedApp() {
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           sports={user?.sports ?? []}
-          username={user?.username}
         />
         {mobileOpen && (
           <div className="sb-backdrop" onClick={() => setMobileOpen(false)} />
@@ -151,6 +152,9 @@ function ProtectedApp() {
           </Routes>
         </main>
       </div>
+      {showTour && !isImpersonating && (
+        <OnboardingTour onDone={() => setShowTour(false)} />
+      )}
     </div>
   );
 }
