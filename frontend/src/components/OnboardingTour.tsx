@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import Joyride, { type CallBackProps, ACTIONS, EVENTS, STATUS } from "react-joyride";
+import { Joyride, type CallBackProps, ACTIONS, EVENTS, STATUS } from "react-joyride";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 
