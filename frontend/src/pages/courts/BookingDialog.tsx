@@ -125,21 +125,34 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
     enabled: open && bookingType === "profesor",
   });
 
-  // Filter locally by what the user typed
+  // Filter by court sport first, then by typed text
+  const sportPlayers = useMemo(
+    () =>
+      courtSport
+        ? players.filter(
+            (p) =>
+              p.sports?.includes(courtSport) ||
+              p.sport === courtSport ||
+              (!p.sports?.length && !p.sport),
+          )
+        : players,
+    [players, courtSport],
+  );
+
   const filteredPlayers = useMemo(
     () =>
       inputValue.trim()
-        ? players.filter((p) =>
+        ? sportPlayers.filter((p) =>
             p.name.toLowerCase().includes(inputValue.toLowerCase())
           )
-        : players,
-    [players, inputValue]
+        : sportPlayers,
+    [sportPlayers, inputValue]
   );
 
   // Append the "create" pseudo-option when there's text and no exact match
   const showCreateOption =
     inputValue.trim().length > 0 &&
-    !players.some((p) => p.name.toLowerCase() === inputValue.toLowerCase());
+    !sportPlayers.some((p) => p.name.toLowerCase() === inputValue.toLowerCase());
 
   const options: (Player | { id: typeof CREATE_OPTION_ID; name: string })[] = [
     ...filteredPlayers,
@@ -345,7 +358,13 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
           {bookingType === "profesor" && (
             <>
               <Autocomplete<Profesor>
-                options={profesores}
+                options={
+                  courtSport
+                    ? profesores.filter(
+                        (p) => !p.sport || p.sport === courtSport,
+                      )
+                    : profesores
+                }
                 getOptionLabel={(p) => p.name}
                 value={selectedProfesor}
                 inputValue={inputValue}
