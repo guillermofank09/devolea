@@ -90,16 +90,6 @@ export default function Login() {
         {error && (
           <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2, fontSize: "0.875rem" }}>
             {error}
-            <Typography
-              component="a"
-              href={WA_RESET}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="body2"
-              sx={{ display: "block", mt: 0.75, color: "inherit", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
-            >
-              ¿Olvidaste tu contraseña? Contactanos
-            </Typography>
           </Alert>
         )}
 
