@@ -12,12 +12,14 @@ import {
   Paper,
   Select,
   Stack,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupIcon from "@mui/icons-material/Group";
+import CakeIcon from "@mui/icons-material/Cake";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -96,6 +98,14 @@ export default function Players() {
   const newToday = (data ?? []).filter(
     (p) => p.createdAt && new Date(p.createdAt) >= todayStart,
   );
+
+  const todayMM = String(new Date().getMonth() + 1).padStart(2, "0");
+  const todayDD = String(new Date().getDate()).padStart(2, "0");
+  const birthdayToday = (data ?? []).filter((p) => {
+    if (!p.birthDate) return false;
+    const [, mm, dd] = p.birthDate.split("-");
+    return mm === todayMM && dd === todayDD;
+  });
 
   // Shared filter selects (used in both desktop and mobile)
   const categorySelect = (
@@ -207,6 +217,28 @@ export default function Players() {
               color="success"
               sx={{ fontWeight: 600, fontSize: "0.72rem" }}
             />
+          )}
+
+          {birthdayToday.length > 0 && (
+            <Tooltip
+              title={
+                <Box sx={{ py: 0.25 }}>
+                  {birthdayToday.map((p) => (
+                    <Typography key={p.id} variant="caption" display="block">
+                      {p.name}
+                    </Typography>
+                  ))}
+                </Box>
+              }
+              arrow
+            >
+              <Chip
+                icon={<CakeIcon sx={{ fontSize: "0.85rem !important" }} />}
+                label={`${birthdayToday.length} ${birthdayToday.length === 1 ? "cumpleaños hoy" : "cumpleaños hoy"}`}
+                size="small"
+                sx={{ fontWeight: 600, fontSize: "0.72rem", bgcolor: "#fff8e1", color: "#b07d00", cursor: "default" }}
+              />
+            </Tooltip>
           )}
         </Paper>
       )}
