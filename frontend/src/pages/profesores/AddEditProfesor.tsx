@@ -17,6 +17,11 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { es } from "date-fns/locale";
+import { format, parseISO } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createProfesor, updateProfesor } from "../../api/profesorService";
 import { fetchCourts } from "../../api/courtService";
@@ -180,52 +185,6 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
               disabled={mutation.isPending}
             />
 
-            <Box>
-              <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
-              <ToggleButtonGroup
-                value={form.sex || null}
-                exclusive
-                onChange={(_, val) => setForm(p => ({ ...p, sex: val ?? "" }))}
-                size="small"
-                fullWidth
-                disabled={mutation.isPending}
-                sx={{
-                  height: 40,
-                  "& .MuiToggleButton-root": {
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.875rem",
-                    borderColor: "divider",
-                    color: "text.secondary",
-                    transition: "all 0.15s",
-                  },
-                  "& .MuiToggleButton-root.Mui-selected": {
-                    bgcolor: "#F5AD27",
-                    color: "#111",
-                    borderColor: "#F5AD27",
-                    "&:hover": { bgcolor: "#e09b18" },
-                  },
-                }}
-              >
-                <ToggleButton value="MASCULINO">Masculino</ToggleButton>
-                <ToggleButton value="FEMENINO">Femenino</ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-
-            <Box>
-              <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento <span style={{ fontWeight: 400, color: "#aaa" }}>(opcional)</span></FormLabel>
-              <TextField
-                fullWidth
-                size="small"
-                type="date"
-                value={form.birthDate ?? ""}
-                onChange={e => setForm(p => ({ ...p, birthDate: e.target.value }))}
-                disabled={mutation.isPending}
-                sx={FORM_INPUT_SX}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Box>
-
             {sportOptions.length > 1 && (
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
@@ -263,26 +222,74 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
             )}
 
             <Box>
-              <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
-              <TextField
-                fullWidth
+              <FormLabel sx={FORM_LABEL_SX}>Sexo</FormLabel>
+              <ToggleButtonGroup
+                value={form.sex || null}
+                exclusive
+                onChange={(_, val) => setForm(p => ({ ...p, sex: val ?? "" }))}
                 size="small"
-                type="text"
-                inputMode="decimal"
-                value={hourlyRateStr}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (v === "" || /^\d*\.?\d*$/.test(v))
-                    setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
-                }}
-                placeholder="0"
+                fullWidth
                 disabled={mutation.isPending}
-                slotProps={{
-                  input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                sx={{
+                  height: 40,
+                  "& .MuiToggleButton-root": {
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    transition: "all 0.15s",
+                  },
+                  "& .MuiToggleButton-root.Mui-selected": {
+                    bgcolor: "#F5AD27",
+                    color: "#111",
+                    borderColor: "#F5AD27",
+                    "&:hover": { bgcolor: "#e09b18" },
+                  },
                 }}
-                helperText="Tarifa propia del profesor. Si se deja vacío se usa el precio general de clases."
-                sx={FORM_INPUT_SX}
-              />
+              >
+                <ToggleButton value="MASCULINO">Masculino</ToggleButton>
+                <ToggleButton value="FEMENINO">Femenino</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="text"
+                  inputMode="decimal"
+                  value={hourlyRateStr}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === "" || /^\d*\.?\d*$/.test(v))
+                      setHourlyRateStr(v.replace(/^0+(\d)/, "$1"));
+                  }}
+                  placeholder="0"
+                  disabled={mutation.isPending}
+                  slotProps={{
+                    input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                  }}
+                  helperText="Tarifa propia. Vacío = precio general."
+                  sx={FORM_INPUT_SX}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento</FormLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+                  <DatePicker
+                    value={form.birthDate ? parseISO(form.birthDate) : null}
+                    onChange={d => setForm(p => ({ ...p, birthDate: d ? format(d, "yyyy-MM-dd") : "" }))}
+                    maxDate={new Date()}
+                    disabled={mutation.isPending}
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small", sx: FORM_INPUT_SX },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
             </Box>
 
             <Box>
