@@ -31,7 +31,7 @@ import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
-const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "" };
+const EMPTY: ProfesorFormData = { name: "", phone: "", sex: "", avatarUrl: "", birthDate: "" };
 
 const FUTBOL_TYPE_LABEL: Record<string, string> = {
   FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
@@ -89,7 +89,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
   useEffect(() => {
     if (!open || sportOptions.length === 0) return;
     if (profesor) {
-      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "" });
+      setForm({ name: profesor.name, phone: profesor.phone ?? "", sex: profesor.sex ?? "", avatarUrl: profesor.avatarUrl ?? "", birthDate: profesor.birthDate ?? "" });
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
       // Use the saved sport only if it still matches a valid option; otherwise fall back to default
       const validSport = sportOptions.some(o => o.key === profesor.sport) ? profesor.sport! : defaultSport;
@@ -111,6 +111,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
         ...data,
         sex: data.sex || undefined,
         avatarUrl: data.avatarUrl || undefined,
+        birthDate: data.birthDate || undefined,
         hourlyRate: hourlyRateStr ? Number(hourlyRateStr) : undefined,
         sport,
         schedule,
@@ -209,6 +210,20 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                 <ToggleButton value="MASCULINO">Masculino</ToggleButton>
                 <ToggleButton value="FEMENINO">Femenino</ToggleButton>
               </ToggleButtonGroup>
+            </Box>
+
+            <Box>
+              <FormLabel sx={FORM_LABEL_SX}>Fecha de nacimiento <span style={{ fontWeight: 400, color: "#aaa" }}>(opcional)</span></FormLabel>
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                value={form.birthDate ?? ""}
+                onChange={e => setForm(p => ({ ...p, birthDate: e.target.value }))}
+                disabled={mutation.isPending}
+                sx={FORM_INPUT_SX}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
             </Box>
 
             {sportOptions.length > 1 && (

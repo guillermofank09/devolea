@@ -33,6 +33,9 @@ export class Profesor {
   @Column({ type: "varchar", nullable: true, default: "PADEL" })
   sport?: string;
 
+  @Column({ type: "date", nullable: true })
+  birthDate?: string;
+
   @Column({ nullable: true })
   userId?: number;
 

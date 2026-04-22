@@ -3,12 +3,16 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Fab,
   FormControl,
   InputAdornment,
   MenuItem,
   OutlinedInput,
+  Paper,
   Select,
+  Stack,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -16,6 +20,8 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import CakeIcon from "@mui/icons-material/Cake";
+import GroupIcon from "@mui/icons-material/Group";
 import IconButton from "@mui/material/IconButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfesores, deleteProfesor } from "../../api/profesorService";
@@ -62,6 +68,14 @@ export default function Profesores() {
   const filtered = (data ?? []).filter((p) =>
     sexFilter === "" || p.sex === sexFilter
   );
+
+  const todayMM = String(new Date().getMonth() + 1).padStart(2, "0");
+  const todayDD = String(new Date().getDate()).padStart(2, "0");
+  const birthdayToday = (data ?? []).filter((p) => {
+    if (!p.birthDate) return false;
+    const [, mm, dd] = p.birthDate.split("-");
+    return mm === todayMM && dd === todayDD;
+  });
 
   const sexSelect = (
     <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 130 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
@@ -116,6 +130,53 @@ export default function Profesores() {
         subtitle="Gestioná los profesores del club y sus horarios de clases"
         action={isMobile ? undefined : desktopAction}
       />
+
+      {data && data.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            border: "1.5px solid",
+            borderColor: "divider",
+            borderRadius: 3,
+            px: { xs: 2, sm: 2.5 },
+            py: 1.5,
+            mb: 3,
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Typography variant="body2" fontWeight={600}>
+              {data.length} {data.length === 1 ? "profesor registrado" : "profesores registrados"}
+            </Typography>
+          </Stack>
+
+          {birthdayToday.length > 0 && (
+            <Tooltip
+              title={
+                <Box sx={{ py: 0.25 }}>
+                  {birthdayToday.map((p) => (
+                    <Typography key={p.id} variant="caption" display="block">
+                      {p.name}
+                    </Typography>
+                  ))}
+                </Box>
+              }
+              arrow
+            >
+              <Chip
+                icon={<CakeIcon sx={{ fontSize: "0.85rem !important" }} />}
+                label={`${birthdayToday.length} ${birthdayToday.length === 1 ? "cumpleaños hoy" : "cumpleaños hoy"}`}
+                size="small"
+                sx={{ fontWeight: 600, fontSize: "0.72rem", bgcolor: "#fff8e1", color: "#b07d00", cursor: "default" }}
+              />
+            </Tooltip>
+          )}
+        </Paper>
+      )}
 
       {/* Mobile: search + filter */}
       {isMobile && (

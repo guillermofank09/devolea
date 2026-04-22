@@ -11,6 +11,7 @@ export interface Profesor {
   schedule?: DaySchedule[] | null;
   avatarUrl?: string;
   sport?: string;
+  birthDate?: string;
   createdAt: string;
 }
 
@@ -20,4 +21,5 @@ export interface ProfesorFormData {
   sex?: ProfesorSex | "";
   avatarUrl?: string;
   sport?: string;
+  birthDate?: string;
 }
