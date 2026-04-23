@@ -67,7 +67,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 // ─── Field label ──────────────────────────────────────────────────────────────
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>
       {children}
     </Typography>
   );
@@ -83,14 +83,14 @@ function LogoUploader({
 }) {
   const src = logoPreview ?? (logoUrl || null);
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, alignSelf: "stretch" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, flexShrink: 0 }}>
       <Box
         component="label"
         sx={{
-          position: "relative", width: 110, flex: 1,
+          position: "relative", width: 112, height: 112,
           borderRadius: 3, overflow: "hidden", cursor: uploading ? "default" : "pointer",
           border: "1.5px solid", borderColor: "divider",
-          bgcolor: "action.hover", flexShrink: 0, minHeight: 80,
+          bgcolor: "action.hover",
           "&:hover .logo-overlay": { opacity: uploading ? 0 : 1 },
         }}
       >
@@ -360,7 +360,7 @@ export default function Profile() {
                 onChange={handleLogoChange}
                 onRemove={() => setLogoUrl("")}
               />
-              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box>
                   <FieldLabel>Nombre del club</FieldLabel>
                   <TextField
