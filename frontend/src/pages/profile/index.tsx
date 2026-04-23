@@ -6,6 +6,8 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
+  Chip,
   CircularProgress,
   Divider,
   Grid,
@@ -18,6 +20,7 @@ import {
 import UploadIcon from "@mui/icons-material/UploadOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import RoomServiceOutlinedIcon from "@mui/icons-material/RoomServiceOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -187,6 +190,7 @@ export default function Profile() {
   const [lat, setLat]               = useState<number | null>(null);
   const [lng, setLng]               = useState<number | null>(null);
   const [hours, setHours]           = useState<DaySchedule[]>(DEFAULT_HOURS);
+  const [amenities, setAmenities]   = useState<string[]>([]);
   const [snack, setSnack]           = useState(false);
 
   // ── Google Maps / Places ──
@@ -220,6 +224,7 @@ export default function Profile() {
     setLat(data.latitude ?? null);
     setLng(data.longitude ?? null);
     setHours(data.businessHours?.length ? data.businessHours : DEFAULT_HOURS);
+    setAmenities(data.amenities ?? []);
   }, [data]);
 
   // debounced Places autocomplete search
@@ -277,7 +282,7 @@ export default function Profile() {
 
   // ── save ──
   function handleSave() {
-    mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours });
+    mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours, amenities });
   }
 
   if (isPending) return <PageLoader />;
@@ -321,6 +326,40 @@ export default function Profile() {
                   onChange={setPhone}
                   label="Teléfono / WhatsApp"
                 />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <RoomServiceOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Servicios del club
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {["Cantina", "Baños", "Vestuario", "Duchas", "Wifi", "Parrillas", "Quinchos"].map((s) => {
+                    const selected = amenities.includes(s);
+                    return (
+                      <Chip
+                        key={s}
+                        label={s}
+                        onClick={() => setAmenities(prev =>
+                          selected ? prev.filter(a => a !== s) : [...prev, s]
+                        )}
+                        icon={<Checkbox checked={selected} size="small" sx={{ p: 0, pl: 0.5, color: "inherit" }} disableRipple />}
+                        variant={selected ? "filled" : "outlined"}
+                        sx={{
+                          cursor: "pointer",
+                          fontWeight: selected ? 600 : 400,
+                          bgcolor: selected ? "#F5AD27" : "transparent",
+                          borderColor: selected ? "#F5AD27" : "divider",
+                          color: selected ? "#111" : "text.secondary",
+                          "& .MuiChip-icon": { color: "inherit" },
+                          "&:hover": { bgcolor: selected ? "#e09b18" : "action.hover" },
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
               </Grid>
 
               <Grid size={{ xs: 12, sm: 4 }}>
