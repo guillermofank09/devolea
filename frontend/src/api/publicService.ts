@@ -24,6 +24,7 @@ export interface PublicProfile {
   logoUrl?: string | null;     // new
   phone?: string | null;
   businessHours: DaySchedule[];
+  amenities?: string[];
   courtsBySport?: Record<string, string[]>;
   showTournaments: boolean;
   showCourts: boolean;

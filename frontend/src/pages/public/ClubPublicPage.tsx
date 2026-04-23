@@ -1236,9 +1236,10 @@ interface ClubInfoPanelProps {
   lng?: number | null;
   businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
   phone?: string | null;
+  amenities?: string[];
 }
 
-function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone }: ClubInfoPanelProps) {
+function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities }: ClubInfoPanelProps) {
   const navigate = useNavigate();
   return (
     <Box
@@ -1292,6 +1293,21 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         >
           <WhatsAppIcon sx={{ fontSize: 18, color: "#4ade80", flexShrink: 0 }} />
           <Typography variant="caption" fontWeight={600} sx={{ color: "#4ade80" }}>{phone}</Typography>
+        </Box>
+      )}
+
+      {amenities && amenities.length > 0 && (
+        <Box sx={{ px: 3.5, py: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(255,255,255,0.4)", display: "block", mb: 1.5 }}>
+            Servicios
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+            {amenities.map(a => (
+              <Box key={a} sx={{ px: 1.25, py: 0.4, borderRadius: 10, border: `1px solid rgba(255,255,255,0.15)`, bgcolor: "rgba(255,255,255,0.07)" }}>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
+              </Box>
+            ))}
+          </Box>
         </Box>
       )}
 
@@ -1568,6 +1584,22 @@ export default function ClubPublicPage() {
                   </Box>
                 </Box>
 
+                {/* Amenities */}
+                {profile.amenities && profile.amenities.length > 0 && (
+                  <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
+                    <Box sx={{ px: 2, py: 1.25, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.muted }}>Servicios</Typography>
+                    </Box>
+                    <Box sx={{ px: 2, py: 1.5, display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                      {profile.amenities.map(a => (
+                        <Box key={a} sx={{ px: 1.25, py: 0.4, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
+                          <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 600, fontSize: "0.72rem" }}>{a}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
                 {/* Full schedule */}
                 <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
                   <Box sx={{ px: 2, py: 1.25, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1 }}>
@@ -1739,7 +1771,7 @@ export default function ClubPublicPage() {
         </Box>
       </Box>
 
-      <ClubInfoPanel clubName={profile.clubName} username={username!} address={profile.address} logoSrc={profile.logoUrl || profile.logoBase64} lat={profile.latitude} lng={profile.longitude} businessHours={profile.businessHours} phone={profile.phone} />
+      <ClubInfoPanel clubName={profile.clubName} username={username!} address={profile.address} logoSrc={profile.logoUrl || profile.logoBase64} lat={profile.latitude} lng={profile.longitude} businessHours={profile.businessHours} phone={profile.phone} amenities={profile.amenities} />
       <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} />
 
     </Box>
