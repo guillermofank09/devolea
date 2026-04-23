@@ -1091,7 +1091,7 @@ interface PublicSidebarProps {
   logoSrc?: string | null;
 }
 
-function PublicPageSidebar({ items, activeId, onSelect, clubName, username, logoSrc }: PublicSidebarProps) {
+function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
   const desktopItems = items.filter(item => item.id !== "section-club");
 
   return (
@@ -1108,20 +1108,6 @@ function PublicPageSidebar({ items, activeId, onSelect, clubName, username, logo
         borderRight: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      {/* Club identity */}
-      <Box sx={{ px: 2.5, pt: 2.5, pb: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        {logoSrc ? (
-          <Box component="img" src={logoSrc} alt="logo" sx={{ width: 36, height: 36, borderRadius: 1.5, objectFit: "contain", bgcolor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", p: 0.25, flexShrink: 0 }} />
-        ) : (
-          <Box sx={{ width: 36, height: 36, borderRadius: 1.5, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <PersonIcon sx={{ fontSize: 20, color: COLORS.panelBg }} />
-          </Box>
-        )}
-        <Typography variant="body2" fontWeight={700} noWrap sx={{ color: "rgba(255,255,255,0.9)", lineHeight: 1.2 }}>
-          {clubName || username || "Club"}
-        </Typography>
-      </Box>
-
       <Box sx={{ flex: 1, px: "12px", pt: "12px", pb: "12px", display: "flex", flexDirection: "column", gap: "3px" }}>
         {desktopItems.map(({ id, label, icon }) => {
           const active = activeId === id;
