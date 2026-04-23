@@ -16,7 +16,6 @@ import {
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import LogoutIcon from "@mui/icons-material/Logout";
