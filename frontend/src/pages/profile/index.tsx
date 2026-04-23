@@ -12,11 +12,11 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Snackbar,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useToast } from "../../context/ToastContext";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
@@ -227,6 +227,7 @@ function PasswordSection({ token }: { token: string }) {
 export default function Profile() {
   const { token } = useAuth();
   const qc = useQueryClient();
+  const showToast = useToast();
   const { data, isPending, isError } = useQuery<ClubProfile>({
     queryKey: ["clubProfile"],
     queryFn: fetchProfile,
@@ -236,7 +237,8 @@ export default function Profile() {
 
   const mutation = useMutation({
     mutationFn: saveProfile,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clubProfile"] }); setSnack(true); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clubProfile"] }); showToast("Perfil guardado correctamente"); },
+    onError: () => showToast("Error al guardar el perfil. Intentá de nuevo.", "error"),
   });
 
   // ── form state ────────────────────────────────────────────────────────────
@@ -252,7 +254,6 @@ export default function Profile() {
   const [lng,       setLng]       = useState<number | null>(null);
   const [hours,     setHours]     = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [snack,     setSnack]     = useState(false);
 
   // ── Google Maps ───────────────────────────────────────────────────────────
   const placesLib    = useMapsLibrary("places");
@@ -538,11 +539,6 @@ export default function Profile() {
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          {mutation.isError && (
-            <Typography variant="caption" color="error">
-              Error al guardar. Intentá de nuevo.
-            </Typography>
-          )}
           <Button
             variant="contained"
             size="medium"
@@ -556,16 +552,6 @@ export default function Profile() {
         </Box>
       </Box>
 
-      <Snackbar
-        open={snack}
-        autoHideDuration={3000}
-        onClose={() => setSnack(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert severity="success" onClose={() => setSnack(false)} sx={{ borderRadius: 2 }}>
-          Perfil guardado correctamente
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

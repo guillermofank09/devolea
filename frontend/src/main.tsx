@@ -7,6 +7,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import axios from 'axios';
 
@@ -27,9 +28,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
-          <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""} libraries={["places", "geocoding"]}>
-            <App />
-          </APIProvider>
+          <ToastProvider>
+            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""} libraries={["places", "geocoding"]}>
+              <App />
+            </APIProvider>
+          </ToastProvider>
         </QueryClientProvider>
       </AuthProvider>
     </BrowserRouter>,

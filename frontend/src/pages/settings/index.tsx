@@ -9,13 +9,13 @@ import {
   Divider,
   Grid,
   InputAdornment,
-  Snackbar,
   Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
+import { useToast } from "../../context/ToastContext";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
@@ -89,6 +89,7 @@ export default function Settings() {
   const clubSports = user?.sports ?? ["PADEL"];
   const sportsWithClass = clubSports.filter(s => SPORTS_WITH_CLASS.includes(s));
   const qc = useQueryClient();
+  const showToast = useToast();
 
   const { data, isPending, isError } = useQuery<AppSettings>({
     queryKey: ["appSettings"],
@@ -107,8 +108,9 @@ export default function Settings() {
     mutationFn: saveSettings,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["appSettings"] });
-      setSnack(true);
+      showToast("Ajustes guardados correctamente");
     },
+    onError: () => showToast("Error al guardar. Intentá de nuevo.", "error"),
   });
 
   const [hourlyRate, setHourlyRate] = useState<string>("");
@@ -122,7 +124,6 @@ export default function Settings() {
   const [tournamentDurations, setTournamentDurations] = useState<Record<string, number>>({});
   const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
   const [tournamentSets, setTournamentSets] = useState<Record<string, number>>({});
-  const [snack, setSnack] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -453,16 +454,6 @@ export default function Settings() {
         </Button>
       </Box>
 
-      <Snackbar
-        open={snack}
-        autoHideDuration={3000}
-        onClose={() => setSnack(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" onClose={() => setSnack(false)} sx={{ borderRadius: 2 }}>
-          Ajustes guardados correctamente
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }
