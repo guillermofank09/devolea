@@ -557,6 +557,16 @@ function CourtCalendar({
 
   return (
     <Box sx={{ mb: 3 }}>
+      {/* Legend + instruction */}
+      <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f0fdf4", border: "1px solid #d1fae5" }} /><Typography variant="caption">Libre</Typography></Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#fee2e2", border: "1px solid #fecaca" }} /><Typography variant="caption">Ocupado</Typography></Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }} /><Typography variant="caption">Cerrado</Typography></Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, ml: { md: "auto" } }}>
+          <WhatsAppIcon sx={{ fontSize: 14, color: "#16a34a" }} />
+          <Typography variant="caption" color="text.secondary">Tocá un horario libre para reservar por WhatsApp</Typography>
+        </Box>
+      </Box>
       {/* Desktop View */}
       <Box sx={{ display: { xs: "none", md: "block" }, overflowX: "auto", borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
         <Box sx={{ display: "grid", gridTemplateColumns: `60px repeat(${days.length}, 1fr)`, minWidth: 400 }}>
@@ -808,15 +818,6 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
             />
           )}
 
-          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mt: 1.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f0fdf4", border: "1px solid #d1fae5" }} /><Typography variant="caption">Libre</Typography></Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#fee2e2", border: "1px solid #fecaca" }} /><Typography variant="caption">Ocupado</Typography></Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }} /><Typography variant="caption">Cerrado</Typography></Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, ml: { md: "auto" } }}>
-              <WhatsAppIcon sx={{ fontSize: 14, color: "#16a34a" }} />
-              <Typography variant="caption" color="text.secondary">Tocá un horario libre para reservar por WhatsApp</Typography>
-            </Box>
-          </Box>
         </DialogContent>
       </Dialog>
     </>
