@@ -15,10 +15,12 @@ function markOnboardingDone(userId: number) {
   localStorage.setItem(storageKey(userId), "1");
 }
 
+const WELCOME_ITEMS = ["Perfil del club", "Canchas", "Profesores", "Jugadores", "Torneos"];
+
 // Step content helper
 function Step({ title, body }: { title: string; body: ReactNode }) {
   return (
-    <Box sx={{ maxWidth: 280, py: 0.5 }}>
+    <Box sx={{ maxWidth: 300, py: 0.5 }}>
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>{title}</Typography>
       {typeof body === "string"
         ? <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{body}</Typography>
@@ -27,22 +29,40 @@ function Step({ title, body }: { title: string; body: ReactNode }) {
   );
 }
 
+function WelcomeContent() {
+  return (
+    <Box sx={{ width: 340, maxWidth: "90vw", py: 0.5 }}>
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 0.75 }}>
+        Bienvenido a Devolea 👋
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5, whiteSpace: "nowrap" }}>
+        Vamos a configurar tu club en unos pocos pasos:
+      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+        {WELCOME_ITEMS.map((item, i) => (
+          <Box key={item} sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <Box sx={{
+              width: 22, height: 22, borderRadius: "50%",
+              bgcolor: "#F5AD27", display: "flex", alignItems: "center",
+              justifyContent: "center", flexShrink: 0,
+            }}>
+              <Typography sx={{ fontSize: "0.65rem", fontWeight: 700, color: "#111", lineHeight: 1 }}>
+                {i + 1}
+              </Typography>
+            </Box>
+            <Typography variant="body2" fontWeight={500}>{item}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
 const STEPS = [
   {
     target: "body",
     placement: "center" as const,
-    content: (
-      <Step
-        title="Bienvenido a Devolea 👋"
-        body={
-          <Box component="ul" sx={{ m: 0, pl: 2.5, color: "text.secondary" }}>
-            {["Perfil del club", "Canchas", "Profesores", "Jugadores", "Torneos"].map((item) => (
-              <Typography key={item} component="li" variant="body2" sx={{ lineHeight: 1.8 }}>{item}</Typography>
-            ))}
-          </Box>
-        }
-      />
-    ),
+    content: <WelcomeContent />,
     disableBeacon: true,
   },
   {
