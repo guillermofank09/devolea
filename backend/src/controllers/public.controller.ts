@@ -53,6 +53,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       logoBase64: profile.logoUrl ? null : profile.logoBase64, // omit heavy base64 when URL exists
       phone: profile.phone ?? null,
       businessHours,
+      amenities: profile.amenities ?? [],
       courtsBySport,
       showTournaments: settings?.showTournaments ?? true,
       showCourts:      settings?.showCourts      ?? true,
