@@ -42,6 +42,14 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SearchIcon from "@mui/icons-material/Search";
+import RestaurantOutlinedIcon from "@mui/icons-material/RestaurantOutlined";
+import WcOutlinedIcon from "@mui/icons-material/WcOutlined";
+import CheckroomOutlinedIcon from "@mui/icons-material/CheckroomOutlined";
+import ShowerOutlinedIcon from "@mui/icons-material/ShowerOutlined";
+import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
+import OutdoorGrillOutlinedIcon from "@mui/icons-material/OutdoorGrillOutlined";
+import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
+import type { SvgIconComponent } from "@mui/icons-material";
 import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam } from "../../types/Tournament";
 import { isTeamSport } from "../tournaments/AddEditTournament";
 import type { DaySchedule } from "../../types/ClubProfile";
@@ -96,6 +104,32 @@ const COLORS = {
   border: "rgba(255,255,255,0.06)",
   lightBorder: "#e2e8f0",
 };
+
+const AMENITY_ICONS: Record<string, SvgIconComponent> = {
+  Cantina:   RestaurantOutlinedIcon,
+  Baños:     WcOutlinedIcon,
+  Vestuario: CheckroomOutlinedIcon,
+  Duchas:    ShowerOutlinedIcon,
+  Wifi:      WifiOutlinedIcon,
+  Parrillas: OutdoorGrillOutlinedIcon,
+  Quinchos:  DeckOutlinedIcon,
+};
+
+function getNextOpenInfo(
+  businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>,
+  todayName: string,
+): string | null {
+  const todayIdx = DAYS.indexOf(todayName);
+  for (let i = 1; i <= 7; i++) {
+    const day = DAYS[(todayIdx + i) % 7];
+    const sched = businessHours.find(h => h.day === day);
+    if (sched?.isOpen) {
+      const label = i === 1 ? "Mañana" : day;
+      return `Abre ${label} · ${sched.openTime}`;
+    }
+  }
+  return null;
+}
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -426,7 +460,7 @@ function PublicCourtCard({ court, onSelect }: { court: PublicCourt; onSelect: (c
       }}
       onClick={() => onSelect(court)}
     >
-      <CardContent sx={{ px: 2, pt: 1.75, pb: "0 !important" }}>
+      <CardContent sx={{ px: 2, pt: 1.75, pb: "14px !important" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
           <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ flex: 1 }}>
             {name}
@@ -462,21 +496,14 @@ function PublicCourtCard({ court, onSelect }: { court: PublicCourt; onSelect: (c
             />
           )}
         </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1.25 }}>
+          <CalendarMonthIcon sx={{ fontSize: 12, color: "text.disabled" }} />
+          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.65rem", fontWeight: 600, letterSpacing: 0.2 }}>
+            Ver disponibilidad
+          </Typography>
+        </Box>
       </CardContent>
-
-      <Divider sx={{ mx: 2, my: 1.25 }} />
-
-      <CardActions sx={{ px: 2, pb: 1.75, pt: 0 }}>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<CalendarMonthIcon sx={{ fontSize: "0.9rem !important" }} />}
-          fullWidth
-          sx={{ borderRadius: 1.5, textTransform: "none", fontWeight: 600, fontSize: "0.75rem" }}
-        >
-          Ver Horarios
-        </Button>
-      </CardActions>
     </Card>
   );
 }
@@ -575,13 +602,14 @@ function CourtCalendar({
                       backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.02) 4px, rgba(0,0,0,0.02) 8px)" : undefined,
                       cursor: clickable ? "pointer" : "default",
                       transition: "all 0.15s",
-                      "&:hover": clickable ? { bgcolor: "#dcfce7", filter: "brightness(0.98)" } : undefined,
+                      "&:hover": clickable ? { bgcolor: "#dcfce7" } : undefined,
+                      "&:hover .wa-badge": clickable ? { opacity: 1 } : undefined,
                       display: "flex", alignItems: "center", justifyContent: "center"
                     }}
                   >
                     {occupied && <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 700, fontSize: "0.55rem", textTransform: "uppercase" }}>Ocupado</Typography>}
                     {clickable && (
-                      <Box sx={{ opacity: 0, transition: "opacity 0.15s", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <Box className="wa-badge" sx={{ opacity: 0.3, transition: "opacity 0.15s", display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <WhatsAppIcon sx={{ fontSize: 14, color: "#10b981" }} />
                         <Typography variant="caption" sx={{ color: "#059669", fontWeight: 700, fontSize: "0.5rem" }}>RESERVAR</Typography>
                       </Box>
@@ -646,7 +674,6 @@ function CourtCalendar({
           );
         })()}
       </Box>
-      <style>{` .MuiBox-root:hover > .MuiBox-root { opacity: 1 !important; } `}</style>
     </Box>
   );
 }
@@ -1186,9 +1213,9 @@ function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: strin
       }}
     >
       {logoSrc ? (
-        <Box component="img" src={logoSrc} alt="logo" sx={{ width: 32, height: 32, borderRadius: 1, objectFit: "contain", bgcolor: "rgba(255,255,255,0.04)", border: `1px solid ${COLORS.border}`, p: 0.25, flexShrink: 0 }} />
+        <Box component="img" src={logoSrc} alt="logo" sx={{ width: 32, height: 32, borderRadius: "50%", objectFit: "contain", bgcolor: "#111111", border: `1.5px solid rgba(255,255,255,0.15)`, p: "3px", flexShrink: 0 }} />
       ) : (
-        <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Box sx={{ width: 32, height: 32, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <PersonIcon sx={{ fontSize: 18, color: COLORS.panelBg }} />
         </Box>
       )}
@@ -1227,6 +1254,8 @@ interface ClubInfoPanelProps {
 
 function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities }: ClubInfoPanelProps) {
   const navigate = useNavigate();
+  const todayStatus = getTodayStatus(businessHours);
+  const nextOpenInfo = !todayStatus.open ? getNextOpenInfo(businessHours, todayStatus.todayName) : null;
   return (
     <Box
       sx={{
@@ -1250,9 +1279,9 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
           sx={{ cursor: "pointer", mb: 2.5, transition: "transform 0.2s", "&:hover": { transform: "scale(1.05)" } }}
         >
           {logoSrc ? (
-            <Box component="img" src={logoSrc} alt="logo" sx={{ width: 80, height: 80, borderRadius: 3, objectFit: "contain", border: `2px solid ${COLORS.border}`, bgcolor: "rgba(255,255,255,0.03)", p: 0.75 }} />
+            <Box component="img" src={logoSrc} alt="logo" sx={{ width: 80, height: 80, borderRadius: "50%", objectFit: "contain", border: `2px solid rgba(255,255,255,0.15)`, bgcolor: "#111111", p: "8px" }} />
           ) : (
-            <Box sx={{ width: 80, height: 80, borderRadius: 3, bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box sx={{ width: 80, height: 80, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <PersonIcon sx={{ fontSize: 44, color: COLORS.panelBg }} />
             </Box>
           )}
@@ -1282,17 +1311,45 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         </Box>
       )}
 
+      {/* Open/closed status */}
+      <Box sx={{ px: 3.5, py: 2, borderBottom: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{
+          width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+          bgcolor: todayStatus.open ? "#4ade80" : "#f87171",
+          boxShadow: todayStatus.open ? "0 0 0 3px rgba(74,222,128,0.2)" : "0 0 0 3px rgba(248,113,113,0.2)",
+        }} />
+        <Box>
+          <Typography variant="caption" fontWeight={700} sx={{ color: todayStatus.open ? "#4ade80" : "#f87171", display: "block", lineHeight: 1.3 }}>
+            {todayStatus.open ? "Abierto ahora" : "Cerrado ahora"}
+            {todayStatus.open && todayStatus.hours && (
+              <Typography component="span" variant="caption" sx={{ color: "rgba(255,255,255,0.35)", fontWeight: 400, ml: 0.75 }}>
+                · cierra {todayStatus.hours?.split("–")[1]}
+              </Typography>
+            )}
+          </Typography>
+          {!todayStatus.open && nextOpenInfo && (
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
+              {nextOpenInfo}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
       {amenities && amenities.length > 0 && (
         <Box sx={{ px: 3.5, py: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
           <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(255,255,255,0.4)", display: "block", mb: 1.5 }}>
             Servicios
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-            {amenities.map(a => (
-              <Box key={a} sx={{ px: 1.25, py: 0.4, borderRadius: 10, border: `1px solid rgba(255,255,255,0.15)`, bgcolor: "rgba(255,255,255,0.07)" }}>
-                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
-              </Box>
-            ))}
+            {amenities.map(a => {
+              const Icon = AMENITY_ICONS[a];
+              return (
+                <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid rgba(255,255,255,0.15)`, bgcolor: "rgba(255,255,255,0.07)" }}>
+                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }} />}
+                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
+                </Box>
+              );
+            })}
           </Box>
         </Box>
       )}
@@ -1304,14 +1361,27 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
             Horarios
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {DAYS.map(day => {
             const sched = businessHours.find(h => h.day === day);
             const open = sched?.isOpen ?? false;
+            const isToday = day === todayStatus.todayName;
             return (
-              <Box key={day} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: open ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)" }}>{day.slice(0, 3)}</Typography>
-                <Typography variant="caption" sx={{ color: open ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)", fontWeight: 500 }}>
+              <Box key={day} sx={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                px: 1, py: 0.75, mx: -1, borderRadius: 1.5,
+                bgcolor: isToday ? (todayStatus.open ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.06)") : "transparent",
+              }}>
+                <Typography variant="caption" sx={{
+                  fontWeight: isToday ? 800 : 600,
+                  color: isToday ? (todayStatus.open ? "#4ade80" : "#f87171") : (open ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.25)"),
+                }}>
+                  {day.slice(0, 3)}{isToday && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontSize: "0.6rem", opacity: 0.7 }}>· hoy</Typography>}
+                </Typography>
+                <Typography variant="caption" sx={{
+                  color: isToday ? (todayStatus.open ? "rgba(74,222,128,0.7)" : "rgba(248,113,113,0.6)") : (open ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"),
+                  fontWeight: isToday ? 700 : 500,
+                }}>
                   {open ? `${sched!.openTime}–${sched!.closeTime}` : "Cerrado"}
                 </Typography>
               </Box>
@@ -1520,26 +1590,24 @@ export default function ClubPublicPage() {
             {(!subSection || subSection === null) && (
               <Box id="section-club" sx={{ display: { xs: "block", md: "none" }, pb: 2 }}>
 
-                {/* Club description card */}
+                {/* Courts by sport */}
                 {profile.courtsBySport && Object.keys(profile.courtsBySport).length > 0 && (
-                  <Box sx={{ mx: 2, mt: 2, mb: 1.5, p: 2, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#fff" }}>
-                    <Typography variant="body2" sx={{ color: COLORS.muted, mb: 1.5, lineHeight: 1.5 }}>
-                      Club Deportivo con canchas de{" "}
-                      <Typography component="span" fontWeight={700} sx={{ color: COLORS.text }}>
-                        {Object.keys(profile.courtsBySport)
-                          .map(s => SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s)
-                          .join(", ")}
-                      </Typography>
-                    </Typography>
+                  <Box sx={{ mx: 2, mt: 2, mb: 1.5 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                       {Object.entries(profile.courtsBySport).map(([sport, names]) => (
-                        <Box key={sport}>
-                          <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.07em", color: COLORS.accent, display: "block", mb: 0.5 }}>
-                            {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                          </Typography>
+                        <Box key={sport} sx={{ p: 2, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#fff" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                            <Box sx={{ width: 3, height: 16, borderRadius: 2, bgcolor: COLORS.accent, flexShrink: 0 }} />
+                            <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.07em", color: COLORS.text }}>
+                              {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: COLORS.muted, ml: "auto" }}>
+                              {names.length} {names.length === 1 ? "cancha" : "canchas"}
+                            </Typography>
+                          </Box>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                             {names.map(name => (
-                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.72rem", fontWeight: 600, bgcolor: "#f1f5f9", color: COLORS.text }} />
+                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.72rem", fontWeight: 600, bgcolor: "#f1f5f9", color: COLORS.text, border: `1px solid ${COLORS.lightBorder}` }} />
                             ))}
                           </Box>
                         </Box>
@@ -1575,13 +1643,18 @@ export default function ClubPublicPage() {
                   <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
                     <Box sx={{ px: 2, py: 1.25, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1 }}>
                       <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.muted }}>Servicios</Typography>
+                      <Typography variant="caption" sx={{ color: COLORS.muted, ml: "auto", fontWeight: 600 }}>{profile.amenities.length}</Typography>
                     </Box>
                     <Box sx={{ px: 2, py: 1.5, display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-                      {profile.amenities.map(a => (
-                        <Box key={a} sx={{ px: 1.25, py: 0.4, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
-                          <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 600, fontSize: "0.72rem" }}>{a}</Typography>
-                        </Box>
-                      ))}
+                      {profile.amenities.map(a => {
+                        const Icon = AMENITY_ICONS[a];
+                        return (
+                          <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
+                            {Icon && <Icon sx={{ fontSize: "0.8rem", color: COLORS.accent }} />}
+                            <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 600, fontSize: "0.72rem" }}>{a}</Typography>
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Box>
                 )}
