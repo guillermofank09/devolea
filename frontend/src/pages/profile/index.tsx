@@ -26,6 +26,14 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import RestaurantOutlinedIcon from "@mui/icons-material/RestaurantOutlined";
+import WcOutlinedIcon from "@mui/icons-material/WcOutlined";
+import CheckroomOutlinedIcon from "@mui/icons-material/CheckroomOutlined";
+import ShowerOutlinedIcon from "@mui/icons-material/ShowerOutlined";
+import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
+import OutdoorGrillOutlinedIcon from "@mui/icons-material/OutdoorGrillOutlined";
+import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
+import type { SvgIconComponent } from "@mui/icons-material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, saveProfile } from "../../api/profileService";
 import { uploadImage } from "../../api/uploadService";
@@ -75,14 +83,14 @@ function LogoUploader({
 }) {
   const src = logoPreview ?? (logoUrl || null);
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, alignSelf: "stretch" }}>
       <Box
         component="label"
         sx={{
-          position: "relative", width: 104, height: 104,
+          position: "relative", width: 110, flex: 1,
           borderRadius: 3, overflow: "hidden", cursor: uploading ? "default" : "pointer",
           border: "1.5px solid", borderColor: "divider",
-          bgcolor: "action.hover", flexShrink: 0,
+          bgcolor: "action.hover", flexShrink: 0, minHeight: 80,
           "&:hover .logo-overlay": { opacity: uploading ? 0 : 1 },
         }}
       >
@@ -130,14 +138,14 @@ function LogoUploader({
 }
 
 // ─── Amenities ────────────────────────────────────────────────────────────────
-const AMENITY_OPTIONS: { key: string; label: string; icon: string }[] = [
-  { key: "Cantina",    label: "Cantina",    icon: "🍔" },
-  { key: "Baños",      label: "Baños",      icon: "🚻" },
-  { key: "Vestuario",  label: "Vestuario",  icon: "👕" },
-  { key: "Duchas",     label: "Duchas",     icon: "🚿" },
-  { key: "Wifi",       label: "Wifi",       icon: "📶" },
-  { key: "Parrillas",  label: "Parrillas",  icon: "🔥" },
-  { key: "Quinchos",   label: "Quinchos",   icon: "🏕️" },
+const AMENITY_OPTIONS: { key: string; label: string; Icon: SvgIconComponent }[] = [
+  { key: "Cantina",   label: "Cantina",   Icon: RestaurantOutlinedIcon  },
+  { key: "Baños",     label: "Baños",     Icon: WcOutlinedIcon          },
+  { key: "Vestuario", label: "Vestuario", Icon: CheckroomOutlinedIcon   },
+  { key: "Duchas",    label: "Duchas",    Icon: ShowerOutlinedIcon      },
+  { key: "Wifi",      label: "Wifi",      Icon: WifiOutlinedIcon        },
+  { key: "Parrillas", label: "Parrillas", Icon: OutdoorGrillOutlinedIcon},
+  { key: "Quinchos",  label: "Quinchos",  Icon: DeckOutlinedIcon        },
 ];
 
 // ─── Password section ─────────────────────────────────────────────────────────
@@ -373,24 +381,29 @@ export default function Profile() {
               Seleccioná los servicios disponibles en tu club.
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {AMENITY_OPTIONS.map(({ key, label, icon }) => {
+              {AMENITY_OPTIONS.map(({ key, label, Icon }) => {
                 const selected = amenities.includes(key);
                 return (
                   <Chip
                     key={key}
-                    label={`${icon} ${label}`}
+                    label={label}
+                    icon={<Icon sx={{ fontSize: "1rem !important", color: selected ? "#fff" : "text.secondary" }} />}
                     onClick={() => setAmenities(prev =>
                       selected ? prev.filter(a => a !== key) : [...prev, key]
                     )}
                     variant={selected ? "filled" : "outlined"}
                     sx={{
                       cursor: "pointer",
-                      fontWeight: selected ? 700 : 400,
+                      fontWeight: selected ? 600 : 400,
                       fontSize: "0.8rem",
-                      bgcolor: selected ? "#F5AD27" : "transparent",
-                      borderColor: selected ? "#F5AD27" : "divider",
-                      color: selected ? "#111" : "text.secondary",
-                      "&:hover": { bgcolor: selected ? "#e09b18" : "action.hover", borderColor: selected ? "#e09b18" : "text.disabled" },
+                      bgcolor: selected ? "#111" : "transparent",
+                      borderColor: selected ? "#111" : "divider",
+                      color: selected ? "#fff" : "text.secondary",
+                      "& .MuiChip-icon": { color: selected ? "#fff" : "text.secondary" },
+                      "&:hover": {
+                        bgcolor: selected ? "#333" : "action.hover",
+                        borderColor: selected ? "#333" : "text.disabled",
+                      },
                       transition: "all 150ms",
                     }}
                   />
