@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { Joyride, type EventData, ACTIONS, EVENTS, STATUS } from "react-joyride";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
@@ -16,11 +16,13 @@ function markOnboardingDone(userId: number) {
 }
 
 // Step content helper
-function Step({ title, body }: { title: string; body: string }) {
+function Step({ title, body }: { title: string; body: ReactNode }) {
   return (
     <Box sx={{ maxWidth: 280, py: 0.5 }}>
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>{title}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{body}</Typography>
+      {typeof body === "string"
+        ? <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{body}</Typography>
+        : body}
     </Box>
   );
 }
@@ -32,7 +34,13 @@ const STEPS = [
     content: (
       <Step
         title="Bienvenido a Devolea 👋"
-        body="Vamos a configurar tu club en unos pocos pasos: perfil, canchas, profesores, jugadores y torneos."
+        body={
+          <Box component="ul" sx={{ m: 0, pl: 2.5, color: "text.secondary" }}>
+            {["Perfil del club", "Canchas", "Profesores", "Jugadores", "Torneos"].map((item) => (
+              <Typography key={item} component="li" variant="body2" sx={{ lineHeight: 1.8 }}>{item}</Typography>
+            ))}
+          </Box>
+        }
       />
     ),
     disableBeacon: true,
@@ -65,7 +73,7 @@ const STEPS = [
     content: (
       <Step
         title="Profesores"
-        body="Registrá los profesores, sus tarifas propias y horarios de clases."
+        body="Registrá los profesores, sus tarifas y horarios de clases."
       />
     ),
     disableBeacon: true,
