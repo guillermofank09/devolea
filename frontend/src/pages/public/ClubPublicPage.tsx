@@ -652,20 +652,16 @@ function CourtCalendar({
                       rel={clickable ? "noopener noreferrer" : undefined}
                       onClick={clickable ? () => trackEvent("whatsapp_reserva", { cancha: court.name }) : undefined}
                       sx={{
-                        height: 64, bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4", borderBottom: "1px solid", borderColor: "divider",
-                        display: "flex", alignItems: "center", px: 2, gap: 1.5, cursor: clickable ? "pointer" : "default", textDecoration: "none"
+                        height: 64,
+                        bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4",
+                        backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.02) 4px, rgba(0,0,0,0.02) 8px)" : undefined,
+                        borderBottom: "1px solid", borderColor: "divider",
+                        display: "flex", alignItems: "center", px: 2, gap: 1.5,
+                        cursor: clickable ? "pointer" : "default", textDecoration: "none",
+                        "&:active": clickable ? { bgcolor: "#dcfce7" } : undefined,
                       }}
                     >
-                      {occupied ? (
-                        <>
-                          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#ef4444" }} />
-                          <Typography variant="body2" sx={{ color: "#ef4444", fontWeight: 600 }}>Reservado</Typography>
-                        </>
-                      ) : outside ? (
-                        <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 500 }}>No disponible</Typography>
-                      ) : (
-                        <Typography variant="body2" sx={{ color: "#059669", fontWeight: 600 }}>Disponible</Typography>
-                      )}
+                      {occupied && <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#ef4444" }} />}
                     </Box>
                   </Fragment>
                 );
