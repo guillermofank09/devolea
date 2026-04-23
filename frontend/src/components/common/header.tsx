@@ -21,6 +21,8 @@ import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "../../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchProfile } from "../../api/profileService";
 
 interface Props {
   onMenuClick?: () => void;
@@ -37,6 +39,14 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
   const initials = user?.name
     ? user.name.split(" ").slice(0, 2).map((w) => w[0].toUpperCase()).join("")
     : null;
+
+  const { data: profile } = useQuery({
+    queryKey: ["clubProfile"],
+    queryFn: fetchProfile,
+    enabled: !!user && !publicMode && user.role !== "superadmin",
+    staleTime: 30_000,
+  });
+  const clubLogoSrc = profile?.logoUrl || profile?.logoBase64 || undefined;
 
   const handleOpen = (e: React.MouseEvent<HTMLElement>) => setAnchor(e.currentTarget);
   const handleClose = () => setAnchor(null);
@@ -75,6 +85,7 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
           <Tooltip title="Mi cuenta">
             <IconButton id="tour-account-btn" onClick={handleOpen} size="small" sx={{ p: 0.5 }} aria-label="Mi cuenta">
               <Avatar
+                src={clubLogoSrc}
                 sx={{
                   width: 34,
                   height: 34,
@@ -83,6 +94,7 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
                   fontWeight: 700,
                   border: open ? "2px solid #F5AD27" : "2px solid transparent",
                   transition: "border-color 150ms ease",
+                  "& img": { objectFit: "contain", p: "3px" },
                 }}
               >
                 {initials ?? <AccountCircleIcon sx={{ fontSize: 20, color: "#e0e0e0" }} />}
@@ -153,13 +165,6 @@ const Header = ({ onMenuClick, publicMode }: Props) => {
                   <SettingsOutlinedIcon fontSize="small" />
                 </ListItemIcon>
                 <Typography variant="body2" fontWeight={500}>Ajustes</Typography>
-              </MenuItem>
-
-              <MenuItem onClick={() => go("/stats")} sx={{ py: 1.25, px: 2, gap: 0.5 }}>
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <BarChartOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <Typography variant="body2" fontWeight={500}>Estadísticas</Typography>
               </MenuItem>
 
               {user?.username && (

@@ -89,20 +89,20 @@ function LogoUploader({
         component="label"
         sx={{
           position: "relative", width: 112, height: 112,
-          borderRadius: 3, overflow: "hidden", cursor: uploading ? "default" : "pointer",
-          border: "1.5px solid", borderColor: error ? "error.main" : "divider",
-          bgcolor: error ? "error.50" : "action.hover",
+          borderRadius: "50%", overflow: "hidden", cursor: uploading ? "default" : "pointer",
+          border: "2px solid", borderColor: error ? "error.main" : "divider",
+          bgcolor: error ? "error.50" : "#111111",
           "&:hover .logo-overlay": { opacity: uploading ? 0 : 1 },
         }}
       >
         {src ? (
           <Box component="img" src={src} alt="logo"
-            sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }} />
+            sx={{ width: "100%", height: "100%", objectFit: "contain", p: "10px" }} />
         ) : (
           <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-            <CameraAltOutlinedIcon sx={{ color: error ? "error.main" : "text.disabled", fontSize: 28 }} />
-            <Typography variant="caption" color={error ? "error" : "text.disabled"}
+            <CameraAltOutlinedIcon sx={{ color: error ? "error.main" : "rgba(255,255,255,0.5)", fontSize: 28 }} />
+            <Typography variant="caption" sx={{ color: error ? "error.main" : "rgba(255,255,255,0.5)" }}
               textAlign="center" lineHeight={1.3} px={1}>
               {error ? "Error al subir" : "Subir logo"}
             </Typography>
