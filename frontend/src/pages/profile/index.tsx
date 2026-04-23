@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Chip,
   CircularProgress,
   Divider,
@@ -15,17 +14,18 @@ import {
   InputAdornment,
   Snackbar,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import UploadIcon from "@mui/icons-material/UploadOutlined";
+import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import RoomServiceOutlinedIcon from "@mui/icons-material/RoomServiceOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, saveProfile } from "../../api/profileService";
 import { uploadImage } from "../../api/uploadService";
@@ -40,12 +40,12 @@ import { useAuth } from "../../context/AuthContext";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import GoogleMapView from "../../components/common/GoogleMapView";
 
-// ─── Section card wrapper ─────────────────────────────────────────────────────
+// ─── Section card ─────────────────────────────────────────────────────────────
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, mb: 3 }}>
       <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
           <Box sx={{ color: "#F5AD27" }}>{icon}</Box>
           <Typography variant="subtitle1" fontWeight={700}>{title}</Typography>
         </Box>
@@ -56,28 +56,105 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Field label ──────────────────────────────────────────────────────────────
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
+      {children}
+    </Typography>
+  );
+}
+
+// ─── Logo uploader ────────────────────────────────────────────────────────────
+function LogoUploader({
+  logoUrl, logoPreview, uploading,
+  onChange, onRemove,
+}: {
+  logoUrl: string; logoPreview: string | null; uploading: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; onRemove: () => void;
+}) {
+  const src = logoPreview ?? (logoUrl || null);
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+      <Box
+        component="label"
+        sx={{
+          position: "relative", width: 104, height: 104,
+          borderRadius: 3, overflow: "hidden", cursor: uploading ? "default" : "pointer",
+          border: "1.5px solid", borderColor: "divider",
+          bgcolor: "action.hover", flexShrink: 0,
+          "&:hover .logo-overlay": { opacity: uploading ? 0 : 1 },
+        }}
+      >
+        {src ? (
+          <Box component="img" src={src} alt="logo"
+            sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }} />
+        ) : (
+          <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+            <CameraAltOutlinedIcon sx={{ color: "text.disabled", fontSize: 28 }} />
+            <Typography variant="caption" color="text.disabled" textAlign="center" lineHeight={1.3} px={1}>
+              Subir logo
+            </Typography>
+          </Box>
+        )}
+
+        {/* hover overlay */}
+        <Box className="logo-overlay" sx={{
+          position: "absolute", inset: 0, opacity: 0, transition: "opacity 150ms",
+          bgcolor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <CameraAltOutlinedIcon sx={{ color: "#fff", fontSize: 26 }} />
+        </Box>
+
+        {/* uploading spinner */}
+        {uploading && (
+          <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center",
+            justifyContent: "center", bgcolor: "rgba(255,255,255,0.7)" }}>
+            <CircularProgress size={22} />
+          </Box>
+        )}
+
+        <input type="file" accept="image/*" hidden disabled={uploading} onChange={onChange} />
+      </Box>
+
+      {src && !uploading && (
+        <Tooltip title="Eliminar logo">
+          <IconButton size="small" onClick={onRemove} sx={{ color: "text.disabled" }}>
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+  );
+}
+
+// ─── Amenities ────────────────────────────────────────────────────────────────
+const AMENITY_OPTIONS: { key: string; label: string; icon: string }[] = [
+  { key: "Cantina",    label: "Cantina",    icon: "🍔" },
+  { key: "Baños",      label: "Baños",      icon: "🚻" },
+  { key: "Vestuario",  label: "Vestuario",  icon: "👕" },
+  { key: "Duchas",     label: "Duchas",     icon: "🚿" },
+  { key: "Wifi",       label: "Wifi",       icon: "📶" },
+  { key: "Parrillas",  label: "Parrillas",  icon: "🔥" },
+  { key: "Quinchos",   label: "Quinchos",   icon: "🏕️" },
+];
+
 // ─── Password section ─────────────────────────────────────────────────────────
 function PasswordSection({ token }: { token: string }) {
-  const [current, setCurrent]     = useState("");
-  const [next, setNext]           = useState("");
-  const [confirm, setConfirm]     = useState("");
+  const [current, setCurrent]         = useState("");
+  const [next, setNext]               = useState("");
+  const [confirm, setConfirm]         = useState("");
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNext, setShowNext]       = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [success, setSuccess]     = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [success, setSuccess]         = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => apiChangePassword(token, current, next),
-    onSuccess: () => {
-      setCurrent(""); setNext(""); setConfirm("");
-      setError(null);
-      setSuccess(true);
-    },
-    onError: (e: any) => {
-      setError(e?.response?.data?.message ?? "Error al cambiar la contraseña.");
-    },
+    onSuccess: () => { setCurrent(""); setNext(""); setConfirm(""); setError(null); setSuccess(true); },
+    onError: (e: any) => { setError(e?.response?.data?.message ?? "Error al cambiar la contraseña."); },
   });
 
   function handleSave() {
@@ -87,25 +164,15 @@ function PasswordSection({ token }: { token: string }) {
     mutation.mutate();
   }
 
-  function passField(
-    label: string,
-    value: string,
-    setter: (v: string) => void,
-    show: boolean,
-    setShow: (v: boolean) => void,
-  ) {
+  function passField(label: string, value: string, setter: (v: string) => void, show: boolean, setShow: (v: boolean) => void) {
     return (
       <Box>
-        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-          {label}
-        </Typography>
+        <FieldLabel>{label}</FieldLabel>
         <TextField
           type={show ? "text" : "password"}
           value={value}
           onChange={e => setter(e.target.value)}
-          fullWidth
-          size="small"
-          autoComplete="new-password"
+          fullWidth size="small" autoComplete="new-password"
           slotProps={{
             input: {
               endAdornment: (
@@ -124,28 +191,18 @@ function PasswordSection({ token }: { token: string }) {
 
   return (
     <Section icon={<LockOutlinedIcon />} title="Cambiar contraseña">
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          {passField("Contraseña actual", current, setCurrent, showCurrent, setShowCurrent)}
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {passField("Contraseña actual", current, setCurrent, showCurrent, setShowCurrent)}
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
           {passField("Nueva contraseña", next, setNext, showNext, setShowNext)}
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
           {passField("Confirmar nueva contraseña", confirm, setConfirm, showConfirm, setShowConfirm)}
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>{error}</Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }} onClose={() => setSuccess(false)}>
-          Contraseña actualizada correctamente.
-        </Alert>
-      )}
+      {error   && <Alert severity="error"   sx={{ mt: 2, borderRadius: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }} onClose={() => setSuccess(false)}>Contraseña actualizada correctamente.</Alert>}
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2.5 }}>
         <Button
           variant="contained"
           disabled={!current || !next || !confirm || mutation.isPending}
@@ -173,51 +230,41 @@ export default function Profile() {
 
   const mutation = useMutation({
     mutationFn: saveProfile,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["clubProfile"] });
-      setSnack(true);
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clubProfile"] }); setSnack(true); },
   });
 
-  // ── form state ──
-  const [clubName, setClubName]     = useState("");
-  const [logoUrl, setLogoUrl]       = useState("");
+  // ── form state ────────────────────────────────────────────────────────────
+  const [clubName,  setClubName]  = useState("");
+  const [logoUrl,   setLogoUrl]   = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const logoPreviewRef = useRef<string | null>(null);
-  const [address, setAddress]       = useState("");
-  const [phone, setPhone]           = useState("");
-  const [lat, setLat]               = useState<number | null>(null);
-  const [lng, setLng]               = useState<number | null>(null);
-  const [hours, setHours]           = useState<DaySchedule[]>(DEFAULT_HOURS);
-  const [amenities, setAmenities]   = useState<string[]>([]);
-  const [snack, setSnack]           = useState(false);
+  const [address,   setAddress]   = useState("");
+  const [phone,     setPhone]     = useState("");
+  const [lat,       setLat]       = useState<number | null>(null);
+  const [lng,       setLng]       = useState<number | null>(null);
+  const [hours,     setHours]     = useState<DaySchedule[]>(DEFAULT_HOURS);
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [snack,     setSnack]     = useState(false);
 
-  // ── Google Maps / Places ──
-  const placesLib = useMapsLibrary("places");
+  // ── Google Maps ───────────────────────────────────────────────────────────
+  const placesLib   = useMapsLibrary("places");
   const geocodingLib = useMapsLibrary("geocoding");
   const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
-  const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
-
-  useEffect(() => {
-    if (placesLib) setAutocompleteService(new placesLib.AutocompleteService());
-  }, [placesLib]);
-
-  useEffect(() => {
-    if (geocodingLib) setGeocoder(new geocodingLib.Geocoder());
-  }, [geocodingLib]);
-
-  // ── address autocomplete state ──
-  const [addrInput, setAddrInput]   = useState("");
+  const [geocoder,   setGeocoder]   = useState<google.maps.Geocoder | null>(null);
+  const [addrInput,  setAddrInput]  = useState("");
   const [addrOptions, setAddrOptions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [addrLoading, setAddrLoading] = useState(false);
-  const [addrValue, setAddrValue]   = useState<google.maps.places.AutocompletePrediction | null>(null);
+  const [addrValue,  setAddrValue]  = useState<google.maps.places.AutocompletePrediction | null>(null);
+
+  useEffect(() => { if (placesLib) setAutocompleteService(new placesLib.AutocompleteService()); }, [placesLib]);
+  useEffect(() => { if (geocodingLib) setGeocoder(new geocodingLib.Geocoder()); }, [geocodingLib]);
 
   // populate when data loads
   useEffect(() => {
     if (!data) return;
     setClubName(data.clubName ?? "");
-    setLogoUrl(data.logoUrl ?? data.logoBase64 ?? ""); // prefer new URL, fall back to legacy base64
+    setLogoUrl(data.logoUrl ?? data.logoBase64 ?? "");
     setAddress(data.address ?? "");
     setPhone(data.phone ?? "");
     setAddrInput(data.address ?? "");
@@ -227,60 +274,47 @@ export default function Profile() {
     setAmenities(data.amenities ?? []);
   }, [data]);
 
-  // debounced Places autocomplete search
+  // debounced Places autocomplete
   useEffect(() => {
     if (addrInput.length < 3 || !autocompleteService) { setAddrOptions([]); return; }
     const timer = setTimeout(async () => {
       setAddrLoading(true);
-      try {
-        const result = await autocompleteService.getPlacePredictions({ input: addrInput });
-        setAddrOptions(result.predictions ?? []);
-      } catch {
-        setAddrOptions([]);
-      } finally {
-        setAddrLoading(false);
-      }
+      try { const r = await autocompleteService.getPlacePredictions({ input: addrInput }); setAddrOptions(r.predictions ?? []); }
+      catch { setAddrOptions([]); }
+      finally { setAddrLoading(false); }
     }, 400);
     return () => clearTimeout(timer);
   }, [addrInput, autocompleteService]);
 
-  const handlePlaceSelect = useCallback(async (prediction: google.maps.places.AutocompletePrediction) => {
-    setAddrValue(prediction);
-    setAddrInput(prediction.description);
-    setAddress(prediction.description);
+  const handlePlaceSelect = useCallback(async (p: google.maps.places.AutocompletePrediction) => {
+    setAddrValue(p);
+    setAddrInput(p.description);
+    setAddress(p.description);
     if (!geocoder) return;
     try {
-      const result = await geocoder.geocode({ placeId: prediction.place_id });
-      const loc = result.results[0]?.geometry?.location;
+      const r = await geocoder.geocode({ placeId: p.place_id });
+      const loc = r.results[0]?.geometry?.location;
       if (loc) { setLat(loc.lat()); setLng(loc.lng()); }
     } catch { /* lat/lng stays null */ }
   }, [geocoder]);
 
-  // ── logo upload ──
+  // ── logo upload ───────────────────────────────────────────────────────────
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
-
-    // Show preview instantly from local file
     if (logoPreviewRef.current) URL.revokeObjectURL(logoPreviewRef.current);
     const objectUrl = URL.createObjectURL(file);
     logoPreviewRef.current = objectUrl;
     setLogoPreview(objectUrl);
     setLogoUploading(true);
-
     uploadImage(file, "logos")
-      .then((url) => {
-        setLogoUrl(url);
-        setLogoPreview(null);
-        URL.revokeObjectURL(objectUrl);
-        logoPreviewRef.current = null;
-      })
+      .then(url => { setLogoUrl(url); setLogoPreview(null); URL.revokeObjectURL(objectUrl); logoPreviewRef.current = null; })
       .catch(() => setLogoPreview(null))
       .finally(() => setLogoUploading(false));
   }
 
-  // ── save ──
+  // ── save ──────────────────────────────────────────────────────────────────
   function handleSave() {
     mutation.mutate({ clubName, logoUrl, logoBase64: undefined, address, phone, latitude: lat, longitude: lng, businessHours: hours, amenities });
   }
@@ -290,7 +324,7 @@ export default function Profile() {
   if (isError) {
     return (
       <Box>
-        <PageHeader title="Gestión de Perfil" subtitle="Información del club y configuración general" />
+        <PageHeader title="Mi Club" subtitle="Información del club y configuración general" />
         <Alert severity="error" sx={{ borderRadius: 2 }}>
           No se pudo conectar con el servidor. Verificá que el backend esté corriendo.
         </Alert>
@@ -300,159 +334,84 @@ export default function Profile() {
 
   return (
     <Box>
-      <PageHeader title="Gestión de Perfil" subtitle="Información del club y configuración general" />
+      <PageHeader title="Mi Club" subtitle="Información del club y configuración general" />
 
       <Grid container spacing={3} alignItems="flex-start">
-        {/* ── Left column ── */}
+
+        {/* ── Columna izquierda ── */}
         <Grid size={{ xs: 12, md: 6 }}>
-          {/* ── Club info ── */}
-          <Section icon={<StorefrontOutlinedIcon />} title="Información del Club">
-            <Grid container spacing={3} alignItems="flex-start">
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                  Nombre del club
-                </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="Ej. Club Deportivo Devolea"
-                  value={clubName}
-                  onChange={e => setClubName(e.target.value)}
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <PhoneField
-                  value={phone}
-                  onChange={setPhone}
-                  label="Teléfono / WhatsApp"
-                />
-              </Grid>
 
-              <Grid size={{ xs: 12 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <RoomServiceOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    Servicios del club
-                  </Typography>
+          {/* ── Datos del club ── */}
+          <Section icon={<StorefrontOutlinedIcon />} title="Datos del club">
+            {/* Logo + Nombre + Teléfono */}
+            <Box sx={{ display: "flex", gap: 2.5, alignItems: "flex-start" }}>
+              <LogoUploader
+                logoUrl={logoUrl}
+                logoPreview={logoPreview}
+                uploading={logoUploading}
+                onChange={handleLogoChange}
+                onRemove={() => setLogoUrl("")}
+              />
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <FieldLabel>Nombre del club</FieldLabel>
+                  <TextField
+                    fullWidth size="small"
+                    placeholder="Ej. Club Deportivo Devolea"
+                    value={clubName}
+                    onChange={e => setClubName(e.target.value)}
+                  />
                 </Box>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {["Cantina", "Baños", "Vestuario", "Duchas", "Wifi", "Parrillas", "Quinchos"].map((s) => {
-                    const selected = amenities.includes(s);
-                    return (
-                      <Chip
-                        key={s}
-                        label={s}
-                        onClick={() => setAmenities(prev =>
-                          selected ? prev.filter(a => a !== s) : [...prev, s]
-                        )}
-                        icon={<Checkbox checked={selected} size="small" sx={{ p: 0, pl: 0.5, color: "inherit" }} disableRipple />}
-                        variant={selected ? "filled" : "outlined"}
-                        sx={{
-                          cursor: "pointer",
-                          fontWeight: selected ? 600 : 400,
-                          bgcolor: selected ? "#F5AD27" : "transparent",
-                          borderColor: selected ? "#F5AD27" : "divider",
-                          color: selected ? "#111" : "text.secondary",
-                          "& .MuiChip-icon": { color: "inherit" },
-                          "&:hover": { bgcolor: selected ? "#e09b18" : "action.hover" },
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-                  Logotipo
-                </Typography>
-                <Box
-                  component="label"
-                  sx={{
-                    width: "100%",
-                    height: 90,
-                    border: "2px dashed",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 0.5,
-                    cursor: logoUploading ? "default" : "pointer",
-                    overflow: "hidden",
-                    transition: "border-color 150ms",
-                    "&:hover": logoUploading ? {} : { borderColor: "text.secondary" },
-                  }}
-                >
-                  {(logoPreview || logoUrl) ? (
-                    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-                      <Box
-                        component="img"
-                        src={logoPreview ?? logoUrl}
-                        alt="logo"
-                        sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
-                      />
-                      {logoUploading && (
-                        <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(255,255,255,0.6)" }}>
-                          <PageLoader size={24} />
-                        </Box>
-                      )}
-                    </Box>
-                  ) : logoUploading ? (
-                    <PageLoader size={24} />
-                  ) : (
-                    <>
-                      <UploadIcon sx={{ color: "text.disabled", fontSize: 22 }} />
-                      <Typography variant="caption" color="text.disabled" textAlign="center" lineHeight={1.3}>
-                        Subir imagen
-                      </Typography>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" hidden disabled={logoUploading} onChange={handleLogoChange} />
-                </Box>
-                {(logoUrl || logoPreview) && !logoUploading && (
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={() => setLogoUrl("")}
-                    sx={{ textTransform: "none", mt: 0.5, fontSize: "0.72rem" }}
-                  >
-                    Eliminar logo
-                  </Button>
-                )}
-              </Grid>
-            </Grid>
+                <PhoneField value={phone} onChange={setPhone} label="Teléfono / WhatsApp" />
+              </Box>
+            </Box>
           </Section>
-          {/* ── Business hours ── */}
-          <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de Atención">
+
+          {/* ── Servicios ── */}
+          <Section icon={<StorefrontOutlinedIcon />} title="Servicios del club">
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Seleccioná los servicios disponibles en tu club.
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {AMENITY_OPTIONS.map(({ key, label, icon }) => {
+                const selected = amenities.includes(key);
+                return (
+                  <Chip
+                    key={key}
+                    label={`${icon} ${label}`}
+                    onClick={() => setAmenities(prev =>
+                      selected ? prev.filter(a => a !== key) : [...prev, key]
+                    )}
+                    variant={selected ? "filled" : "outlined"}
+                    sx={{
+                      cursor: "pointer",
+                      fontWeight: selected ? 700 : 400,
+                      fontSize: "0.8rem",
+                      bgcolor: selected ? "#F5AD27" : "transparent",
+                      borderColor: selected ? "#F5AD27" : "divider",
+                      color: selected ? "#111" : "text.secondary",
+                      "&:hover": { bgcolor: selected ? "#e09b18" : "action.hover", borderColor: selected ? "#e09b18" : "text.disabled" },
+                      transition: "all 150ms",
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Section>
+
+          {/* ── Horarios ── */}
+          <Section icon={<AccessTimeOutlinedIcon />} title="Horarios de atención">
             <BusinessHoursEditor value={hours} onChange={setHours} />
           </Section>
 
         </Grid>
 
-        {/* ── Right column ── */}
+        {/* ── Columna derecha ── */}
         <Grid size={{ xs: 12, md: 6 }}>
-          {/* ── Location ── */}
-          <Section icon={<LocationOnOutlinedIcon />} title="Ubicación">
-            <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.75}>
-              Dirección del club
-            </Typography>
 
-            {lat && lng && (
-              <Box
-                sx={{
-                  mb: 2,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  border: "1.5px solid",
-                  borderColor: "divider",
-                  height: 220,
-                }}
-              >
-                <GoogleMapView lat={lat} lng={lng} height={220} interactive />
-              </Box>
-            )}
+          {/* ── Ubicación ── */}
+          <Section icon={<LocationOnOutlinedIcon />} title="Ubicación">
+            <FieldLabel>Dirección del club</FieldLabel>
 
             <Autocomplete
               freeSolo
@@ -464,17 +423,9 @@ export default function Profile() {
               filterOptions={x => x}
               onInputChange={(_, val, reason) => {
                 setAddrInput(val);
-                if (reason === "input") {
-                  setAddress(val);
-                  setLat(null);
-                  setLng(null);
-                  setAddrValue(null);
-                }
+                if (reason === "input") { setAddress(val); setLat(null); setLng(null); setAddrValue(null); }
               }}
-              onChange={(_, opt) => {
-                if (!opt || typeof opt === "string") return;
-                handlePlaceSelect(opt);
-              }}
+              onChange={(_, opt) => { if (!opt || typeof opt === "string") return; handlePlaceSelect(opt); }}
               renderInput={params => (
                 <TextField
                   {...params}
@@ -483,20 +434,11 @@ export default function Profile() {
                   slotProps={{
                     input: {
                       ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {addrLoading && <PageLoader size={16} />}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
+                      endAdornment: (<>{addrLoading && <PageLoader size={16} />}{params.InputProps.endAdornment}</>),
                     },
                     formHelperText: { sx: { ml: 0, mt: 0.5, fontSize: "0.72rem" } },
                   }}
-                  helperText={
-                    lat && lng
-                      ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`
-                      : "Escribí para buscar con Google Maps"
-                  }
+                  helperText={lat && lng ? `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}` : "Escribí para buscar con Google Maps"}
                 />
               )}
               renderOption={(props, option) => (
@@ -517,14 +459,21 @@ export default function Profile() {
                 </li>
               )}
             />
+
+            {lat && lng && (
+              <Box sx={{ mt: 2, borderRadius: 2, overflow: "hidden", border: "1.5px solid", borderColor: "divider", height: 220 }}>
+                <GoogleMapView lat={lat} lng={lng} height={220} interactive />
+              </Box>
+            )}
           </Section>
-          {/* ── Password ── */}
+
+          {/* ── Contraseña ── */}
           <PasswordSection token={token!} />
 
         </Grid>
       </Grid>
 
-      {/* ── Floating save button ── */}
+      {/* ── Floating save ── */}
       <Box sx={{ position: "fixed", bottom: 28, right: 28, zIndex: 1200, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
         {mutation.isError && (
           <Typography variant="caption" color="error" sx={{ bgcolor: "background.paper", px: 1.5, py: 0.5, borderRadius: 2, boxShadow: 2 }}>
@@ -543,12 +492,7 @@ export default function Profile() {
         </Button>
       </Box>
 
-      <Snackbar
-        open={snack}
-        autoHideDuration={3000}
-        onClose={() => setSnack(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
+      <Snackbar open={snack} autoHideDuration={3000} onClose={() => setSnack(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert severity="success" onClose={() => setSnack(false)} sx={{ borderRadius: 2 }}>
           Perfil guardado correctamente
         </Alert>
