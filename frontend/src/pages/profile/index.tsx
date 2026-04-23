@@ -418,13 +418,17 @@ export default function Profile() {
                     variant={selected ? "filled" : "outlined"}
                     sx={{
                       cursor: "pointer",
-                      fontWeight: selected ? 600 : 400,
+                      fontWeight: selected ? 700 : 400,
                       fontSize: "0.8rem",
-                      bgcolor: selected ? "#111" : "transparent",
-                      borderColor: selected ? "#111" : "divider",
-                      color: selected ? "#fff" : "text.secondary",
-                      "& .MuiChip-icon": { color: selected ? "#fff" : "inherit" },
-                      "&:hover": { bgcolor: selected ? "#333" : "action.hover", borderColor: selected ? "#333" : "text.disabled" },
+                      bgcolor: selected ? "#fff8e8" : "transparent",
+                      borderColor: selected ? "#F5AD27" : "divider",
+                      borderWidth: selected ? "1.5px" : "1px",
+                      color: selected ? "#7a5200" : "text.secondary",
+                      "& .MuiChip-icon": { color: selected ? "#F5AD27" : "text.disabled" },
+                      "&:hover": {
+                        bgcolor: selected ? "#ffefc4" : "action.hover",
+                        borderColor: selected ? "#e09b18" : "text.disabled",
+                      },
                       transition: "all 150ms",
                     }}
                   />
