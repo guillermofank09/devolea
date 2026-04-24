@@ -15,7 +15,7 @@ export default function PageLoader({ size }: Props = {}) {
     return (
       <Box
         component="img"
-        src="/favicon.ico"
+        src="/favicon.png"
         alt="Cargando…"
         sx={{
           width: size,
@@ -44,7 +44,7 @@ export default function PageLoader({ size }: Props = {}) {
     >
       <Box
         component="img"
-        src="/favicon.ico"
+        src="/favicon.png"
         alt="Cargando…"
         sx={{
           width: 48,
