@@ -20,8 +20,8 @@ export default function PageLoader({ size }: Props = {}) {
         sx={{
           width: size,
           height: size,
+          objectFit: "contain",
           animation: `${spin} 0.9s linear infinite`,
-          borderRadius: "50%",
           display: "inline-block",
           verticalAlign: "middle",
           flexShrink: 0,
@@ -49,8 +49,8 @@ export default function PageLoader({ size }: Props = {}) {
         sx={{
           width: 48,
           height: 48,
+          objectFit: "contain",
           animation: `${spin} 0.9s linear infinite`,
-          borderRadius: "50%",
         }}
       />
     </Box>
