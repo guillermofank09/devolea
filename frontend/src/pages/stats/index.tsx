@@ -1,173 +1,218 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   MenuItem,
   Select,
-  List,
-  ListItem,
-  ListItemText,
   Typography,
   CircularProgress,
   Stack,
-  Divider,
+  Chip,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import { useAuth } from '@/context/AuthContext';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import { fetchRanking } from '../../api/statsService';
+import type { RankingEntry, RankingResponse } from '../../api/statsService';
 
-type RankingEntry = {
-  id: string;
-  name: string;
-  scores: number[]; // points per tournament round
-  total: number;     // sum of scores
-  role: 'team' | 'player';
+const PHASE_COLOR: Record<string, 'warning' | 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success'> = {
+  'Campeón':   'warning',
+  'Final':     'secondary',
+  'Semifinal': 'primary',
+  'Cuartos':   'info',
+  'Octavos':   'default',
+  'Fase Grupal': 'default',
 };
 
+const SPORT_LABEL: Record<string, string> = {
+  TENIS: 'Tenis',
+  PADEL: 'Pádel',
+  FUTBOL_5: 'Fútbol 5',
+  FUTBOL_7: 'Fútbol 7',
+  FUTBOL_11: 'Fútbol 11',
+  VOLEY: 'Vóley',
+  BASQUET: 'Básquet',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  PRIMERA: '1ra',
+  SEGUNDA: '2da',
+  TERCERA: '3ra',
+  CUARTA: '4ta',
+  QUINTA: '5ta',
+  SEXTA: '6ta',
+  SEPTIMA: '7ma',
+  SIN_CATEGORIA: 'Sin categoría',
+};
+
+function medalColor(pos: number): string | undefined {
+  if (pos === 1) return '#FFD700';
+  if (pos === 2) return '#C0C0C0';
+  if (pos === 3) return '#CD7F32';
+  return undefined;
+}
+
 export default function StatsRanking() {
-  const { user } = useAuth();
-  const SPORTS = ['Tennis', 'Basketball', 'Soccer', 'Swimming', 'Athletics'];
-  const [selectedSport, setSelectedSport] = useState<string>(SPORTS[0]);
-  const [ranking, setRanking] = useState<RankingEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  const [selectedSport, setSelectedSport] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [data, setData] = useState<RankingResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Handler for sport change
-  const handleSportChange = (event: any) => {
-    const sport = event.target.value;
-    setSelectedSport(sport);
-    loadRanking(sport);
-  };
-
-  // Load ranking data (mock API call – replace with real endpoint)
-  const loadRanking = async (sport: string) => {
-    if (!sport) {
-      setRanking([]);
-      return;
-    }
+  const load = useCallback(async (sport: string, category: string) => {
     setLoading(true);
     setError('');
     try {
-      // Replace with actual API call, e.g., fetch(`/api/stats/ranking?sport=${sport}`)
-      const mockData: RankingEntry[] = [
-        {
-          id: '1',
-          name: 'Team Alpha',
-          scores: [150, 100, 50],
-          total: 300,
-          role: 'team',
-        },
-        {
-          id: '2',
-          name: 'Player Beta',
-          scores: [120, 80, 90],
-          total: 290,
-          role: 'player',
-        },
-        {
-          id: '3',
-          name: 'Team Gamma',
-          scores: [200, 60, 40],
-          total: 300,
-          role: 'team',
-        },
-        // Add more mock entries as needed
-      ];
-      // Sort by total descending
-      const sorted = [...mockData].sort((a, b) => b.total - a.total);
-      setRanking(sorted);
-    } catch (err) {
-      setError('Failed to load ranking data');
+      const result = await fetchRanking(sport || undefined, category || undefined);
+      setData(result);
+    } catch {
+      setError('Error al cargar el ranking');
     } finally {
       setLoading(false);
     }
-  };
-
-  // On mount load ranking for default sport
-  useEffect(() => {
-    loadRanking(selectedSport);
   }, []);
 
-  // Helper to render scores list
-  const renderScores = (scores: number[]) => (
-    <span style={{ fontSize: '0.85rem', color: '#666' }}>
-      {scores.map((s, i) => (
-        <span key={i}>
-          {i > 0 && ' + '}
-          {s}
-        </span>
-      ))}
-      {' = '}
-      <strong>{scores.reduce((a, b) => a + b, 0)}</strong>
-    </span>
-  );
+  useEffect(() => {
+    load('', '');
+  }, [load]);
+
+  const handleSportChange = (sport: string) => {
+    setSelectedSport(sport);
+    load(sport, selectedCategory);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    load(selectedSport, category);
+  };
+
+  const ranking: RankingEntry[] = data?.ranking ?? [];
+  const availableSports: string[] = data?.availableSports ?? [];
+  const availableCategories: string[] = data?.availableCategories ?? [];
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Sport selector */}
-      <Stack spacing={2} mb={2}>
-        <Typography variant="h6" gutterBottom>
-          Selecciona el deporte
-        </Typography>
-        <Select
-          value={selectedSport}
-          onChange={handleSportChange}
-          sx={{ minWidth: 200 }}
-        >
-          {SPORTS.map((sport) => (
-            <MenuItem key={sport} value={sport}>
-              {sport}
-            </MenuItem>
-          ))}
-        </Select>
+      <Typography variant="h5" fontWeight={700} gutterBottom>
+        Ranking de Torneos
+      </Typography>
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
+        <FormControl sx={{ minWidth: 180 }} size="small">
+          <InputLabel>Deporte</InputLabel>
+          <Select
+            value={selectedSport}
+            label="Deporte"
+            onChange={e => handleSportChange(e.target.value)}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            {availableSports.map(s => (
+              <MenuItem key={s} value={s}>{SPORT_LABEL[s] ?? s}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 180 }} size="small">
+          <InputLabel>Categoría</InputLabel>
+          <Select
+            value={selectedCategory}
+            label="Categoría"
+            onChange={e => handleCategoryChange(e.target.value)}
+          >
+            <MenuItem value="">Todas</MenuItem>
+            {availableCategories.map(c => (
+              <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Stack>
 
-      {/* Ranking list */}
       {loading && (
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Box sx={{ textAlign: 'center', mt: 6 }}>
           <CircularProgress />
         </Box>
       )}
+
       {error && (
-        <Typography color="error" sx={{ mt: 4 }}>
-          {error}
-        </Typography>
+        <Typography color="error" sx={{ mt: 4 }}>{error}</Typography>
       )}
-      {ranking.length > 0 && (
-        <>
-          <Typography variant="h5" gutterBottom>
-            Ranking de {selectedSport}
-          </Typography>
-          <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {ranking.map((item, idx) => (
-              <ListItem
-                key={item.id}
-                sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5 }}
-              >
-                <ListItemText
-                  primary={`${idx + 1}. ${item.name}`}
-                  secondary={item.role === 'team' ? 'Equipo' : 'Jugador'}
-                  primaryTypographyProps={{ variant: 'body1' }}
-                />
-                <Box sx={{ textAlign: 'right' }}>
-                  {renderScores(item.scores)}
-                </Box>
-              </ListItem>
-            ))}
-          </List>
-          <Divider sx={{ my: 2 }} />
-          {/* Example of filtering by club activity – placeholder logic */}
-          {user?.sports?.includes(selectedSport) && (
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body1" color="text.secondary">
-                Club activo – se mostrarán datos de equipos/jugadores habilitados
-              </Typography>
-            </Box>
-          )}
-        </>
-      )}
-      {!loading && ranking.length === 0 && (
+
+      {!loading && !error && ranking.length === 0 && (
         <Typography color="text.secondary" sx={{ mt: 4 }}>
-          No hay datos de ranking para este deporte aún.
+          No hay datos de ranking. Completá torneos de tipo eliminatorio (bracket) para ver resultados.
         </Typography>
       )}
+
+      {!loading && !error && ranking.length > 0 && (
+        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableCell sx={{ fontWeight: 700, width: 48 }}>#</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Participaciones</TableCell>
+                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Total</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {ranking.map((entry, idx) => {
+                const pos = idx + 1;
+                const color = medalColor(pos);
+                return (
+                  <TableRow key={entry.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {pos <= 3 ? (
+                          <EmojiEventsIcon sx={{ fontSize: 18, color }} />
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">{pos}</Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={pos <= 3 ? 700 : 400}>
+                        {entry.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {entry.type === 'team' ? 'Equipo' : 'Pareja'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                        {entry.results.map((r, i) => (
+                          <Chip
+                            key={i}
+                            label={`${r.tournamentName}: ${r.phase} (+${r.points})`}
+                            size="small"
+                            color={PHASE_COLOR[r.phase] ?? 'default'}
+                            variant={r.phase === 'Campeón' ? 'filled' : 'outlined'}
+                          />
+                        ))}
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: 'right' }}>
+                      <Typography variant="body1" fontWeight={700}>
+                        {entry.total}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="caption" color="text.secondary">
+          Puntos: Campeón 100 · Final 70 · Semifinal 50 · Cuartos 30 · Octavos 20 · Fase grupal 10
+        </Typography>
+      </Box>
     </Box>
   );
 }

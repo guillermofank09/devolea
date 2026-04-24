@@ -5,6 +5,8 @@ import { ClubProfile } from "../entities/ClubProfile";
 import { Court } from "../entities/Court";
 import { Profesor } from "../entities/Profesor";
 import { Player } from "../entities/Player";
+import { Tournament } from "../entities/Tournament";
+import { TournamentMatch } from "../entities/TournamentMatch";
 
 export interface RevenueEntry {
   label: string;
@@ -125,7 +127,51 @@ export interface PlayerCategoryEntry {
   total: number;
 }
 
-// ── Service ───────────────────────────────────────────────────────────────────
+// ── Ranking ───────────────────────────────────────────────────────────────────
+
+function isTeamSport(sport?: string | null): boolean {
+  if (!sport) return false;
+  return sport.startsWith("FUTBOL") || sport === "VOLEY" || sport === "BASQUET";
+}
+
+const PHASE_POINTS: Record<string, number> = {
+  "Campeón":   100,
+  "Final":      70,
+  "Semifinal":  50,
+  "Cuartos":    30,
+  "Octavos":    20,
+};
+
+function phaseFromEnd(fromEnd: number): string {
+  if (fromEnd === 0) return "Final";
+  if (fromEnd === 1) return "Semifinal";
+  if (fromEnd === 2) return "Cuartos";
+  if (fromEnd === 3) return "Octavos";
+  return "Fase Grupal";
+}
+
+export interface TournamentResult {
+  tournamentId: number;
+  tournamentName: string;
+  phase: string;
+  points: number;
+}
+
+export interface RankingEntry {
+  id: string;
+  name: string;
+  type: "pair" | "team";
+  results: TournamentResult[];
+  total: number;
+}
+
+export interface RankingResponse {
+  sport: string | null;
+  category: string | null;
+  availableSports: string[];
+  availableCategories: string[];
+  ranking: RankingEntry[];
+}
 
 export class StatsService {
   constructor(
@@ -134,7 +180,9 @@ export class StatsService {
     private profileRepo: Repository<ClubProfile>,
     private courtRepo: Repository<Court>,
     private profesorRepo: Repository<Profesor>,
-    private playerRepo: Repository<Player>
+    private playerRepo: Repository<Player>,
+    private tournamentRepo: Repository<Tournament>,
+    private matchRepo: Repository<TournamentMatch>
   ) {}
 
   async getRevenue(userId: number): Promise<RevenueStats> {
@@ -360,5 +408,117 @@ export class StatsService {
         total:     players.filter((p) => p.category === cat).length,
       }))
       .filter((e) => e.total > 0);
+  }
+
+  async getRanking(userId: number, sport?: string, category?: string): Promise<RankingResponse> {
+    const allTournaments = await this.tournamentRepo.find({
+      where: { userId, format: "BRACKET" },
+    });
+
+    const availableSports = [...new Set(
+      allTournaments.map(t => t.sport).filter((s): s is string => Boolean(s))
+    )].sort();
+    const availableCategories = [...new Set(allTournaments.map(t => t.category))].sort();
+
+    const tournaments = allTournaments.filter(t =>
+      (!sport || t.sport === sport) &&
+      (!category || t.category === category)
+    );
+
+    const participantMap = new Map<string, Omit<RankingEntry, "total">>();
+
+    const pairName = (pair: any): string => {
+      const n1: string = pair?.player1?.name ?? "?";
+      const n2: string | undefined = pair?.player2?.name;
+      return n2 ? `${n1} / ${n2}` : n1;
+    };
+
+    for (const t of tournaments) {
+      const matches = await this.matchRepo.find({
+        where: { tournament: { id: t.id } },
+      });
+      if (!matches.length) continue;
+
+      const completedMatches = matches.filter(m => m.status === "COMPLETED");
+      if (!completedMatches.length) continue;
+
+      const totalRounds = Math.max(...matches.map(m => m.round));
+      const teamMode = isTeamSport(t.sport);
+
+      // Track highest round each participant was eliminated in
+      const eliminated = new Map<number, { round: number; name: string; key: string }>();
+      let championId: number | null = null;
+      let championName = "";
+      let championKey = "";
+
+      for (const match of completedMatches) {
+        if (teamMode) {
+          const p1 = match.team1;
+          const p2 = match.team2;
+          if (!p1 || !p2 || match.winnerId == null) continue;
+
+          const loserId = match.winnerId === p1.id ? p2.id : p1.id;
+          const loserName = match.winnerId === p1.id ? p2.equipo.name : p1.equipo.name;
+          const loserKey = `team-${loserId}`;
+
+          const prev = eliminated.get(loserId);
+          if (!prev || prev.round < match.round) {
+            eliminated.set(loserId, { round: match.round, name: loserName, key: loserKey });
+          }
+
+          if (match.round === totalRounds) {
+            championId = match.winnerId;
+            const winner = match.winnerId === p1.id ? p1 : p2;
+            championName = winner.equipo.name;
+            championKey = `team-${championId}`;
+          }
+        } else {
+          const p1 = match.pair1;
+          const p2 = match.pair2;
+          if (!p1 || !p2 || match.winnerId == null) continue;
+
+          const loserId = match.winnerId === p1.id ? p2.id : p1.id;
+          const loserName = match.winnerId === p1.id ? pairName(p2) : pairName(p1);
+          const loserKey = `pair-${loserId}`;
+
+          const prev = eliminated.get(loserId);
+          if (!prev || prev.round < match.round) {
+            eliminated.set(loserId, { round: match.round, name: loserName, key: loserKey });
+          }
+
+          if (match.round === totalRounds) {
+            championId = match.winnerId;
+            const winner = match.winnerId === p1.id ? p1 : p2;
+            championName = pairName(winner);
+            championKey = `pair-${championId}`;
+          }
+        }
+      }
+
+      if (championId != null) {
+        const entry = participantMap.get(championKey) ?? {
+          id: championKey, name: championName, type: teamMode ? "team" : "pair", results: [],
+        };
+        entry.results.push({ tournamentId: t.id, tournamentName: t.name, phase: "Campeón", points: 100 });
+        participantMap.set(championKey, entry);
+      }
+
+      for (const [, { round, name, key }] of eliminated) {
+        const fromEnd = totalRounds - round;
+        const phase = phaseFromEnd(fromEnd);
+        const points = PHASE_POINTS[phase] ?? 10;
+        const entry = participantMap.get(key) ?? {
+          id: key, name, type: teamMode ? "team" : "pair", results: [],
+        };
+        entry.results.push({ tournamentId: t.id, tournamentName: t.name, phase, points });
+        participantMap.set(key, entry);
+      }
+    }
+
+    const ranking: RankingEntry[] = Array.from(participantMap.values())
+      .map(p => ({ ...p, total: p.results.reduce((s, r) => s + r.points, 0) }))
+      .sort((a, b) => b.total - a.total);
+
+    return { sport: sport ?? null, category: category ?? null, availableSports, availableCategories, ranking };
   }
 }

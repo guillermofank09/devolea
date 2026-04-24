@@ -82,3 +82,34 @@ export async function fetchPlayerStats(): Promise<PlayerCategoryEntry[]> {
   const { data } = await axios.get<PlayerCategoryEntry[]>(`${API}/stats/players`);
   return data;
 }
+
+export interface TournamentResult {
+  tournamentId: number;
+  tournamentName: string;
+  phase: string;
+  points: number;
+}
+
+export interface RankingEntry {
+  id: string;
+  name: string;
+  type: "pair" | "team";
+  results: TournamentResult[];
+  total: number;
+}
+
+export interface RankingResponse {
+  sport: string | null;
+  category: string | null;
+  availableSports: string[];
+  availableCategories: string[];
+  ranking: RankingEntry[];
+}
+
+export async function fetchRanking(sport?: string, category?: string): Promise<RankingResponse> {
+  const params: Record<string, string> = {};
+  if (sport) params.sport = sport;
+  if (category) params.category = category;
+  const { data } = await axios.get<RankingResponse>(`${API}/stats/ranking`, { params });
+  return data;
+}
