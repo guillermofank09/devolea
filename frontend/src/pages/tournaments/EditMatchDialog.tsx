@@ -143,13 +143,14 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   const [liveStatus, setLiveStatus] = useState<MatchLiveStatus | null>(null);
   const [delayedUntilTime, setDelayedUntilTime] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
 
-  // Two-column layout when a court is selected and not on mobile
-  const sideLayout = !!courtId && !fullScreen;
+  // Two-column layout only while calendar is open and not on mobile
+  const sideLayout = showCalendar && !!courtId && !fullScreen;
 
   const { data: settings } = useQuery({
     queryKey: ["appSettings"],
@@ -191,6 +192,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
       const delayedParts = toLocalDatetimeParts(match.delayedUntil);
       setDelayedUntilTime(delayedParts.time);
       setError(null);
+      setShowCalendar(false);
     }
   }, [open, match, setsCount, isFootball]);
 
@@ -287,6 +289,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
     setScheduledAt(
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
     );
+    setShowCalendar(false);
   };
 
   const mutation = useMutation({
@@ -409,6 +412,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           onChange={e => {
             setCourtId(e.target.value as number | "");
             setScheduledAt("");
+            setShowCalendar(false);
           }}
           displayEmpty
           sx={{ height: 40, fontSize: "0.875rem" }}
@@ -425,17 +429,32 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
         <Box>
           <FormLabel sx={{ ...FORM_LABEL_SX, display: "block", mb: 0.75 }}>Horario</FormLabel>
           {scheduledAt ? (
-            <Chip
-              label={formatSelected(scheduledAt)}
-              color="primary"
-              variant="outlined"
-              onDelete={() => setScheduledAt("")}
-              sx={{ fontWeight: 700, fontSize: "0.8rem", height: 32 }}
-            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Chip
+                label={formatSelected(scheduledAt)}
+                color="primary"
+                variant="outlined"
+                onDelete={() => { setScheduledAt(""); setShowCalendar(false); }}
+                sx={{ fontWeight: 700, fontSize: "0.8rem", height: 32 }}
+              />
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setShowCalendar(v => !v)}
+                sx={{ textTransform: "none", fontSize: "0.78rem", color: "text.secondary", minWidth: 0 }}
+              >
+                {showCalendar ? "Ocultar" : "Editar"}
+              </Button>
+            </Box>
           ) : (
-            <Typography variant="caption" color="text.secondary">
-              Hacé click en un horario libre del calendario →
-            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setShowCalendar(true)}
+              sx={{ textTransform: "none", fontSize: "0.82rem", borderRadius: 2 }}
+            >
+              Elegir horario
+            </Button>
           )}
         </Box>
       ) : (
@@ -836,7 +855,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
         )}
 
         {/* Calendar */}
-        {courtId && (
+        {showCalendar && courtId && (
           <Box sx={{
             flex: sideLayout ? 1 : "none",
             height: sideLayout ? undefined : (fullScreen ? 300 : 400),
