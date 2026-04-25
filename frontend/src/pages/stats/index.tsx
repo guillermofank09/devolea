@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Alert,
   Box,
@@ -423,6 +423,7 @@ function RankingSection() {
   const [selectedSport, setSelectedSport] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
+  // First fetch with no filters to discover available sports
   const { data, isFetching, isError } = useQuery({
     queryKey: ["stats", "ranking", selectedSport, selectedCategory],
     queryFn: () => fetchRanking(selectedSport || undefined, selectedCategory || undefined),
@@ -430,13 +431,24 @@ function RankingSection() {
     retry: 1,
   });
 
-  const handleSport = useCallback((sport: string) => setSelectedSport(sport), []);
-  const handleCategory = useCallback((cat: string) => setSelectedCategory(cat), []);
-
-  const ranking: RankingEntry[] = data?.ranking ?? [];
   const availableSports: string[] = data?.availableSports ?? [];
   const availableCategories: string[] = data?.availableCategories ?? [];
+  const ranking: RankingEntry[] = data?.ranking ?? [];
 
+  // Auto-select first sport once we know what's available
+  useEffect(() => {
+    if (!selectedSport && availableSports.length > 0) {
+      setSelectedSport(availableSports[0]);
+    }
+  }, [availableSports, selectedSport]);
+
+  const handleSport = useCallback((sport: string) => {
+    setSelectedSport(sport);
+    setSelectedCategory("");
+  }, []);
+  const handleCategory = useCallback((cat: string) => setSelectedCategory(cat), []);
+
+  const showCategoryFilter = selectedSport === "PADEL";
   const cardSx = { border: "1.5px solid", borderColor: "divider", borderRadius: 3 };
 
   return (
@@ -448,31 +460,38 @@ function RankingSection() {
           <FormControl sx={{ minWidth: 160 }} size="small">
             <InputLabel>Deporte</InputLabel>
             <Select value={selectedSport} label="Deporte" onChange={e => handleSport(e.target.value)}>
-              <MenuItem value="">Todos</MenuItem>
               {availableSports.map(s => (
                 <MenuItem key={s} value={s}>{SPORT_LABEL[s] ?? s}</MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 160 }} size="small">
-            <InputLabel>Categoría</InputLabel>
-            <Select value={selectedCategory} label="Categoría" onChange={e => handleCategory(e.target.value)}>
-              <MenuItem value="">Todas</MenuItem>
-              {availableCategories.map(c => (
-                <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {showCategoryFilter && (
+            <FormControl sx={{ minWidth: 160 }} size="small">
+              <InputLabel>Categoría</InputLabel>
+              <Select value={selectedCategory} label="Categoría" onChange={e => handleCategory(e.target.value)}>
+                <MenuItem value="">Todas</MenuItem>
+                {availableCategories.map(c => (
+                  <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
         </Stack>
 
         {isError && (
           <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudo cargar el ranking.</Alert>
         )}
 
-        {!isError && ranking.length === 0 && !isFetching && (
+        {!isError && !selectedSport && !isFetching && availableSports.length === 0 && (
           <Typography variant="body2" color="text.secondary">
-            No hay datos de ranking. Completá torneos de tipo bracket para ver resultados.
+            No hay torneos de tipo bracket completados aún.
+          </Typography>
+        )}
+
+        {!isError && selectedSport && ranking.length === 0 && !isFetching && (
+          <Typography variant="body2" color="text.secondary">
+            No hay datos de ranking para este deporte todavía.
           </Typography>
         )}
 
