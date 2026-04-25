@@ -32,7 +32,6 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ProfesorBillingCard from "./ProfesorBillingCard";
 import { useQuery } from "@tanstack/react-query";
@@ -419,12 +418,6 @@ const CATEGORY_LABEL: Record<string, string> = {
   QUINTA: "5ta", SEXTA: "6ta", SEPTIMA: "7ma", SIN_CATEGORIA: "Sin categoría",
 };
 
-function medalColor(pos: number): string | undefined {
-  if (pos === 1) return "#FFD700";
-  if (pos === 2) return "#C0C0C0";
-  if (pos === 3) return "#CD7F32";
-  return undefined;
-}
 
 function RankingSection() {
   const [selectedSport, setSelectedSport] = useState("");
@@ -498,14 +491,10 @@ function RankingSection() {
                 <TableBody>
                   {ranking.map((entry, idx) => {
                     const pos = idx + 1;
-                    const color = medalColor(pos);
                     return (
                       <TableRow key={entry.id} hover>
                         <TableCell>
-                          {pos <= 3
-                            ? <EmojiEventsIcon sx={{ fontSize: 18, color, verticalAlign: "middle" }} />
-                            : <Typography variant="body2" color="text.secondary">{pos}</Typography>
-                          }
+                          <Typography variant="body2" fontWeight={pos <= 3 ? 700 : 400}>{pos}</Typography>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={pos <= 3 ? 700 : 400}>{entry.name}</Typography>
