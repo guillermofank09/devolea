@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Autocomplete,
   Box,
   Button,
@@ -378,6 +379,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   const currentTeam1 = teams.find(t => t.id === Number(team1Id)) ?? match.team1;
   const currentTeam2 = teams.find(t => t.id === Number(team2Id)) ?? match.team2;
   const showWinner = teamMode ? (!!currentTeam1 && !!currentTeam2) : (!!currentPair1 && !!currentPair2);
+  const missingSchedule = !isPlaceholder && (!courtId || !scheduledAt);
 
   // ── Controls panel (shared between side-layout and stacked) ────────────────
   const controlsPanel = (
@@ -558,6 +560,13 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
             </>
           )}
 
+          {missingSchedule && (
+            <Alert severity="warning" sx={{ borderRadius: 2, fontSize: "0.82rem" }}>
+              Asigná cancha y horario antes de cargar el resultado.
+            </Alert>
+          )}
+
+          <Box sx={{ opacity: missingSchedule ? 0.4 : 1, pointerEvents: missingSchedule ? "none" : "auto" }}>
           {isFootball ? (
             <>
               {/* Football: score */}
@@ -782,6 +791,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
               )}
             </>
           )}
+          </Box>
         </>
       )}
 
