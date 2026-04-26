@@ -1184,6 +1184,112 @@ function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
   );
 }
 
+// ─── desktop top bar ─────────────────────────────────────────────────────────
+
+interface DesktopTopBarProps {
+  clubName?: string;
+  username?: string;
+  logoSrc?: string | null;
+  phone?: string | null;
+  items: PublicNavItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
+}
+
+function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, onSelect }: DesktopTopBarProps) {
+  const navItems = items.filter(item => item.id !== "section-club");
+  return (
+    <Box
+      sx={{
+        display: { xs: "none", md: "flex" },
+        position: "fixed",
+        top: 0, left: 0, right: 0,
+        zIndex: 1200,
+        height: 64,
+        bgcolor: "#fff",
+        borderBottom: `1px solid ${COLORS.lightBorder}`,
+        alignItems: "center",
+        px: 3,
+        gap: 2,
+        boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+      }}
+    >
+      {/* Logo + name */}
+      {logoSrc ? (
+        <Box component="img" src={logoSrc} alt="logo" sx={{ width: 36, height: 36, borderRadius: "50%", objectFit: "contain", border: `1.5px solid ${COLORS.lightBorder}`, p: "3px", flexShrink: 0 }} />
+      ) : (
+        <Box sx={{ width: 36, height: 36, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <PersonIcon sx={{ fontSize: 20, color: "#111" }} />
+        </Box>
+      )}
+      <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: COLORS.text, letterSpacing: "-0.01em", mr: 1, maxWidth: 220 }}>
+        {clubName || username || "Club"}
+      </Typography>
+
+      {/* Nav links */}
+      <Box sx={{ display: "flex", gap: 0.5, flex: 1 }}>
+        {navItems.map(({ id, label, icon }) => {
+          const active = activeId === id;
+          return (
+            <Box
+              key={id}
+              component="button"
+              onClick={() => onSelect(id)}
+              sx={{
+                display: "flex", alignItems: "center", gap: 1,
+                px: 2, py: 1,
+                border: "none", bgcolor: "transparent", cursor: "pointer",
+                borderRadius: 2,
+                color: active ? COLORS.accent : COLORS.muted,
+                fontWeight: active ? 700 : 500,
+                fontSize: "0.875rem",
+                position: "relative",
+                transition: "color 0.15s, background 0.15s",
+                "&:hover": { bgcolor: "rgba(245,173,39,0.07)", color: COLORS.text },
+                "&::after": active ? {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -17,
+                  left: "12px",
+                  right: "12px",
+                  height: 2.5,
+                  bgcolor: COLORS.accent,
+                  borderRadius: "2px 2px 0 0",
+                } : {},
+              }}
+            >
+              <FontAwesomeIcon icon={icon} style={{ fontSize: 14 }} />
+              {label}
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* WA button */}
+      {phone && (
+        <Box
+          component="a"
+          href={`https://wa.me/${phone.replace(/\D/g, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("whatsapp_contacto")}
+          sx={{
+            display: "flex", alignItems: "center", gap: 1,
+            px: 2, py: 1, borderRadius: 2,
+            bgcolor: "#16a34a", color: "#fff",
+            textDecoration: "none", fontWeight: 700, fontSize: "0.8rem",
+            transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
+            flexShrink: 0,
+          }}
+        >
+          <WhatsAppIcon sx={{ fontSize: 17 }} />
+          Contactar
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 // ─── mobile top bar ──────────────────────────────────────────────────────────
 
 function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: string; username?: string; logoSrc?: string | null; phone?: string | null }) {
@@ -1244,50 +1350,45 @@ interface ClubInfoPanelProps {
 }
 
 function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities }: ClubInfoPanelProps) {
-  const navigate = useNavigate();
   const todayStatus = getTodayStatus(businessHours);
   const nextOpenInfo = !todayStatus.open ? getNextOpenInfo(businessHours, todayStatus.todayName) : null;
   return (
     <Box
       sx={{
-        width: 300,
+        width: 280,
         flexShrink: 0,
         display: { xs: "none", md: "flex" },
         flexDirection: "column",
         position: "sticky",
-        top: 0,
-        height: "100vh",
+        top: 64,
+        height: "calc(100vh - 64px)",
         overflowY: "auto",
-        borderLeft: `1px solid ${COLORS.border}`,
-        bgcolor: COLORS.panelBg,
+        borderLeft: `1px solid ${COLORS.lightBorder}`,
+        bgcolor: "#fff",
         scrollbarWidth: "none",
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      <Box sx={{ p: 3.5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", borderBottom: `1px solid ${COLORS.border}` }}>
-        <Box
-          onClick={() => navigate("/")}
-          sx={{ cursor: "pointer", mb: 2.5, transition: "transform 0.2s", "&:hover": { transform: "scale(1.05)" } }}
-        >
-          {logoSrc ? (
-            <Box component="img" src={logoSrc} alt="logo" sx={{ width: 80, height: 80, borderRadius: "50%", objectFit: "contain", border: `2px solid rgba(255,255,255,0.15)`, bgcolor: "#111111", p: "8px" }} />
-          ) : (
-            <Box sx={{ width: 80, height: 80, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <PersonIcon sx={{ fontSize: 44, color: COLORS.panelBg }} />
-            </Box>
-          )}
-        </Box>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: "#fff", lineHeight: 1.2, mb: address ? 0.75 : 0 }}>
-          {clubName || username}
-        </Typography>
-        {address && (
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.75, color: "rgba(255,255,255,0.45)", mt: 0.5 }}>
-            <LocationOnIcon sx={{ fontSize: 13, mt: "3px", flexShrink: 0 }} />
-            <Typography variant="caption" sx={{ lineHeight: 1.5, fontWeight: 500 }}>{address}</Typography>
+      {/* Map first, address below */}
+      {lat && lng && address && (
+        <Box sx={{ borderBottom: `1px solid ${COLORS.lightBorder}` }}>
+          <Box sx={{ height: 160, overflow: "hidden" }}>
+            <GoogleMapView lat={lat} lng={lng} height={160} interactive />
           </Box>
-        )}
-      </Box>
+          <Box sx={{ px: 3, py: 1.5, display: "flex", alignItems: "flex-start", gap: 1 }}>
+            <LocationOnIcon sx={{ fontSize: 15, color: COLORS.accent, mt: "2px", flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: COLORS.muted, lineHeight: 1.5, fontWeight: 500 }}>{address}</Typography>
+          </Box>
+        </Box>
+      )}
+      {!lat && address && (
+        <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "flex-start", gap: 1 }}>
+          <LocationOnIcon sx={{ fontSize: 15, color: COLORS.accent, mt: "2px", flexShrink: 0 }} />
+          <Typography variant="caption" sx={{ color: COLORS.muted, lineHeight: 1.5, fontWeight: 500 }}>{address}</Typography>
+        </Box>
+      )}
 
+      {/* Phone / WA */}
       {phone && (
         <Box
           component="a"
@@ -1295,49 +1396,50 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("whatsapp_contacto")}
-          sx={{ px: 3.5, py: 2, display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", borderBottom: `1px solid ${COLORS.border}`, transition: "bgcolor 0.15s", "&:hover": { bgcolor: "rgba(255,255,255,0.04)" } }}
+          sx={{ px: 3, py: 1.75, display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", borderBottom: `1px solid ${COLORS.lightBorder}`, transition: "background 0.15s", "&:hover": { bgcolor: "#f0fdf4" } }}
         >
-          <WhatsAppIcon sx={{ fontSize: 18, color: "#4ade80", flexShrink: 0 }} />
-          <Typography variant="caption" fontWeight={600} sx={{ color: "#4ade80" }}>{phone}</Typography>
+          <WhatsAppIcon sx={{ fontSize: 17, color: "#16a34a", flexShrink: 0 }} />
+          <Typography variant="caption" fontWeight={600} sx={{ color: "#16a34a" }}>{phone}</Typography>
         </Box>
       )}
 
       {/* Open/closed status */}
-      <Box sx={{ px: 3.5, py: 2, borderBottom: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1.5 }}>
         <Box sx={{
           width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-          bgcolor: todayStatus.open ? "#4ade80" : "#f87171",
-          boxShadow: todayStatus.open ? "0 0 0 3px rgba(74,222,128,0.2)" : "0 0 0 3px rgba(248,113,113,0.2)",
+          bgcolor: todayStatus.open ? "#16a34a" : "#dc2626",
+          boxShadow: todayStatus.open ? "0 0 0 3px rgba(22,163,74,0.15)" : "0 0 0 3px rgba(220,38,38,0.12)",
         }} />
         <Box>
-          <Typography variant="caption" fontWeight={700} sx={{ color: todayStatus.open ? "#4ade80" : "#f87171", display: "block", lineHeight: 1.3 }}>
+          <Typography variant="caption" fontWeight={700} sx={{ color: todayStatus.open ? "#15803d" : "#dc2626", display: "block", lineHeight: 1.3 }}>
             {todayStatus.open ? "Abierto ahora" : "Cerrado ahora"}
             {todayStatus.open && todayStatus.hours && (
-              <Typography component="span" variant="caption" sx={{ color: "rgba(255,255,255,0.35)", fontWeight: 400, ml: 0.75 }}>
+              <Typography component="span" variant="caption" sx={{ color: COLORS.muted, fontWeight: 400, ml: 0.75 }}>
                 · cierra {todayStatus.hours?.split("–")[1]}
               </Typography>
             )}
           </Typography>
           {!todayStatus.open && nextOpenInfo && (
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.35)", fontWeight: 500 }}>
+            <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500 }}>
               {nextOpenInfo}
             </Typography>
           )}
         </Box>
       </Box>
 
+      {/* Amenities */}
       {amenities && amenities.length > 0 && (
-        <Box sx={{ px: 3.5, py: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(255,255,255,0.4)", display: "block", mb: 1.5 }}>
+        <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted, display: "block", mb: 1.5 }}>
             Servicios
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
             {amenities.map(a => {
               const Icon = AMENITY_ICONS[a];
               return (
-                <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid rgba(255,255,255,0.15)`, bgcolor: "rgba(255,255,255,0.07)" }}>
-                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }} />}
-                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
+                <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
+                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: COLORS.accent }} />}
+                  <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
                 </Box>
               );
             })}
@@ -1345,10 +1447,11 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         </Box>
       )}
 
-      <Box sx={{ px: 3.5, py: 3, borderBottom: (lat && lng && address) ? `1px solid ${COLORS.border}` : "none" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 2 }}>
+      {/* Business hours */}
+      <Box sx={{ px: 3, py: 2.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.75 }}>
           <AccessTimeIcon sx={{ fontSize: 14, color: COLORS.accent }} />
-          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(255,255,255,0.4)" }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted }}>
             Horarios
           </Typography>
         </Box>
@@ -1361,16 +1464,16 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
               <Box key={day} sx={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 px: 1, py: 0.75, mx: -1, borderRadius: 1.5,
-                bgcolor: isToday ? (todayStatus.open ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.06)") : "transparent",
+                bgcolor: isToday ? (todayStatus.open ? "rgba(22,163,74,0.06)" : "rgba(220,38,38,0.04)") : "transparent",
               }}>
                 <Typography variant="caption" sx={{
                   fontWeight: isToday ? 800 : 600,
-                  color: isToday ? (todayStatus.open ? "#4ade80" : "#f87171") : (open ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.25)"),
+                  color: isToday ? (todayStatus.open ? "#15803d" : "#dc2626") : (open ? COLORS.text : "#cbd5e1"),
                 }}>
-                  {day.slice(0, 3)}{isToday && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontSize: "0.6rem", opacity: 0.7 }}>· hoy</Typography>}
+                  {day.slice(0, 3)}{isToday && <Typography component="span" variant="caption" sx={{ ml: 0.5, fontSize: "0.6rem", color: COLORS.muted }}>· hoy</Typography>}
                 </Typography>
                 <Typography variant="caption" sx={{
-                  color: isToday ? (todayStatus.open ? "rgba(74,222,128,0.7)" : "rgba(248,113,113,0.6)") : (open ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"),
+                  color: isToday ? (todayStatus.open ? "#15803d" : "#dc2626") : (open ? COLORS.muted : "#cbd5e1"),
                   fontWeight: isToday ? 700 : 500,
                 }}>
                   {open ? `${sched!.openTime}–${sched!.closeTime}` : "Cerrado"}
@@ -1381,13 +1484,6 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         </Box>
       </Box>
 
-      {lat && lng && address && (
-        <Box sx={{ p: 3, flex: 1 }}>
-          <Box sx={{ borderRadius: 3, overflow: "hidden", height: 160, border: `1px solid ${COLORS.border}` }}>
-            <GoogleMapView lat={lat} lng={lng} height={160} interactive />
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 }
@@ -1569,11 +1665,11 @@ export default function ClubPublicPage() {
 
       <MobileTopBar clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} phone={profile.phone} />
 
-      <PublicPageSidebar items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} />
+      <DesktopTopBar items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} phone={profile.phone} />
 
       <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
 
-        <Box sx={{ flex: 1, pt: { xs: "56px", md: 0 }, px: { xs: 0, md: 5 }, py: { xs: 0, md: 5 }, pb: { xs: "calc(72px + env(safe-area-inset-bottom, 12px))", md: 5 }, maxWidth: { md: 1100 }, mx: "auto", width: "100%" }}>
+        <Box sx={{ flex: 1, pt: { xs: "56px", md: "64px" }, px: { xs: 0, md: 5 }, py: { xs: 0, md: 4 }, pb: { xs: "calc(72px + env(safe-area-inset-bottom, 12px))", md: 4 }, maxWidth: { md: 1100 }, mx: "auto", width: "100%" }}>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 0, md: 6 } }}>
 
@@ -1690,7 +1786,7 @@ export default function ClubPublicPage() {
 
             {/* Torneos */}
             {showSection("torneos") && (profile.showTournaments ?? true) && (
-              <Box id="section-torneos" sx={{ scrollMarginTop: "16px" }}>
+              <Box id="section-torneos" sx={{ scrollMarginTop: { xs: "16px", md: "80px" } }}>
                 {/* Section header */}
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: { xs: "flex-start", md: "center" }, gap: { xs: 1.5, md: 2 }, mb: { xs: 2, md: 3 }, px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -1801,7 +1897,7 @@ export default function ClubPublicPage() {
 
             {/* Canchas */}
             {showSection("canchas") && (profile.showCourts ?? true) && (
-              <Box id="section-canchas" sx={{ scrollMarginTop: "16px", px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
+              <Box id="section-canchas" sx={{ scrollMarginTop: { xs: "16px", md: "80px" }, px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 2, md: 3 } }}>
                   <Box sx={{ width: 4, height: 26, bgcolor: COLORS.accent, borderRadius: 2, flexShrink: 0 }} />
                   <Typography variant="h5" fontWeight={800} sx={{ letterSpacing: "-0.02em", color: COLORS.text }}>Canchas</Typography>
@@ -1812,7 +1908,7 @@ export default function ClubPublicPage() {
 
             {/* Profesores */}
             {showSection("profesores") && (profile.showProfesores ?? true) && (
-              <Box id="section-profesores" sx={{ scrollMarginTop: "16px", px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
+              <Box id="section-profesores" sx={{ scrollMarginTop: { xs: "16px", md: "80px" }, px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
                 <ProfesoresSection username={username!} />
               </Box>
             )}
