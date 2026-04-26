@@ -1267,11 +1267,11 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
       </Box>
 
       {/* Powered by Devolea */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, ml: "auto" }}>
-        <Typography variant="caption" sx={{ color: COLORS.muted, fontSize: "0.7rem", whiteSpace: "nowrap" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0, ml: "auto" }}>
+        <Typography sx={{ color: COLORS.muted, fontSize: "0.68rem", lineHeight: 1, whiteSpace: "nowrap" }}>
           Impulsado por
         </Typography>
-        <Box component="img" src={devoleaLogo} alt="Devolea" sx={{ height: 18, objectFit: "contain", opacity: 0.75 }} />
+        <Box component="img" src={devoleaLogo} alt="Devolea" sx={{ height: 16, display: "block", objectFit: "contain", opacity: 0.65 }} />
       </Box>
     </Box>
   );
@@ -1899,6 +1899,14 @@ export default function ClubPublicPage() {
                 <ProfesoresSection username={username!} />
               </Box>
             )}
+
+            {/* Powered by Devolea — mobile footer */}
+            <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", justifyContent: "center", gap: 0.75, py: 3 }}>
+              <Typography sx={{ color: "#94a3b8", fontSize: "0.68rem", lineHeight: 1 }}>
+                Impulsado por
+              </Typography>
+              <Box component="img" src={devoleaLogo} alt="Devolea" sx={{ height: 15, display: "block", objectFit: "contain", opacity: 0.5 }} />
+            </Box>
 
           </Box>
         </Box>
