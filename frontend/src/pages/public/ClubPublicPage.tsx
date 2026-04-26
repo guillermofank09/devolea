@@ -1403,6 +1403,26 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         </Box>
       )}
 
+      {/* Amenities */}
+      {amenities && amenities.length > 0 && (
+        <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted, display: "block", mb: 1.5 }}>
+            Servicios
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+            {amenities.map(a => {
+              const Icon = AMENITY_ICONS[a];
+              return (
+                <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
+                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: COLORS.accent }} />}
+                  <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
+
       {/* Open/closed status */}
       <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1.5 }}>
         <Box sx={{
@@ -1426,26 +1446,6 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
           )}
         </Box>
       </Box>
-
-      {/* Amenities */}
-      {amenities && amenities.length > 0 && (
-        <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted, display: "block", mb: 1.5 }}>
-            Servicios
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-            {amenities.map(a => {
-              const Icon = AMENITY_ICONS[a];
-              return (
-                <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
-                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: COLORS.accent }} />}
-                  <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-      )}
 
       {/* Business hours */}
       <Box sx={{ px: 3, py: 2.5 }}>
