@@ -1225,7 +1225,7 @@ function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: strin
             px: 1.5, py: 0.75, borderRadius: 2,
             bgcolor: "#16a34a", color: "#fff",
             flexShrink: 0, textDecoration: "none",
-            fontSize: "0.75rem", fontWeight: 700,
+            fontSize: "0.75rem", fontWeight: 700, fontFamily: "inherit",
           }}
         >
           <WhatsAppIcon sx={{ fontSize: 16 }} />
@@ -1317,6 +1317,7 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
               py: 1.25, borderRadius: 2.5,
               bgcolor: "#16a34a", color: "#fff",
               textDecoration: "none", fontWeight: 700, fontSize: "0.85rem",
+              fontFamily: "inherit",
               transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
             }}
           >
