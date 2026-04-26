@@ -500,7 +500,7 @@ function PublicCourtCard({ court, onSelect }: { court: PublicCourt; onSelect: (c
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1.25 }}>
           <CalendarMonthIcon sx={{ fontSize: 12, color: "text.disabled" }} />
-          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.65rem", fontWeight: 600, letterSpacing: 0.2 }}>
+          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.75rem", fontWeight: 600 }}>
             Ver disponibilidad
           </Typography>
         </Box>
@@ -1099,105 +1099,18 @@ const ALL_NAV_ITEMS: PublicNavItem[] = [
   { id: "section-profesores", label: "Profesores", icon: faChalkboardTeacher },
 ];
 
-// ─── public page sidebar ──────────────────────────────────────────────────────
-
-interface PublicSidebarProps {
-  items: PublicNavItem[];
-  activeId: string;
-  onSelect: (id: string) => void;
-  clubName?: string;
-  username?: string;
-  logoSrc?: string | null;
-}
-
-function PublicPageSidebar({ items, activeId, onSelect }: PublicSidebarProps) {
-  const desktopItems = items.filter(item => item.id !== "section-club");
-
-  return (
-    <Box
-      sx={{
-        width: 240,
-        flexShrink: 0,
-        bgcolor: "#111111",
-        display: { xs: "none", md: "flex" },
-        flexDirection: "column",
-        position: "sticky",
-        top: 0,
-        height: "100vh",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-      }}
-    >
-      <Box sx={{ flex: 1, px: "12px", pt: "12px", pb: "12px", display: "flex", flexDirection: "column", gap: "3px" }}>
-        {desktopItems.map(({ id, label, icon }) => {
-          const active = activeId === id;
-          return (
-            <Box
-              key={id}
-              component="button"
-              onClick={() => onSelect(id)}
-              sx={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                px: "14px",
-                py: "11px",
-                borderRadius: "12px",
-                border: "none",
-                cursor: "pointer",
-                textAlign: "left",
-                width: "100%",
-                bgcolor: "transparent",
-                color: active ? COLORS.accent : "#6b7a99",
-                fontWeight: active ? 700 : 500,
-                fontSize: "14px",
-                letterSpacing: "0.1px",
-                transition: "background 150ms ease, color 150ms ease",
-                "&:hover": active
-                  ? { bgcolor: "rgba(255,255,255,0.05)" }
-                  : { bgcolor: "rgba(255,255,255,0.05)", color: "#e8eaf0" },
-                "&:active": { transform: "scale(0.98)" },
-              }}
-            >
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  borderRadius: "9px",
-                  fontSize: "18px",
-                  bgcolor: active ? "rgba(245,173,39,0.12)" : "rgba(255,255,255,0.04)",
-                  color: active ? COLORS.accent : "inherit",
-                  transition: "background 150ms ease, color 150ms ease",
-                }}
-              >
-                <FontAwesomeIcon icon={icon} />
-              </Box>
-              {label}
-            </Box>
-          );
-        })}
-      </Box>
-    </Box>
-  );
-}
-
 // ─── desktop top bar ─────────────────────────────────────────────────────────
 
 interface DesktopTopBarProps {
   clubName?: string;
   username?: string;
   logoSrc?: string | null;
-  phone?: string | null;
   items: PublicNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
 }
 
-function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, onSelect }: DesktopTopBarProps) {
+function DesktopTopBar({ clubName, username, logoSrc, items, activeId, onSelect }: DesktopTopBarProps) {
   const navItems = items.filter(item => item.id !== "section-club");
   return (
     <Box
@@ -1211,8 +1124,9 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
         borderBottom: `1px solid ${COLORS.lightBorder}`,
         alignItems: "center",
         px: 3,
-        gap: 2,
+        gap: 0,
         boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+        overflow: "hidden",
       }}
     >
       {/* Logo + name */}
@@ -1223,12 +1137,15 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
           <PersonIcon sx={{ fontSize: 20, color: "#111" }} />
         </Box>
       )}
-      <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: COLORS.text, letterSpacing: "-0.01em", mr: 1, maxWidth: 220 }}>
+      <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: COLORS.text, letterSpacing: "-0.01em", ml: 1.5, maxWidth: 200 }}>
         {clubName || username || "Club"}
       </Typography>
 
-      {/* Nav links */}
-      <Box sx={{ display: "flex", gap: 0.5 }}>
+      {/* Divider */}
+      <Box sx={{ width: "1px", height: 24, bgcolor: COLORS.lightBorder, mx: 2.5, flexShrink: 0 }} />
+
+      {/* Nav links — overflow hidden on parent clips the underline to the border */}
+      <Box sx={{ display: "flex", gap: 0.5, height: "100%", alignItems: "center" }}>
         {navItems.map(({ id, label, icon }) => {
           const active = activeId === id;
           return (
@@ -1238,25 +1155,15 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
               onClick={() => onSelect(id)}
               sx={{
                 display: "flex", alignItems: "center", gap: 1,
-                px: 2, py: 1,
+                px: 2, height: "100%",
                 border: "none", bgcolor: "transparent", cursor: "pointer",
-                borderRadius: 2,
                 color: active ? COLORS.accent : COLORS.muted,
                 fontWeight: active ? 700 : 500,
                 fontSize: "0.875rem",
                 position: "relative",
                 transition: "color 0.15s, background 0.15s",
-                "&:hover": { bgcolor: "rgba(245,173,39,0.07)", color: COLORS.text },
-                "&::after": active ? {
-                  content: '""',
-                  position: "absolute",
-                  bottom: -17,
-                  left: "12px",
-                  right: "12px",
-                  height: 2.5,
-                  bgcolor: COLORS.accent,
-                  borderRadius: "2px 2px 0 0",
-                } : {},
+                borderBottom: active ? `2.5px solid ${COLORS.accent}` : "2.5px solid transparent",
+                "&:hover": { bgcolor: "rgba(245,173,39,0.06)", color: COLORS.text },
               }}
             >
               <FontAwesomeIcon icon={icon} style={{ fontSize: 14 }} />
@@ -1288,8 +1195,8 @@ function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: strin
         top: 0, left: 0, right: 0,
         zIndex: 1100,
         height: 56,
-        bgcolor: COLORS.panelBg,
-        borderBottom: `1px solid ${COLORS.border}`,
+        bgcolor: "#1e293b",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         backdropFilter: "blur(16px)",
         alignItems: "center",
         px: 2,
@@ -1297,10 +1204,10 @@ function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: strin
       }}
     >
       {logoSrc ? (
-        <Box component="img" src={logoSrc} alt="logo" sx={{ width: 32, height: 32, borderRadius: "50%", objectFit: "contain", bgcolor: "#111111", border: `1.5px solid rgba(255,255,255,0.15)`, p: "3px", flexShrink: 0 }} />
+        <Box component="img" src={logoSrc} alt="logo" sx={{ width: 32, height: 32, borderRadius: "50%", objectFit: "contain", bgcolor: "#111", border: `1.5px solid rgba(255,255,255,0.15)`, p: "3px", flexShrink: 0 }} />
       ) : (
         <Box sx={{ width: 32, height: 32, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <PersonIcon sx={{ fontSize: 18, color: COLORS.panelBg }} />
+          <PersonIcon sx={{ fontSize: 18, color: "#111" }} />
         </Box>
       )}
       <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ color: "#fff", flex: 1, letterSpacing: "-0.01em" }}>
@@ -1313,9 +1220,16 @@ function MobileTopBar({ clubName, username, logoSrc, phone }: { clubName?: strin
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("whatsapp_contacto")}
-          sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 2, bgcolor: "#16a34a", color: "#fff", flexShrink: 0, textDecoration: "none" }}
+          sx={{
+            display: "flex", alignItems: "center", gap: 0.75,
+            px: 1.5, py: 0.75, borderRadius: 2,
+            bgcolor: "#16a34a", color: "#fff",
+            flexShrink: 0, textDecoration: "none",
+            fontSize: "0.75rem", fontWeight: 700,
+          }}
         >
-          <WhatsAppIcon sx={{ fontSize: 20 }} />
+          <WhatsAppIcon sx={{ fontSize: 16 }} />
+          Contactar
         </Box>
       )}
     </Box>
@@ -1356,11 +1270,25 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      {/* Map first, address below */}
+      {/* Club identity */}
+      <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1.5 }}>
+        {logoSrc ? (
+          <Box component="img" src={logoSrc} alt="logo" sx={{ width: 40, height: 40, borderRadius: "50%", objectFit: "contain", border: `1.5px solid ${COLORS.lightBorder}`, p: "4px", flexShrink: 0 }} />
+        ) : (
+          <Box sx={{ width: 40, height: 40, borderRadius: "50%", bgcolor: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <PersonIcon sx={{ fontSize: 22, color: "#111" }} />
+          </Box>
+        )}
+        <Typography variant="subtitle2" fontWeight={800} sx={{ color: COLORS.text, lineHeight: 1.3 }}>
+          {clubName || username}
+        </Typography>
+      </Box>
+
+      {/* Map + address */}
       {lat && lng && address && (
         <Box sx={{ borderBottom: `1px solid ${COLORS.lightBorder}` }}>
-          <Box sx={{ height: 160, overflow: "hidden" }}>
-            <GoogleMapView lat={lat} lng={lng} height={160} interactive />
+          <Box sx={{ height: 150, overflow: "hidden" }}>
+            <GoogleMapView lat={lat} lng={lng} height={150} interactive />
           </Box>
           <Box sx={{ px: 3, py: 1.5, display: "flex", alignItems: "flex-start", gap: 1 }}>
             <LocationOnIcon sx={{ fontSize: 15, color: COLORS.accent, mt: "2px", flexShrink: 0 }} />
@@ -1375,18 +1303,26 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
         </Box>
       )}
 
-      {/* Phone / WA */}
+      {/* WA button — clear CTA */}
       {phone && (
-        <Box
-          component="a"
-          href={`https://wa.me/${phone.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackEvent("whatsapp_contacto")}
-          sx={{ px: 3, py: 1.75, display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", borderBottom: `1px solid ${COLORS.lightBorder}`, transition: "background 0.15s", "&:hover": { bgcolor: "#f0fdf4" } }}
-        >
-          <WhatsAppIcon sx={{ fontSize: 17, color: "#16a34a", flexShrink: 0 }} />
-          <Typography variant="caption" fontWeight={600} sx={{ color: "#16a34a" }}>{phone}</Typography>
+        <Box sx={{ px: 3, py: 2, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
+          <Box
+            component="a"
+            href={`https://wa.me/${phone.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackEvent("whatsapp_contacto")}
+            sx={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 1,
+              py: 1.25, borderRadius: 2.5,
+              bgcolor: "#16a34a", color: "#fff",
+              textDecoration: "none", fontWeight: 700, fontSize: "0.85rem",
+              transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
+            }}
+          >
+            <WhatsAppIcon sx={{ fontSize: 18 }} />
+            Contactar por WhatsApp
+          </Box>
         </Box>
       )}
 
@@ -1401,8 +1337,8 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
               const Icon = AMENITY_ICONS[a];
               return (
                 <Box key={a} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.25, py: 0.5, borderRadius: 10, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#f8fafc" }}>
-                  {Icon && <Icon sx={{ fontSize: "0.75rem", color: COLORS.accent }} />}
-                  <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, fontSize: "0.7rem" }}>{a}</Typography>
+                  {Icon && <Icon sx={{ fontSize: "0.8rem", color: COLORS.accent }} />}
+                  <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, fontSize: "0.75rem" }}>{a}</Typography>
                 </Box>
               );
             })}
@@ -1435,7 +1371,7 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
       </Box>
 
       {/* Business hours */}
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.75 }}>
           <AccessTimeIcon sx={{ fontSize: 14, color: COLORS.accent }} />
           <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted }}>
@@ -1469,6 +1405,12 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
             );
           })}
         </Box>
+      </Box>
+
+      {/* Powered by Devolea */}
+      <Box sx={{ mt: "auto", px: 3, py: 2, display: "flex", alignItems: "center", gap: 0.75 }}>
+        <Typography sx={{ color: "#94a3b8", fontSize: "0.68rem", lineHeight: 1 }}>Impulsado por</Typography>
+        <Box component="img" src={devoleaLogo} alt="Devolea" sx={{ height: 14, display: "block", objectFit: "contain", opacity: 0.45 }} />
       </Box>
 
     </Box>
@@ -1652,7 +1594,7 @@ export default function ClubPublicPage() {
 
       <MobileTopBar clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} phone={profile.phone} />
 
-      <DesktopTopBar items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} phone={profile.phone} />
+      <DesktopTopBar items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} clubName={profile.clubName} username={username} logoSrc={profile.logoUrl || profile.logoBase64} />
 
       <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
 
@@ -1818,9 +1760,14 @@ export default function ClubPublicPage() {
                 {tournamentsLoading && <PageLoader />}
 
                 {!tournamentsLoading && tournaments.length === 0 && (
-                  <Box sx={{ py: 8, textAlign: "center" }}>
-                    <EmojiEventsIcon sx={{ fontSize: 44, color: "#cbd5e1", mb: 1.5 }} />
-                    <Typography variant="body2" fontWeight={600} color="text.disabled">No hay torneos activos</Typography>
+                  <Box sx={{ py: 8, textAlign: "center", px: 2 }}>
+                    <EmojiEventsIcon sx={{ fontSize: 48, color: "#e2e8f0", mb: 2 }} />
+                    <Typography variant="subtitle2" fontWeight={700} color="text.disabled" mb={0.5}>
+                      {tournamentSportFilter ? "Sin torneos para este deporte" : "No hay torneos publicados"}
+                    </Typography>
+                    <Typography variant="caption" color="text.disabled">
+                      {tournamentSportFilter ? "Probá con otro deporte o quitá el filtro." : "Cuando el club publique un torneo vas a verlo acá."}
+                    </Typography>
                   </Box>
                 )}
 
