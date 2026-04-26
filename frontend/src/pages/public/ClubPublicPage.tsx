@@ -1,4 +1,5 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
+import devoleaLogo from "../../assets/logo.png";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -1227,7 +1228,7 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
       </Typography>
 
       {/* Nav links */}
-      <Box sx={{ display: "flex", gap: 0.5, flex: 1 }}>
+      <Box sx={{ display: "flex", gap: 0.5 }}>
         {navItems.map(({ id, label, icon }) => {
           const active = activeId === id;
           return (
@@ -1265,27 +1266,13 @@ function DesktopTopBar({ clubName, username, logoSrc, phone, items, activeId, on
         })}
       </Box>
 
-      {/* WA button */}
-      {phone && (
-        <Box
-          component="a"
-          href={`https://wa.me/${phone.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackEvent("whatsapp_contacto")}
-          sx={{
-            display: "flex", alignItems: "center", gap: 1,
-            px: 2, py: 1, borderRadius: 2,
-            bgcolor: "#16a34a", color: "#fff",
-            textDecoration: "none", fontWeight: 700, fontSize: "0.8rem",
-            transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
-            flexShrink: 0,
-          }}
-        >
-          <WhatsAppIcon sx={{ fontSize: 17 }} />
-          Contactar
-        </Box>
-      )}
+      {/* Powered by Devolea */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, ml: "auto" }}>
+        <Typography variant="caption" sx={{ color: COLORS.muted, fontSize: "0.7rem", whiteSpace: "nowrap" }}>
+          Impulsado por
+        </Typography>
+        <Box component="img" src={devoleaLogo} alt="Devolea" sx={{ height: 18, objectFit: "contain", opacity: 0.75 }} />
+      </Box>
     </Box>
   );
 }
