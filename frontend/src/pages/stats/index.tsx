@@ -409,7 +409,7 @@ const PHASE_COLOR: Record<string, "warning" | "default" | "primary" | "secondary
 
 const SPORT_LABEL: Record<string, string> = {
   TENIS: "Tenis", PADEL: "Pádel",
-  FUTBOL_5: "Fútbol 5", FUTBOL_7: "Fútbol 7", FUTBOL_11: "Fútbol 11",
+  FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
   VOLEY: "Vóley", BASQUET: "Básquet",
 };
 
