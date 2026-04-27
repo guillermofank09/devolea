@@ -1,6 +1,7 @@
-import { Avatar, Box, Paper, Typography } from "@mui/material";
+import { Avatar, Box, Button, Paper, Typography } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AddIcon from "@mui/icons-material/Add";
 import type { TournamentMatch, Pair, TournamentTeam } from "../../types/Tournament";
 import ChampionBanner from "../../components/common/ChampionBanner";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
@@ -15,6 +16,8 @@ interface Props {
   matches: TournamentMatch[];
   onEditMatch?: (m: TournamentMatch) => void;
   onVirtualMatchClick?: (round: number, matchNumber: number) => void;
+  onAddMatchToRound?: (round: number) => void;
+  onAddNewRound?: (round: number) => void;
   sex?: string | null;
   readOnly?: boolean;
   teamMode?: boolean;
@@ -39,7 +42,7 @@ function isPlaceholder(m: TournamentMatch, teamMode?: boolean): boolean {
 }
 
 
-function getRoundLabel(roundNumber: number, totalRounds: number, allRoundCounts: number[]): string {
+export function getRoundLabel(roundNumber: number, totalRounds: number, allRoundCounts: number[]): string {
   const hasCrossPhase = allRoundCounts.length >= 2 && allRoundCounts[0] === allRoundCounts[1];
   if (hasCrossPhase) {
     if (roundNumber === 1) return "1ra Ronda";
@@ -53,7 +56,9 @@ function getRoundLabel(roundNumber: number, totalRounds: number, allRoundCounts:
   return `Ronda ${roundNumber}`;
 }
 
-export default function BracketView({ matches, onEditMatch, onVirtualMatchClick, sex, readOnly = false, teamMode = false }: Props) {
+const ELIMINATION_LABELS = new Set(["Final", "Semifinales", "Cuartos", "Octavos"]);
+
+export default function BracketView({ matches, onEditMatch, onVirtualMatchClick, onAddMatchToRound, onAddNewRound, sex, readOnly = false, teamMode = false }: Props) {
   const matchesByRound: Record<number, TournamentMatch[]> = {};
   matches.forEach(m => {
     if (!matchesByRound[m.round]) matchesByRound[m.round] = [];
@@ -229,6 +234,63 @@ export default function BracketView({ matches, onEditMatch, onVirtualMatchClick,
           })
         )}
       </Box>
+
+      {/* ── Add match / add round buttons ──────────────────────────────── */}
+      {!readOnly && onAddMatchToRound && (
+        <Box sx={{ display: "flex", mt: 2.5, minWidth: totalW, alignItems: "center" }}>
+          {allRoundNumbers.map((round, rIdx) => {
+            const label = getRoundLabel(round, totalRoundsExpected, allRoundCounts);
+            const isElim = ELIMINATION_LABELS.has(label);
+            return (
+              <Box
+                key={round}
+                sx={{ width: MATCH_W, flexShrink: 0, display: "flex", justifyContent: "center", mr: rIdx < allRoundNumbers.length - 1 ? `${CONN_W}px` : 0 }}
+              >
+                {!isElim && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon sx={{ fontSize: 13 }} />}
+                    onClick={() => onAddMatchToRound(round)}
+                    sx={{
+                      textTransform: "none", fontSize: "0.72rem", fontWeight: 600,
+                      borderRadius: 2, color: "text.secondary", borderColor: "divider",
+                      py: 0.4, px: 1.5,
+                      "&:hover": { borderColor: "primary.main", color: "primary.main", bgcolor: "primary.50" },
+                    }}
+                  >
+                    Partido
+                  </Button>
+                )}
+              </Box>
+            );
+          })}
+          {/* Nueva ronda: solo si el último round NO es eliminatorio */}
+          {(() => {
+            const lastRound = allRoundNumbers[allRoundNumbers.length - 1];
+            const lastLabel = getRoundLabel(lastRound, totalRoundsExpected, allRoundCounts);
+            if (ELIMINATION_LABELS.has(lastLabel) || !onAddNewRound) return null;
+            return (
+              <Box sx={{ ml: `${CONN_W}px`, flexShrink: 0 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<AddIcon sx={{ fontSize: 13 }} />}
+                  onClick={() => onAddNewRound(lastRound + 1)}
+                  sx={{
+                    textTransform: "none", fontSize: "0.72rem", fontWeight: 600,
+                    borderRadius: 2, color: "text.secondary", borderColor: "divider",
+                    py: 0.4, px: 1.5,
+                    "&:hover": { borderColor: "primary.main", color: "primary.main", bgcolor: "primary.50" },
+                  }}
+                >
+                  Nueva ronda
+                </Button>
+              </Box>
+            );
+          })()}
+        </Box>
+      )}
     </>
   );
 

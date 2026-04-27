@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
 
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
-export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
+export type TournamentFormat = "ROUND_ROBIN" | "BRACKET" | "PERSONALIZADO";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
 export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
 
