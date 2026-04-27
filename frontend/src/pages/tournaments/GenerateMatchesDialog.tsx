@@ -188,7 +188,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     mutationFn: () =>
       generateMatches(
         tournamentId,
-        new Date(startTime).toISOString(),
+        startTime ? new Date(startTime).toISOString() : undefined,
         courtIds.length > 0 ? courtIds : undefined,
         matchDuration,
         selectedFormat,
@@ -331,6 +331,12 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
             </Typography>
           )}
 
+          {!startTime && (
+            <Typography variant="body2" color="text.secondary" sx={{ bgcolor: "grey.50", borderRadius: 2, p: 1.5, fontSize: "0.82rem" }}>
+              Sin horario seleccionado, los cruces se generarán sin cancha ni horario asignados. Podés editarlos después desde cada partido.
+            </Typography>
+          )}
+
           {error && (
             <Typography variant="body2" color="error">
               {error}
@@ -344,7 +350,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
         </Button>
         <Button
           variant="contained"
-          disabled={!startTime || mutation.isPending}
+          disabled={mutation.isPending}
           onClick={() => mutation.mutate()}
           fullWidth={fullScreen}
           sx={{ textTransform: "none", fontWeight: 600 }}

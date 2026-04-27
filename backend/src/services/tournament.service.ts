@@ -156,7 +156,7 @@ export class TournamentService {
     await this.tRepo.update(tournamentId, { format: null as any, status: "DRAFT" });
   }
 
-  private async generateMatchesTeamMode(tournamentId: number, startTime: Date, courtIds: number[], matchDuration: number, formatOverride?: string): Promise<TournamentMatch[]> {
+  private async generateMatchesTeamMode(tournamentId: number, startTime: Date | null, courtIds: number[], matchDuration: number, formatOverride?: string): Promise<TournamentMatch[]> {
     const teams = await this.ttRepo.find({ where: { tournament: { id: tournamentId } } });
     if (teams.length < 2) throw new Error("Se necesitan al menos 2 equipos para generar cruces");
 
@@ -165,19 +165,22 @@ export class TournamentService {
       : teams.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
-    const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(startTime); dayEnd.setHours(23, 59, 59, 999);
+    const effectiveCourts = startTime ? courtIds : [];
     const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
-    for (const cId of courtIds) {
-      const bookings = await this.bRepo.find({
-        where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
-        order: { startTime: "ASC" },
-      });
-      courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
+    if (startTime) {
+      const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(startTime); dayEnd.setHours(23, 59, 59, 999);
+      for (const cId of effectiveCourts) {
+        const bookings = await this.bRepo.find({
+          where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
+          order: { startTime: "ASC" },
+        });
+        courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
+      }
     }
 
     const nextFreeAt = new Map<number, number>();
-    for (const cId of courtIds) nextFreeAt.set(cId, startTime.getTime());
+    if (startTime) for (const cId of effectiveCourts) nextFreeAt.set(cId, startTime.getTime());
 
     const advancePastBookings = (cId: number, tMs: number): number => {
       const bookings = courtBookingsMap.get(cId) ?? [];
@@ -192,11 +195,12 @@ export class TournamentService {
       return t;
     };
 
+    let cursor = startTime ? startTime.getTime() : 0;
     const getNextSlot = (): { court: any; scheduledAt: Date } | null => {
-      if (courtIds.length === 0) return null;
-      let bestCId = courtIds[0];
+      if (effectiveCourts.length === 0) return null;
+      let bestCId = effectiveCourts[0];
       let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
-      for (const cId of courtIds.slice(1)) {
+      for (const cId of effectiveCourts.slice(1)) {
         const ms = advancePastBookings(cId, nextFreeAt.get(cId)!);
         if (ms < bestMs) { bestCId = cId; bestMs = ms; }
       }
@@ -212,8 +216,9 @@ export class TournamentService {
       for (let i = 0; i < teams.length; i++) {
         for (let j = i + 1; j < teams.length; j++) {
           const slot = getNextSlot();
-          toCreate.push({ tournament: t as any, team1: teams[i] as any, team2: teams[j] as any, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
+          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
+          toCreate.push({ tournament: t as any, team1: teams[i] as any, team2: teams[j] as any, court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
         }
       }
     } else {
@@ -222,8 +227,9 @@ export class TournamentService {
       for (let i = 0; i < shuffled.length; i += 2) {
         if (i + 1 < shuffled.length) {
           const slot = getNextSlot();
-          toCreate.push({ tournament: t as any, team1: shuffled[i] as any, team2: shuffled[i + 1] as any, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
+          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
+          toCreate.push({ tournament: t as any, team1: shuffled[i] as any, team2: shuffled[i + 1] as any, court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
         } else {
           toCreate.push({ tournament: t as any, team1: shuffled[i] as any, team2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
         }
@@ -260,7 +266,7 @@ export class TournamentService {
     return savedR1;
   }
 
-  async generateMatches(tournamentId: number, startTime: Date, courtIds: number[] = [], matchDuration = 90, formatOverride?: string): Promise<TournamentMatch[]> {
+  async generateMatches(tournamentId: number, startTime: Date | null, courtIds: number[] = [], matchDuration = 90, formatOverride?: string): Promise<TournamentMatch[]> {
     const matchCount = await this.mRepo.count({ where: { tournament: { id: tournamentId } } });
     if (matchCount > 0) throw new Error("Los cruces ya fueron generados");
 
@@ -279,24 +285,22 @@ export class TournamentService {
       : pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
-    // Load bookings for each court on the tournament day for greedy scheduling
-    const dayStart = new Date(startTime);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(startTime);
-    dayEnd.setHours(23, 59, 59, 999);
-
+    const effectiveCourts = startTime ? courtIds : [];
     const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
-    for (const cId of courtIds) {
-      const bookings = await this.bRepo.find({
-        where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
-        order: { startTime: "ASC" },
-      });
-      courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
+    if (startTime) {
+      const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(startTime); dayEnd.setHours(23, 59, 59, 999);
+      for (const cId of effectiveCourts) {
+        const bookings = await this.bRepo.find({
+          where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
+          order: { startTime: "ASC" },
+        });
+        courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
+      }
     }
 
-    // Greedy scheduler: track next free time (ms) per court
     const nextFreeAt = new Map<number, number>();
-    for (const cId of courtIds) nextFreeAt.set(cId, startTime.getTime());
+    if (startTime) for (const cId of effectiveCourts) nextFreeAt.set(cId, startTime.getTime());
 
     const advancePastBookings = (cId: number, tMs: number): number => {
       const bookings = courtBookingsMap.get(cId) ?? [];
@@ -315,10 +319,10 @@ export class TournamentService {
     };
 
     const getNextSlot = (): { court: any; scheduledAt: Date } | null => {
-      if (courtIds.length === 0) return null;
-      let bestCId = courtIds[0];
+      if (effectiveCourts.length === 0) return null;
+      let bestCId = effectiveCourts[0];
       let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
-      for (const cId of courtIds.slice(1)) {
+      for (const cId of effectiveCourts.slice(1)) {
         const ms = advancePastBookings(cId, nextFreeAt.get(cId)!);
         if (ms < bestMs) { bestCId = cId; bestMs = ms; }
       }
@@ -326,52 +330,33 @@ export class TournamentService {
       return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
     };
 
-    // Parse a pair's preferred times as sorted millisecond timestamps.
-    // Returns an empty array when no preference is set (= fully available).
     const getPref = (pair: Pair): number[] => {
       if (!pair.preferredStartTimes) return [];
       try {
         const times: string[] = JSON.parse(pair.preferredStartTimes);
-        return times
-          .map(t => new Date(t).getTime())
-          .filter(n => !isNaN(n))
-          .sort((a, b) => a - b);
+        return times.map(t => new Date(t).getTime()).filter(n => !isNaN(n)).sort((a, b) => a - b);
       } catch { return []; }
     };
 
-    // Try to schedule a match at a preferred time.
-    // Returns a slot when a valid preferred time with a free court is found, otherwise null.
     const getPreferredSlot = (pref1: number[], pref2: number[]): { court: any; scheduledAt: Date } | null => {
-      if (courtIds.length === 0) return null;
-
-      // Determine candidate times:
-      // empty = fully available, so defer to the other pair's preferences
+      if (effectiveCourts.length === 0) return null;
       let candidates: number[];
-      if (pref1.length === 0 && pref2.length === 0) return null; // both fully available → use greedy
+      if (pref1.length === 0 && pref2.length === 0) return null;
       else if (pref1.length === 0) candidates = [...pref2];
       else if (pref2.length === 0) candidates = [...pref1];
-      else {
-        // Both have preferences → use the intersection (same minute)
-        candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000));
-      }
-
-      if (candidates.length === 0) return null; // no common preferred time → fall back to greedy
-
+      else candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000));
+      if (candidates.length === 0) return null;
       candidates.sort((a, b) => a - b);
-
-      // Try each candidate in order, looking for any free court at that time
       for (const tMs of candidates) {
-        for (const cId of courtIds) {
+        for (const cId of effectiveCourts) {
           const freeFrom = advancePastBookings(cId, tMs);
-          // Court must be free exactly at tMs (no booking conflict) and not occupied by a previously scheduled match
           if (freeFrom === tMs && (nextFreeAt.get(cId) ?? 0) <= tMs) {
             nextFreeAt.set(cId, tMs + matchDuration * 60 * 1000);
             return { court: { id: cId } as any, scheduledAt: new Date(tMs) };
           }
         }
       }
-
-      return null; // preferred times all occupied → fall back to greedy
+      return null;
     };
 
     const scheduleMatch = (pair1: Pair, pair2: Pair): { court: any; scheduledAt: Date } | null =>
@@ -379,27 +364,28 @@ export class TournamentService {
 
     const toCreate: Partial<TournamentMatch>[] = [];
     const t = { id: tournamentId };
+    let cursor = startTime ? startTime.getTime() : 0;
 
     if (format === "ROUND_ROBIN") {
       let matchNum = 1;
       for (let i = 0; i < pairs.length; i++) {
         for (let j = i + 1; j < pairs.length; j++) {
           const slot = scheduleMatch(pairs[i], pairs[j]);
-          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
+          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
+          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
         }
       }
     } else {
-      // Bracket - shuffle and generate round 1
       const shuffled = [...pairs].sort(() => Math.random() - 0.5);
       let matchNum = 1;
       for (let i = 0; i < shuffled.length; i += 2) {
         if (i + 1 < shuffled.length) {
           const slot = scheduleMatch(shuffled[i], shuffled[i + 1]);
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? new Date(startTime), round: 1, matchNumber: matchNum++, status: "PENDING" });
-          if (!slot) startTime = new Date(startTime.getTime() + matchDuration * 60 * 1000);
+          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
+          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
+          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
         } else {
-          // Bye
           toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
         }
       }

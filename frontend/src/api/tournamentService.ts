@@ -41,7 +41,7 @@ export const updatePair = (tournamentId: number, pairId: number, dto: {
 export const resetMatches = (tournamentId: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${tournamentId}/matches`).then(() => undefined);
 
-export const generateMatches = (tournamentId: number, startTime: string, courtIds?: number[], matchDuration?: number, format?: string): Promise<TournamentMatch[]> =>
+export const generateMatches = (tournamentId: number, startTime: string | undefined, courtIds?: number[], matchDuration?: number, format?: string): Promise<TournamentMatch[]> =>
   axios.post(`${BASE}/tournaments/${tournamentId}/generate`, { startTime, courtIds, matchDuration, format }).then(r => r.data);
 
 export const triggerNextRound = (tournamentId: number, startTime: string, matchDuration?: number): Promise<TournamentMatch[]> =>

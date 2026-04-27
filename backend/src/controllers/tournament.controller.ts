@@ -84,10 +84,10 @@ export const resetMatches = async (req: Request, res: Response) => {
 
 export const generateMatches = async (req: Request, res: Response) => {
   const { startTime, courtIds, matchDuration, format } = req.body;
-  if (!startTime) return res.status(400).json({ error: "startTime requerido" });
   try {
     const duration = await resolveMatchDuration(req.authUser!.sub, matchDuration);
-    res.json(await getService().generateMatches(Number(req.params.id), new Date(startTime), Array.isArray(courtIds) ? courtIds.map(Number) : [], duration, format));
+    const parsedTime = startTime ? new Date(startTime) : null;
+    res.json(await getService().generateMatches(Number(req.params.id), parsedTime, Array.isArray(courtIds) ? courtIds.map(Number) : [], duration, format));
   } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
