@@ -564,7 +564,7 @@ const TAB_OPTIONS = [
 type Period = "daily" | "weekly" | "monthly";
 
 export default function Stats() {
-  const [period, setPeriod] = useState<Period>("monthly");
+  const [period, setPeriod] = useState<Period>("daily");
   const { user } = useAuth();
   const sports = user?.sports ?? ["PADEL"];
   const hasPadel = sports.includes("PADEL");
