@@ -611,8 +611,9 @@ export default function Stats() {
     <Box>
       <PageHeader title="Estadísticas" subtitle="Facturación y ocupación de canchas" />
 
-      {/* Summary cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} alignItems="stretch">
+
+        {/* Summary cards */}
         <Grid size={{ xs: 4 }}>
           <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day}   bookings={data.bookingTotals.day} />
         </Grid>
@@ -622,12 +623,10 @@ export default function Stats() {
         <Grid size={{ xs: 4 }}>
           <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} bookings={data.bookingTotals.month} />
         </Grid>
-      </Grid>
 
-      {/* Row 1: Facturación + Ocupación */}
-      <Grid container spacing={3} alignItems="flex-start" sx={{ mb: 3 }}>
+        {/* Facturación */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card elevation={0} sx={cardSx}>
+          <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <ChartHeader
                 icon={<TrendingUpIcon />}
@@ -636,7 +635,6 @@ export default function Stats() {
                   <Typography variant="caption" color="text.secondary">Precio/hora: {fmt(data.hourlyRate)}</Typography>
                 )}
               />
-
               <Tabs
                 value={period}
                 onChange={(_, v) => setPeriod(v)}
@@ -648,14 +646,12 @@ export default function Stats() {
                   <Tab key={t.key} value={t.key} label={t.label} />
                 ))}
               </Tabs>
-
               {(() => {
                 const trendMap = new Map<string, number | null>();
                 periodData.forEach((e, i) => {
                   trendMap.set(e.label, i > 0 ? periodData[i - 1].revenue : null);
                 });
                 const rows = [...periodData].reverse().filter((e) => e.bookings > 0);
-
                 return (
                   <TableContainer>
                     <Table size="small">
@@ -674,7 +670,6 @@ export default function Stats() {
                           const pct  = diff !== null && prev! > 0 ? (diff / prev!) * 100 : null;
                           const isUp = diff !== null && diff > 0;
                           const isDown = diff !== null && diff < 0;
-
                           return (
                             <TableRow key={entry.label} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
                               <TableCell>
@@ -715,49 +710,51 @@ export default function Stats() {
           </Card>
         </Grid>
 
+        {/* Ocupación */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card elevation={0} sx={cardSx}>
+          <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <ChartHeader icon={<DonutLargeIcon />} title="Ocupación por cancha" />
               <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
 
-      {/* Row 2: Profesor billing + Player distribution */}
-      {(hasRacketSport || hasPadel) && (
-        <Grid container spacing={3} alignItems="flex-start" sx={{ mb: 3 }}>
-          {hasRacketSport && (
-            <Grid size={{ xs: 12, md: hasPadel ? 7 : 12 }}>
-              <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
-            </Grid>
-          )}
-          {hasPadel && (
-            <Grid size={{ xs: 12, md: hasRacketSport ? 5 : 12 }}>
-              <Card elevation={0} sx={cardSx}>
-                <CardContent sx={{ p: 3 }}>
-                  <ChartHeader
-                    icon={<PeopleAltIcon />}
-                    title="Jugadores por Categoría"
-                    meta={!playerPending && !playerError && playerData && (
-                      <Typography variant="caption" color="text.secondary">
-                        {playerData.reduce((s, d) => s + d.total, 0)} en total
-                      </Typography>
-                    )}
-                  />
-                  {playerPending && <PageLoader />}
-                  {playerError && <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudieron cargar los datos de jugadores.</Alert>}
-                  {!playerPending && !playerError && <PlayerCategoryChart data={playerData ?? []} />}
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
+        {/* Profesor billing */}
+        {hasRacketSport && (
+          <Grid size={{ xs: 12, md: hasPadel ? 7 : 12 }}>
+            <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
+          </Grid>
+        )}
+
+        {/* Jugadores por categoría */}
+        {hasPadel && (
+          <Grid size={{ xs: 12, md: hasRacketSport ? 5 : 12 }}>
+            <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
+              <CardContent sx={{ p: 3 }}>
+                <ChartHeader
+                  icon={<PeopleAltIcon />}
+                  title="Jugadores por Categoría"
+                  meta={!playerPending && !playerError && playerData && (
+                    <Typography variant="caption" color="text.secondary">
+                      {playerData.reduce((s, d) => s + d.total, 0)} en total
+                    </Typography>
+                  )}
+                />
+                {playerPending && <PageLoader />}
+                {playerError && <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudieron cargar los datos de jugadores.</Alert>}
+                {!playerPending && !playerError && <PlayerCategoryChart data={playerData ?? []} />}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Ranking de torneos */}
+        <Grid size={{ xs: 12 }}>
+          <RankingSection />
         </Grid>
-      )}
 
-      {/* Row 3: Ranking de torneos */}
-      <RankingSection />
+      </Grid>
     </Box>
   );
 }
