@@ -66,8 +66,16 @@ export class TournamentService {
   async removeTeam(teamId: number): Promise<void> {
     const team = await this.ttRepo.findOne({ where: { id: teamId }, relations: ["tournament"] });
     if (!team) throw new Error("Equipo no encontrado");
-    const matchCount = await this.mRepo.count({ where: { tournament: { id: team.tournament.id } } });
-    if (matchCount > 0) throw new Error("No se puede eliminar un equipo después de generar los cruces");
+    // Free any matches that referenced this team
+    const affected = await this.mRepo.find({ where: [{ team1: { id: teamId } }, { team2: { id: teamId } }] });
+    if (affected.length > 0) {
+      for (const m of affected) {
+        if (m.winnerId === teamId) m.winnerId = null;
+        (m as any).status = "PENDING";
+        m.result = null;
+      }
+      await this.mRepo.save(affected);
+    }
     await this.ttRepo.delete(teamId);
   }
 
@@ -146,9 +154,63 @@ export class TournamentService {
   async removePair(pairId: number): Promise<void> {
     const pair = await this.pRepo.findOne({ where: { id: pairId }, relations: ["tournament"] });
     if (!pair) throw new Error("Pareja no encontrada");
-    const matchCount = await this.mRepo.count({ where: { tournament: { id: pair.tournament.id } } });
-    if (matchCount > 0) throw new Error("No se puede eliminar una pareja después de generar los cruces");
+    // Free any matches that referenced this pair
+    const affected = await this.mRepo.find({ where: [{ pair1: { id: pairId } }, { pair2: { id: pairId } }] });
+    if (affected.length > 0) {
+      for (const m of affected) {
+        if (m.winnerId === pairId) m.winnerId = null;
+        (m as any).status = "PENDING";
+        m.result = null;
+      }
+      await this.mRepo.save(affected);
+    }
     await this.pRepo.delete(pairId);
+  }
+
+  async disqualifyPair(pairId: number): Promise<Pair> {
+    const pair = await this.pRepo.findOne({ where: { id: pairId } });
+    if (!pair) throw new Error("Pareja no encontrada");
+    pair.disqualified = !pair.disqualified;
+    await this.pRepo.save(pair);
+    const affected = await this.mRepo.find({ where: [{ pair1: { id: pairId } }, { pair2: { id: pairId } }] });
+    if (affected.length > 0) {
+      for (const m of affected) {
+        if (pair.disqualified) {
+          (m as any).status = "FORFEIT";
+          const opponentId = m.pair1?.id === pairId ? m.pair2?.id : m.pair1?.id;
+          m.winnerId = opponentId ?? null;
+        } else {
+          (m as any).status = "PENDING";
+          m.winnerId = null;
+          m.result = null;
+        }
+      }
+      await this.mRepo.save(affected);
+    }
+    return deserializePair(pair);
+  }
+
+  async disqualifyTeam(teamId: number): Promise<TournamentTeam> {
+    const team = await this.ttRepo.findOne({ where: { id: teamId } });
+    if (!team) throw new Error("Equipo no encontrado");
+    team.disqualified = !team.disqualified;
+    await this.ttRepo.save(team);
+    const affected = await this.mRepo.find({ where: [{ team1: { id: teamId } }, { team2: { id: teamId } }] });
+    if (affected.length > 0) {
+      for (const m of affected) {
+        if (team.disqualified) {
+          (m as any).status = "FORFEIT";
+          const opponentId = m.team1?.id === teamId ? m.team2?.id : m.team1?.id;
+          m.winnerId = opponentId ?? null;
+        } else {
+          (m as any).status = "PENDING";
+          m.winnerId = null;
+          m.result = null;
+        }
+      }
+      await this.mRepo.save(affected);
+    }
+    return team;
   }
 
   async resetMatches(tournamentId: number): Promise<void> {
@@ -330,82 +392,154 @@ export class TournamentService {
       return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
     };
 
-    const getPref = (pair: Pair): number[] => {
-      if (!pair.preferredStartTimes) return [];
+    const getPrefMs = (pair: Pair | null): number[] => {
+      if (!pair?.preferredStartTimes) return [];
       try {
-        const times: string[] = JSON.parse(pair.preferredStartTimes);
-        return times.map(t => new Date(t).getTime()).filter(n => !isNaN(n)).sort((a, b) => a - b);
+        return (JSON.parse(pair.preferredStartTimes) as string[])
+          .map(s => new Date(s).getTime()).filter(n => !isNaN(n));
       } catch { return []; }
     };
 
-    // Collect ALL valid candidate slots for the given preferred times, then shuffle
-    // so that when multiple times work, the choice is random (fair across pairs).
-    const getPreferredSlot = (pref1: number[], pref2: number[]): { court: any; scheduledAt: Date } | null => {
-      if (effectiveCourts.length === 0) return null;
+    const pairPrefsMap = new Map<number, number[]>();
+    for (const p of pairs) pairPrefsMap.set(p.id, getPrefMs(p));
 
-      // Priority order:
-      //   1. intersection (both want the same time)
-      //   2. union where one pair is flexible (no prefs = fully available)
-      let candidates: number[];
-      if (pref1.length === 0 && pref2.length === 0) return null; // both flexible → caller decides
-      else if (pref1.length === 0) candidates = [...pref2];       // pair1 flexible, use pair2 prefs
-      else if (pref2.length === 0) candidates = [...pref1];       // pair2 flexible, use pair1 prefs
-      else candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000)); // intersection
+    // --- Determine all matchups ---
+    // BRACKET: seed pairs with shared preferred times against each other so Pass 1
+    // (both-prefer) covers the maximum number of first-round matches.
+    interface MatchupEntry { pair1: Pair; pair2: Pair | null; isBye: boolean; }
+    const matchupList: MatchupEntry[] = [];
 
-      if (candidates.length === 0) return null; // no common slot → caller will leave unscheduled
-
-      // Shuffle so multiple valid times don't always resolve to earliest
-      candidates = candidates.slice().sort(() => Math.random() - 0.5);
-
-      for (const tMs of candidates) {
-        for (const cId of effectiveCourts) {
-          const freeFrom = advancePastBookings(cId, tMs);
-          if (freeFrom === tMs && (nextFreeAt.get(cId) ?? 0) <= tMs) {
-            nextFreeAt.set(cId, tMs + matchDuration * 60 * 1000);
-            return { court: { id: cId } as any, scheduledAt: new Date(tMs) };
-          }
-        }
-      }
-      return null; // candidates exist but all courts occupied at those times
+    const sharedPrefsCount = (a: Pair, b: Pair): number => {
+      const pa = pairPrefsMap.get(a.id) ?? [];
+      const pb = pairPrefsMap.get(b.id) ?? [];
+      return pa.filter(ta => pb.some(tb => Math.abs(ta - tb) < 60_000)).length;
     };
-
-    // Schedule a match:
-    //   - If either pair has preferences → try preferred slot only.
-    //     No fallback to greedy: if no common slot found, return null so the
-    //     match is created unscheduled (can be edited later).
-    //   - If neither pair has preferences → greedy (assign next free court/time).
-    const scheduleMatch = (pair1: Pair, pair2: Pair): { court: any; scheduledAt: Date } | null => {
-      const pref1 = getPref(pair1);
-      const pref2 = getPref(pair2);
-      if (pref1.length > 0 || pref2.length > 0) {
-        return getPreferredSlot(pref1, pref2); // null = no match → unscheduled
-      }
-      return getNextSlot(); // both flexible → greedy
-    };
-
-    const toCreate: Partial<TournamentMatch>[] = [];
-    const t = { id: tournamentId };
 
     if (format === "ROUND_ROBIN") {
-      let matchNum = 1;
-      for (let i = 0; i < pairs.length; i++) {
-        for (let j = i + 1; j < pairs.length; j++) {
-          const slot = scheduleMatch(pairs[i], pairs[j]);
-          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: matchNum++, status: "PENDING" });
-        }
-      }
+      for (let i = 0; i < pairs.length; i++)
+        for (let j = i + 1; j < pairs.length; j++)
+          matchupList.push({ pair1: pairs[i], pair2: pairs[j], isBye: false });
     } else {
-      const shuffled = [...pairs].sort(() => Math.random() - 0.5);
-      let matchNum = 1;
-      for (let i = 0; i < shuffled.length; i += 2) {
-        if (i + 1 < shuffled.length) {
-          const slot = scheduleMatch(shuffled[i], shuffled[i + 1]);
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: matchNum++, status: "PENDING" });
-        } else {
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
-        }
+      // Greedy preference-aware seeding: highest-overlap pairs face each other first
+      const combos: { shared: number; i: number; j: number }[] = [];
+      for (let i = 0; i < pairs.length; i++)
+        for (let j = i + 1; j < pairs.length; j++)
+          combos.push({ shared: sharedPrefsCount(pairs[i], pairs[j]), i, j });
+      combos.sort((a, b) => b.shared - a.shared);
+
+      const used = new Set<number>();
+      const seeded: Pair[] = [];
+      for (const { i, j } of combos) {
+        if (used.has(i) || used.has(j)) continue;
+        seeded.push(pairs[i], pairs[j]);
+        used.add(i); used.add(j);
+      }
+      // Remaining pairs (no shared prefs) shuffled randomly
+      pairs.filter((_, i) => !used.has(i)).sort(() => Math.random() - 0.5).forEach(p => seeded.push(p));
+
+      for (let i = 0; i < seeded.length; i += 2) {
+        if (i + 1 < seeded.length)
+          matchupList.push({ pair1: seeded[i], pair2: seeded[i + 1], isBye: false });
+        else
+          matchupList.push({ pair1: seeded[i], pair2: null, isBye: true });
       }
     }
+
+    // --- Court-time grid scheduling (4 sequential passes) ---
+    // Pass 1: both pairs prefer this slot.
+    // Pass 2: one pair prefers + opponent has NO preferences (flexible).
+    // Pass 3: one pair prefers + opponent prefers a different slot (conflict).
+    // Pass 4: greedy fill with any remaining matchup.
+    // nextFreeAt carries between passes — courts never double-booked.
+    const scheduledSlots = new Map<number, { court: any; scheduledAt: Date } | null>();
+    const scheduled = new Set<number>();
+
+    if (effectiveCourts.length > 0 && startTime) {
+      const prefersSlot = (pair: Pair | null, tMs: number) =>
+        (pairPrefsMap.get(pair?.id ?? -1) ?? []).some(t => Math.abs(t - tMs) < 60_000);
+      const hasAnyPref = (pair: Pair | null) =>
+        (pairPrefsMap.get(pair?.id ?? -1) ?? []).length > 0;
+
+      const nonByeCount = matchupList.filter(m => !m.isBye).length;
+      const baseMs = startTime.getTime();
+      const upperBound = baseMs + (nonByeCount + 2) * matchDuration * 60_000;
+
+      const opportunities: { cId: number; tMs: number }[] = [];
+      for (const cId of effectiveCourts) {
+        let t = baseMs;
+        while (t <= upperBound) {
+          const adj = advancePastBookings(cId, t);
+          if (adj <= upperBound) opportunities.push({ cId, tMs: adj });
+          t = adj + matchDuration * 60_000;
+        }
+      }
+      opportunities.sort((a, b) =>
+        a.tMs !== b.tMs ? a.tMs - b.tMs : effectiveCourts.indexOf(a.cId) - effectiveCourts.indexOf(b.cId)
+      );
+
+      const getUnscheduled = () => matchupList
+        .map((m, i) => ({ m, i }))
+        .filter(({ m, i }) => !m.isBye && !scheduled.has(i) && m.pair2 != null);
+
+      const assign = (pick: { i: number }, cId: number, tMs: number) => {
+        nextFreeAt.set(cId, tMs + matchDuration * 60_000);
+        scheduledSlots.set(pick.i, { court: { id: cId } as any, scheduledAt: new Date(tMs) });
+        scheduled.add(pick.i);
+      };
+
+      // Pass 1 — both pairs prefer this exact slot
+      for (const { cId, tMs } of opportunities) {
+        if (scheduled.size >= nonByeCount) break;
+        if ((nextFreeAt.get(cId) ?? 0) > tMs) continue;
+        const eligible = getUnscheduled().filter(({ m }) =>
+          prefersSlot(m.pair1, tMs) && prefersSlot(m.pair2, tMs));
+        if (eligible.length === 0) continue;
+        assign(eligible[Math.floor(Math.random() * eligible.length)], cId, tMs);
+      }
+
+      // Pass 2 — one prefers this slot + opponent has NO preferences (flexible partner)
+      for (const { cId, tMs } of opportunities) {
+        if (scheduled.size >= nonByeCount) break;
+        if ((nextFreeAt.get(cId) ?? 0) > tMs) continue;
+        const eligible = getUnscheduled().filter(({ m }) =>
+          (prefersSlot(m.pair1, tMs) && !hasAnyPref(m.pair2)) ||
+          (prefersSlot(m.pair2, tMs) && !hasAnyPref(m.pair1)));
+        if (eligible.length === 0) continue;
+        assign(eligible[Math.floor(Math.random() * eligible.length)], cId, tMs);
+      }
+
+      // Pass 3 — one prefers this slot (opponent prefers a different slot)
+      for (const { cId, tMs } of opportunities) {
+        if (scheduled.size >= nonByeCount) break;
+        if ((nextFreeAt.get(cId) ?? 0) > tMs) continue;
+        const eligible = getUnscheduled().filter(({ m }) =>
+          prefersSlot(m.pair1, tMs) || prefersSlot(m.pair2, tMs));
+        if (eligible.length === 0) continue;
+        assign(eligible[Math.floor(Math.random() * eligible.length)], cId, tMs);
+      }
+
+      // Pass 4 — greedy: any remaining matchup fills the next available slot
+      for (const { cId, tMs } of opportunities) {
+        if (scheduled.size >= nonByeCount) break;
+        if ((nextFreeAt.get(cId) ?? 0) > tMs) continue;
+        const eligible = getUnscheduled();
+        if (eligible.length === 0) break;
+        assign(eligible[Math.floor(Math.random() * eligible.length)], cId, tMs);
+      }
+    }
+
+    // Final greedy fallback for any matchup not placed (e.g. no courts were selected)
+    for (let i = 0; i < matchupList.length; i++) {
+      if (!matchupList[i].isBye && !scheduledSlots.has(i))
+        scheduledSlots.set(i, getNextSlot());
+    }
+
+    const t = { id: tournamentId };
+    const toCreate: Partial<TournamentMatch>[] = matchupList.map((m, i) => {
+      if (m.isBye) return { tournament: t as any, pair1: m.pair1, pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: i + 1, status: "BYE", winnerId: m.pair1.id };
+      const slot = scheduledSlots.get(i) ?? null;
+      return { tournament: t as any, pair1: m.pair1, pair2: m.pair2 as Pair, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: i + 1, status: "PENDING" };
+    });
 
     const savedR1 = await this.mRepo.save(toCreate.map(m => this.mRepo.create(m)));
 

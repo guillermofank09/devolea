@@ -320,10 +320,11 @@ const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: s
 function BracketMatchCard({ match, groupLabel, readOnly, onEdit, teamMode }: { match: TournamentMatch; groupLabel?: string; readOnly?: boolean; onEdit?: () => void; teamMode?: boolean }) {
   const isBye = match.status === "BYE";
   const isCompleted = match.status === "COMPLETED";
+  const isForfeit = match.status === "FORFEIT";
   const pair1Won = match.winnerId != null && (teamMode ? match.team1?.id === match.winnerId : match.pair1?.id === match.winnerId);
   const pair2Won = match.winnerId != null && (teamMode ? match.team2?.id === match.winnerId : match.pair2?.id === match.winnerId);
   const live = match.liveStatus ? LIVE_STATUS_COLORS[match.liveStatus] : null;
-  const sideColor = live ? live.stripe : isBye ? "#3b82f6" : isCompleted ? "#10b981" : "#cbd5e1";
+  const sideColor = live ? live.stripe : isBye ? "#3b82f6" : isCompleted ? "#10b981" : isForfeit ? "#94a3b8" : "#cbd5e1";
 
   return (
     <Paper
@@ -331,8 +332,8 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit, teamMode }: { m
       sx={{
         width: "100%", height: "100%",
         border: "1px solid",
-        borderColor: live ? live.border : isCompleted ? "#d1fae5" : "#e2e8f0",
-        bgcolor: live ? live.bg : "#fff",
+        borderColor: live ? live.border : isCompleted ? "#d1fae5" : isForfeit ? "#e2e8f0" : "#e2e8f0",
+        bgcolor: live ? live.bg : isForfeit ? "#f8fafc" : "#fff",
         borderRadius: 3, overflow: "hidden",
         display: "flex",
         cursor: readOnly ? "default" : "pointer",

@@ -14,4 +14,5 @@ export class Pair {
   @Column({ default: false }) player1InscriptionPaid!: boolean;
   @Column({ default: false }) player2InscriptionPaid!: boolean;
   @Column({ type: "text", nullable: true }) preferredStartTimes!: string | null;
+  @Column({ default: false }) disqualified!: boolean;
 }

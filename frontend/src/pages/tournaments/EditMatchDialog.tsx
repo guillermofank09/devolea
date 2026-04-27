@@ -384,6 +384,17 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   const showWinner = teamMode ? (!!currentTeam1 && !!currentTeam2) : (!!currentPair1 && !!currentPair2);
   const missingSchedule = !isPlaceholder && (!courtId || !scheduledAt);
 
+  // Preferred-time highlighting for the calendar
+  const { calendarPair1Slots, calendarPair2Slots } = useMemo(() => {
+    const parse = (p: typeof currentPair1): string[] => {
+      const v = p?.preferredStartTimes;
+      if (!v) return [];
+      if (Array.isArray(v)) return v;
+      try { return JSON.parse(v as unknown as string); } catch { return []; }
+    };
+    return { calendarPair1Slots: parse(currentPair1), calendarPair2Slots: parse(currentPair2) };
+  }, [currentPair1, currentPair2]);
+
   // ── Controls panel (shared between side-layout and stacked) ────────────────
   const controlsPanel = (
     <Box sx={{
@@ -864,6 +875,44 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
             borderTop: !sideLayout ? "1px solid" : "none",
             borderColor: "divider",
           }}>
+            {(calendarPair1Slots.length > 0 || calendarPair2Slots.length > 0) && (
+              <Box sx={{ display: "flex", gap: 1.5, px: 1.5, pt: 0.75, pb: 0.25, flexWrap: "wrap", borderBottom: "1px solid", borderColor: "divider" }}>
+                {calendarPair1Slots.length > 0 && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{
+                      width: 20, height: 12, borderRadius: 0.5, flexShrink: 0,
+                      borderLeft: "3px dashed rgba(245,173,39,0.8)",
+                      backgroundImage: "repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(245,173,39,0.32) 3px,rgba(245,173,39,0.32) 6px)",
+                    }} />
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {currentPair1 ? `${currentPair1.player1.name}${currentPair1.player2 ? ` / ${currentPair1.player2.name}` : ""}` : "Pareja 1"}
+                    </Typography>
+                  </Box>
+                )}
+                {calendarPair2Slots.length > 0 && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{
+                      width: 20, height: 12, borderRadius: 0.5, flexShrink: 0,
+                      borderLeft: "3px dashed rgba(33,150,243,0.8)",
+                      backgroundImage: "repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(33,150,243,0.32) 3px,rgba(33,150,243,0.32) 6px)",
+                    }} />
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {currentPair2 ? `${currentPair2.player1.name}${currentPair2.player2 ? ` / ${currentPair2.player2.name}` : ""}` : "Pareja 2"}
+                    </Typography>
+                  </Box>
+                )}
+                {calendarPair1Slots.length > 0 && calendarPair2Slots.length > 0 && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{
+                      width: 20, height: 12, borderRadius: 0.5, flexShrink: 0,
+                      borderLeft: "3px solid rgba(76,175,80,0.9)",
+                      backgroundImage: "repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(76,175,80,0.35) 3px,rgba(76,175,80,0.35) 6px)",
+                    }} />
+                    <Typography variant="caption" color="text.secondary" noWrap>Ambas parejas</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
             <WeeklyCalendar
               key={`${match.id}-${courtId}`}
               events={calendarEvents}
@@ -876,6 +925,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                   ? { start: tournamentStartDate, end: tournamentEndDate }
                   : undefined
               }
+              pair1Slots={calendarPair1Slots.length > 0 ? calendarPair1Slots : undefined}
+              pair2Slots={calendarPair2Slots.length > 0 ? calendarPair2Slots : undefined}
             />
           </Box>
         )}

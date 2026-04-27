@@ -72,6 +72,12 @@ export const updateMatch = (matchId: number, data: {
 }): Promise<TournamentMatch> =>
   axios.put(`${BASE}/tournaments/matches/${matchId}`, data).then(r => r.data);
 
+export const disqualifyPair = (tournamentId: number, pairId: number): Promise<Pair> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/pairs/${pairId}/disqualify`).then(r => r.data);
+
+export const disqualifyTeam = (tournamentId: number, teamId: number): Promise<TournamentTeam> =>
+  axios.post(`${BASE}/tournaments/${tournamentId}/teams/${teamId}/disqualify`).then(r => r.data);
+
 export const addTeam = (tournamentId: number, equipoId: number): Promise<TournamentTeam> =>
   axios.post(`${BASE}/tournaments/${tournamentId}/teams`, { equipoId }).then(r => r.data);
 

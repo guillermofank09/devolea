@@ -126,6 +126,16 @@ export const triggerRepechage = async (req: Request, res: Response) => {
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
 
+export const disqualifyPair = async (req: Request, res: Response) => {
+  try { res.json(await getService().disqualifyPair(Number(req.params.pairId))); }
+  catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
+export const disqualifyTeam = async (req: Request, res: Response) => {
+  try { res.json(await getService().disqualifyTeam(Number(req.params.teamId))); }
+  catch (e: any) { res.status(400).json({ error: e.message }); }
+};
+
 export const addTeam = async (req: Request, res: Response) => {
   const { equipoId } = req.body;
   try {

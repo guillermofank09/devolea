@@ -176,6 +176,41 @@
   background: rgba(245, 173, 39, 0.08) !important;
 }
 
+/* Preferred start time slots (pair suggestions) */
+.rbc-slot-preferred-pair1 {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(245, 173, 39, 0.32) 5px,
+    rgba(245, 173, 39, 0.32) 9px
+  ) !important;
+  background-color: rgba(245, 173, 39, 0.06) !important;
+  border-left: 3px dashed rgba(245, 173, 39, 0.8) !important;
+}
+.rbc-slot-preferred-pair2 {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(33, 150, 243, 0.32) 5px,
+    rgba(33, 150, 243, 0.32) 9px
+  ) !important;
+  background-color: rgba(33, 150, 243, 0.06) !important;
+  border-left: 3px dashed rgba(33, 150, 243, 0.8) !important;
+}
+.rbc-slot-preferred-both {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(76, 175, 80, 0.35) 5px,
+    rgba(76, 175, 80, 0.35) 9px
+  ) !important;
+  background-color: rgba(76, 175, 80, 0.07) !important;
+  border-left: 3px solid rgba(76, 175, 80, 0.9) !important;
+}
+
 /* Disabled nav button */
 .cal-btn--disabled {
   opacity: 0.3;

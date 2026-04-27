@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column } from "typeorm";
 import { Tournament } from "./Tournament";
 import { Equipo } from "./Equipo";
 
@@ -9,4 +9,5 @@ export class TournamentTeam {
   @JoinColumn({ name: "tournamentId" }) tournament!: Tournament;
   @ManyToOne(() => Equipo, { eager: true, onDelete: "CASCADE" })
   @JoinColumn({ name: "equipoId" }) equipo!: Equipo;
+  @Column({ default: false }) disqualified!: boolean;
 }

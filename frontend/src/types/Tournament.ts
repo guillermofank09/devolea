@@ -5,12 +5,13 @@ export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
 export type TournamentFormat = "ROUND_ROBIN" | "BRACKET";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
 export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
-export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
+export type MatchStatus = "PENDING" | "COMPLETED" | "BYE" | "FORFEIT";
 export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
 
 export interface TournamentTeam {
   id: number;
   equipo: Equipo;
+  disqualified?: boolean;
 }
 
 export interface Tournament {
@@ -42,6 +43,7 @@ export interface Pair {
   player1InscriptionPaid: boolean;
   player2InscriptionPaid: boolean;
   preferredStartTimes?: string[];
+  disqualified?: boolean;
 }
 
 export interface MatchGoal {

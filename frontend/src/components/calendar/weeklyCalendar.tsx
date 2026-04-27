@@ -15,6 +15,10 @@ interface Props {
   height?: string | number;
   /** Restrict and highlight days within this date range (e.g. tournament start/end) */
   highlightedDateRange?: { start: string; end: string };
+  /** ISO timestamps preferred by pair 1 (amber stripes) */
+  pair1Slots?: string[];
+  /** ISO timestamps preferred by pair 2 (blue stripes) */
+  pair2Slots?: string[];
 }
 
 const spanishMessages = {
@@ -203,7 +207,7 @@ function CustomToolbar({ date, label, onNavigate, onView, view, views }: Toolbar
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
-export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, initialDate, height, highlightedDateRange }: Props) {
+export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, initialDate, height, highlightedDateRange, pair1Slots, pair2Slots }: Props) {
   const isMobile = useMediaQuery("(max-width:600px)");
 
   const highlightStart = useMemo(
@@ -233,8 +237,17 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, in
   const dayPropGetter = (d: Date) =>
     isHighlighted(d) ? { className: "rbc-day-tournament" } : {};
 
-  const slotPropGetter = (d: Date) =>
-    isHighlighted(d) ? { className: "rbc-slot-tournament" } : {};
+  const slotPropGetter = (d: Date) => {
+    const slotEnd = new Date(d.getTime() + 60 * 60 * 1000);
+    const matches = (list: string[] | undefined) =>
+      list?.some(s => { const t = new Date(s); return t >= d && t < slotEnd; }) ?? false;
+    const in1 = matches(pair1Slots);
+    const in2 = matches(pair2Slots);
+    if (in1 && in2) return { className: "rbc-slot-preferred-both" };
+    if (in1) return { className: "rbc-slot-preferred-pair1" };
+    if (in2) return { className: "rbc-slot-preferred-pair2" };
+    return isHighlighted(d) ? { className: "rbc-slot-tournament" } : {};
+  };
 
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {

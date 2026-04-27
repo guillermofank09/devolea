@@ -4,7 +4,7 @@ import { Pair } from "./Pair";
 import { Court } from "./Court";
 import { TournamentTeam } from "./TournamentTeam";
 
-export type MatchStatus = "PENDING" | "COMPLETED" | "BYE";
+export type MatchStatus = "PENDING" | "COMPLETED" | "BYE" | "FORFEIT";
 export type MatchLiveStatus = "IN_PLAY" | "DELAYED" | "EARLY";
 
 @Entity("tournament_match")

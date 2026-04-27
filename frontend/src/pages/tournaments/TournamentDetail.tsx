@@ -20,8 +20,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import BlockIcon from "@mui/icons-material/Block";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTournamentById, removePair, removeTeam, resetMatches, triggerRepechage } from "../../api/tournamentService";
+import { fetchTournamentById, removePair, removeTeam, resetMatches, triggerRepechage, disqualifyPair, disqualifyTeam } from "../../api/tournamentService";
 import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentTeam } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
@@ -91,6 +92,7 @@ function MatchStatusChip({ status }: { status: string }) {
     PENDING: { label: "Pendiente", color: "warning" },
     COMPLETED: { label: "Completado", color: "success" },
     BYE: { label: "BYE", color: "info" },
+    FORFEIT: { label: "Descalificado", color: "default" },
   };
   const cfg = map[status] ?? { label: status, color: "default" };
   return <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />;
@@ -132,6 +134,16 @@ export default function TournamentDetail() {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
       setDeleteTeamTarget(null);
     },
+  });
+
+  const disqualifyPairMutation = useMutation({
+    mutationFn: (pairId: number) => disqualifyPair(Number(id), pairId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] }),
+  });
+
+  const disqualifyTeamMutation = useMutation({
+    mutationFn: (teamId: number) => disqualifyTeam(Number(id), teamId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] }),
   });
 
   const resetMutation = useMutation({
@@ -254,13 +266,18 @@ export default function TournamentDetail() {
                       {idx > 0 && <Divider />}
                       <ListItem
                         secondaryAction={
-                          !hasMatches && (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            <Tooltip title={team.disqualified ? "Rehabilitar equipo" : "Descalificar equipo"}>
+                              <IconButton size="small" color={team.disqualified ? "warning" : "default"} onClick={() => disqualifyTeamMutation.mutate(team.id)}>
+                                <BlockIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                             <Tooltip title="Eliminar equipo">
                               <IconButton edge="end" size="small" color="error" onClick={() => setDeleteTeamTarget(team)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                          )
+                          </Box>
                         }
                       >
                         <ListItemAvatar>
@@ -308,13 +325,18 @@ export default function TournamentDetail() {
                       {idx > 0 && <Divider />}
                       <ListItem
                         secondaryAction={
-                          !hasMatches && (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            <Tooltip title={pair.disqualified ? "Rehabilitar jugador" : "Descalificar jugador"}>
+                              <IconButton size="small" color={pair.disqualified ? "warning" : "default"} onClick={() => disqualifyPairMutation.mutate(pair.id)}>
+                                <BlockIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                             <Tooltip title="Eliminar jugador">
                               <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                          )
+                          </Box>
                         }
                       >
                         <ListItemAvatar>
@@ -371,13 +393,16 @@ export default function TournamentDetail() {
                                 <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            {!hasMatches && (
-                              <Tooltip title="Eliminar pareja">
-                                <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
+                            <Tooltip title={pair.disqualified ? "Rehabilitar pareja" : "Descalificar pareja"}>
+                              <IconButton size="small" color={pair.disqualified ? "warning" : "default"} onClick={() => disqualifyPairMutation.mutate(pair.id)}>
+                                <BlockIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Eliminar pareja">
+                              <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </Box>
                         }
                       >
@@ -385,7 +410,8 @@ export default function TournamentDetail() {
                           <Avatar
                             sx={{
                               width: 36, height: 36, fontSize: "0.75rem", fontWeight: 700,
-                              bgcolor: stringToColor(pair.player1.name + (pair.player2?.name ?? "")),
+                              bgcolor: pair.disqualified ? "grey.400" : stringToColor(pair.player1.name + (pair.player2?.name ?? "")),
+                              opacity: pair.disqualified ? 0.6 : 1,
                             }}
                           >
                             {pairInitials(pair)}
@@ -394,16 +420,17 @@ export default function TournamentDetail() {
                         <ListItemText
                           primary={
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-                              <Typography variant="body2" fontWeight={600}>{pair.player1.name}</Typography>
-                              {pair.player1InscriptionPaid && (
+                              <Typography variant="body2" fontWeight={600} sx={{ color: pair.disqualified ? "text.disabled" : undefined, textDecoration: pair.disqualified ? "line-through" : undefined }}>{pair.player1.name}</Typography>
+                              {!pair.disqualified && pair.player1InscriptionPaid && (
                                 <Typography component="span" sx={{ fontSize: "0.8rem", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>$</Typography>
                               )}
+                              {pair.disqualified && <Chip label="Descalificado" size="small" sx={{ height: 18, fontSize: "0.65rem", bgcolor: "grey.200", color: "text.disabled" }} />}
                             </Box>
                           }
                           secondary={pair.player2 && (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-                              <Typography variant="caption" color="text.secondary">{pair.player2.name}</Typography>
-                              {pair.player2InscriptionPaid && (
+                              <Typography variant="caption" sx={{ color: pair.disqualified ? "text.disabled" : "text.secondary", textDecoration: pair.disqualified ? "line-through" : undefined }}>{pair.player2.name}</Typography>
+                              {!pair.disqualified && pair.player2InscriptionPaid && (
                                 <Typography component="span" sx={{ fontSize: "0.8rem", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>$</Typography>
                               )}
                             </Box>
@@ -578,8 +605,8 @@ export default function TournamentDetail() {
         open={!!deletePairTarget}
         title={tennisMode ? "Eliminar jugador" : "Eliminar pareja"}
         description={tennisMode
-          ? "¿Estás seguro de que querés eliminar este jugador del torneo?"
-          : "¿Estás seguro de que querés eliminar esta pareja del torneo? Esta acción no se puede deshacer."}
+          ? `¿Eliminar este jugador del torneo?${hasMatches ? " Los partidos asignados quedarán libres." : ""}`
+          : `¿Eliminar esta pareja del torneo?${hasMatches ? " Los partidos asignados quedarán libres." : " Esta acción no se puede deshacer."}`}
         loading={removePairMutation.isPending}
         onClose={() => setDeletePairTarget(null)}
         onConfirm={() => deletePairTarget && removePairMutation.mutate(deletePairTarget.id)}
@@ -588,7 +615,7 @@ export default function TournamentDetail() {
       <DeleteDialog
         open={!!deleteTeamTarget}
         title="Eliminar equipo"
-        description="¿Estás seguro de que querés eliminar este equipo del torneo?"
+        description={`¿Eliminar este equipo del torneo?${hasMatches ? " Los partidos asignados quedarán libres." : ""}`}
         loading={removeTeamMutation.isPending}
         onClose={() => setDeleteTeamTarget(null)}
         onConfirm={() => deleteTeamTarget && removeTeamMutation.mutate(deleteTeamTarget.id)}
