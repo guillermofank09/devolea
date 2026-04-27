@@ -338,15 +338,25 @@ export class TournamentService {
       } catch { return []; }
     };
 
+    // Collect ALL valid candidate slots for the given preferred times, then shuffle
+    // so that when multiple times work, the choice is random (fair across pairs).
     const getPreferredSlot = (pref1: number[], pref2: number[]): { court: any; scheduledAt: Date } | null => {
       if (effectiveCourts.length === 0) return null;
+
+      // Priority order:
+      //   1. intersection (both want the same time)
+      //   2. union where one pair is flexible (no prefs = fully available)
       let candidates: number[];
-      if (pref1.length === 0 && pref2.length === 0) return null;
-      else if (pref1.length === 0) candidates = [...pref2];
-      else if (pref2.length === 0) candidates = [...pref1];
-      else candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000));
-      if (candidates.length === 0) return null;
-      candidates.sort((a, b) => a - b);
+      if (pref1.length === 0 && pref2.length === 0) return null; // both flexible → caller decides
+      else if (pref1.length === 0) candidates = [...pref2];       // pair1 flexible, use pair2 prefs
+      else if (pref2.length === 0) candidates = [...pref1];       // pair2 flexible, use pair1 prefs
+      else candidates = pref1.filter(t1 => pref2.some(t2 => Math.abs(t1 - t2) < 60_000)); // intersection
+
+      if (candidates.length === 0) return null; // no common slot → caller will leave unscheduled
+
+      // Shuffle so multiple valid times don't always resolve to earliest
+      candidates = candidates.slice().sort(() => Math.random() - 0.5);
+
       for (const tMs of candidates) {
         for (const cId of effectiveCourts) {
           const freeFrom = advancePastBookings(cId, tMs);
@@ -356,24 +366,32 @@ export class TournamentService {
           }
         }
       }
-      return null;
+      return null; // candidates exist but all courts occupied at those times
     };
 
-    const scheduleMatch = (pair1: Pair, pair2: Pair): { court: any; scheduledAt: Date } | null =>
-      getPreferredSlot(getPref(pair1), getPref(pair2)) ?? getNextSlot();
+    // Schedule a match:
+    //   - If either pair has preferences → try preferred slot only.
+    //     No fallback to greedy: if no common slot found, return null so the
+    //     match is created unscheduled (can be edited later).
+    //   - If neither pair has preferences → greedy (assign next free court/time).
+    const scheduleMatch = (pair1: Pair, pair2: Pair): { court: any; scheduledAt: Date } | null => {
+      const pref1 = getPref(pair1);
+      const pref2 = getPref(pair2);
+      if (pref1.length > 0 || pref2.length > 0) {
+        return getPreferredSlot(pref1, pref2); // null = no match → unscheduled
+      }
+      return getNextSlot(); // both flexible → greedy
+    };
 
     const toCreate: Partial<TournamentMatch>[] = [];
     const t = { id: tournamentId };
-    let cursor = startTime ? startTime.getTime() : 0;
 
     if (format === "ROUND_ROBIN") {
       let matchNum = 1;
       for (let i = 0; i < pairs.length; i++) {
         for (let j = i + 1; j < pairs.length; j++) {
           const slot = scheduleMatch(pairs[i], pairs[j]);
-          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
-          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
-          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
+          toCreate.push({ tournament: t as any, pair1: pairs[i], pair2: pairs[j], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: matchNum++, status: "PENDING" });
         }
       }
     } else {
@@ -382,9 +400,7 @@ export class TournamentService {
       for (let i = 0; i < shuffled.length; i += 2) {
         if (i + 1 < shuffled.length) {
           const slot = scheduleMatch(shuffled[i], shuffled[i + 1]);
-          const scheduledAt = slot ? slot.scheduledAt : startTime ? new Date(cursor) : null;
-          if (!slot && startTime) cursor += matchDuration * 60 * 1000;
-          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt, round: 1, matchNumber: matchNum++, status: "PENDING" });
+          toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: shuffled[i + 1], court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: matchNum++, status: "PENDING" });
         } else {
           toCreate.push({ tournament: t as any, pair1: shuffled[i], pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: matchNum++, status: "BYE", winnerId: shuffled[i].id });
         }
