@@ -12,7 +12,6 @@ import {
   FormControlLabel,
   FormGroup,
   FormLabel,
-  ToggleButton,
   ToggleButtonGroup,
   Typography,
   useMediaQuery,

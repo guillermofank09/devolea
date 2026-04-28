@@ -269,7 +269,7 @@ function PublicPhaseMatchCard({ match, teamMode }: { match: TournamentMatch; tea
   const pair2Won = match.winnerId != null && (teamMode ? match.team2?.id === match.winnerId : match.pair2?.id === match.winnerId);
   const stripeColor = live ? live.stripe : isCompleted ? "#10b981" : isForfeit ? "#94a3b8" : "#cbd5e1";
 
-  const label = (id: number | undefined, winner: boolean, loser: boolean, name: string) => (
+  const label = (_id: number | undefined, winner: boolean, loser: boolean, name: string) => (
     <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.75, overflow: "hidden", bgcolor: winner ? "rgba(16,185,129,0.05)" : "transparent" }}>
       <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: winner ? 700 : 500, color: loser ? "text.disabled" : "text.primary", flex: 1, minWidth: 0 }}>
         {name}
