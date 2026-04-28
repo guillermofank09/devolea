@@ -195,7 +195,7 @@ const IconJersey = () => (
     {/* Collar */}
     <path d="M14 6c0 3 3 5 6 5s6-2 6-5" stroke={C} strokeWidth="2" strokeLinecap="round" fill="none"/>
     {/* Jersey number */}
-    <text x="20" y="27" textAnchor="middle" fontSize="10" fontWeight="800" fill={C} fontFamily="Inter,sans-serif">10</text>
+    <text x="20" y="27" textAnchor="middle" fontSize="10" fontWeight="800" fill={C} fontFamily="Inter,Roboto,sans-serif">10</text>
   </svg>
 );
 
@@ -538,7 +538,7 @@ export default function Landing() {
                   ))}
                 </ul>
                 <a
-                  className={plan.featured ? "lp-btn-primary" : "lp-btn-outline lp-pricing-cta"}
+                  className={plan.featured ? "lp-btn-primary lp-pricing-cta" : "lp-btn-outline lp-pricing-cta"}
                   href={WA_URL}
                   target="_blank"
                   rel="noopener noreferrer"

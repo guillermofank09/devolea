@@ -1,6 +1,9 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
+import theme from './theme';
 import { initAnalytics } from './lib/analytics';
 import {
   QueryClient,
@@ -26,14 +29,17 @@ const queryClient = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <ToastProvider>
-            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""} libraries={["places", "geocoding"]}>
-              <App />
-            </APIProvider>
-          </ToastProvider>
-        </QueryClientProvider>
-      </AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+              <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""} libraries={["places", "geocoding"]}>
+                <App />
+              </APIProvider>
+            </ToastProvider>
+          </QueryClientProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>,
 );

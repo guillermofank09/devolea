@@ -39,7 +39,6 @@ export default function PageHeader({ title, subtitle, action }: Props) {
               lineHeight: 1.15,
               letterSpacing: "-0.5px",
               color: "text.primary",
-              fontFamily: "'Teko', sans-serif",
               textTransform: "uppercase",
             }}
           >

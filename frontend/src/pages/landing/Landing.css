@@ -170,6 +170,7 @@
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
+  z-index: 1; /* hero-content is z-index:2, so text always paints on top */
 }
 
 .lp-ball-1 {
@@ -1174,8 +1175,44 @@
   .lp-hero { padding: 86px 20px 64px; }
   .lp-hero-title { letter-spacing: -1.5px; }
   .lp-hero-sub { font-size: 15px; margin-bottom: 32px; }
-  .lp-ball-4 { display: none; }
   .lp-hero-cta .lp-btn-ghost { display: none; }
+
+  /* Balls — corner positioning so they stay in the dark background, not on text */
+  @keyframes ballBounceMobileA {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+    50%  { transform: translateY(-10px) translateX(6px) rotate(180deg); }
+    100% { transform: translateY(0) translateX(0) rotate(360deg); }
+  }
+  @keyframes ballBounceMobileB {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+    50%  { transform: translateY(-10px) translateX(-6px) rotate(-180deg); }
+    100% { transform: translateY(0) translateX(0) rotate(-360deg); }
+  }
+  /* Ball-1 (padel): top-left, highest */
+  .lp-ball-1 {
+    width: 48px; height: 48px;
+    top: 7%; left: 8%;
+    bottom: auto;
+    opacity: 0.7;
+    animation: ballBounceMobileA 7s ease-in-out infinite !important;
+  }
+  /* Ball-2 (basketball): mid-right, one level below ball-1 */
+  .lp-ball-2 {
+    width: 40px; height: 40px;
+    top: 15%; right: 9%;
+    opacity: 0.62;
+    animation: ballBounceMobileB 9s ease-in-out infinite 1.2s !important;
+  }
+  /* Ball-3 (volleyball): hidden — replaced by football */
+  .lp-ball-3 { display: none; }
+  /* Ball-4 (football): below buttons, left side — lowest level */
+  .lp-ball-4 {
+    display: block;
+    width: 58px; height: 58px;
+    top: auto; right: auto; bottom: 85px; left: 10%;
+    opacity: 0.52;
+    animation: ballBounceMobileA 10s ease-in-out infinite 2s !important;
+  }
 
   /* Trust strip — force single row, compact, top-aligned */
   .lp-trust-strip { padding: 20px 16px; }
@@ -1227,17 +1264,29 @@
   .lp-phone-island { width: 22px; height: 7px; }
   .lp-phone-home  { width: 20px; margin-top: 5px; }
 
-  /* CTA section */
+  /* xl buttons — reduce side padding on mobile */
+  .lp-btn-xl { padding: 14px 24px; font-size: 15px; }
+
+  /* CTA section — centered, natural button width */
   .lp-cta-section { padding: 64px 20px; }
-  .lp-cta-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 340px; margin-left: auto; margin-right: auto; }
+  .lp-cta-actions {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
   .lp-cta-actions .lp-btn-primary,
-  .lp-cta-actions .lp-btn-outline { width: 100%; text-align: center; justify-content: center; }
+  .lp-cta-actions .lp-btn-outline {
+    width: auto;
+    min-width: 220px;
+    text-align: center;
+    justify-content: center;
+  }
 }
 
 /* ── Extra small: stack hero CTAs ────────────────────────────────────────── */
 @media (max-width: 420px) {
-  .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
-  .lp-hero-cta .lp-btn-primary { width: 100%; max-width: 100%; text-align: center; justify-content: center; }
+  .lp-hero-cta { flex-direction: column; align-items: center; gap: 10px; }
+  .lp-hero-cta .lp-btn-primary { width: auto; min-width: 220px; max-width: 100%; text-align: center; justify-content: center; }
   .lp-btn-xl { padding: 14px 20px; font-size: 15px; }
   .lp-trust-num  { font-size: 14px; }
   .lp-trust-desc { font-size: 9px; }
