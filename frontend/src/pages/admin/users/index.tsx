@@ -24,6 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
@@ -51,6 +52,8 @@ import { SPORTS, SPORT_LABEL } from "../../../constants/sports";
 import Checkbox from "@mui/material/Checkbox";
 import SportsIcon from "@mui/icons-material/Sports";
 
+const DEFAULT_TRIAL_DAYS = 14;
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function addDays(dateStr: string, days: number): Date {
@@ -65,6 +68,19 @@ function formatDate(dateStr: string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+function trialStatus(trialEndsAt: string | null): {
+  label: string;
+  color: "success" | "warning" | "error" | "default";
+} {
+  if (!trialEndsAt) return { label: "Sin prueba", color: "default" };
+  const end = new Date(trialEndsAt + "T23:59:59");
+  const today = new Date();
+  const diff = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return { label: "Prueba vencida", color: "error" };
+  if (diff <= 3) return { label: `Prueba: ${diff}d`, color: "warning" };
+  return { label: `Prueba: ${diff}d`, color: "success" };
 }
 
 function paymentStatus(lastPaymentDate: string | null): {
@@ -159,6 +175,90 @@ function PaymentDialog({
         <Button onClick={onClose} fullWidth={fullScreen} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>
           Cancelar
         </Button>
+        <Button
+          variant="contained"
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          fullWidth={fullScreen}
+          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
+        >
+          {mutation.isPending ? "Guardando…" : "Guardar"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Trial dialog ─────────────────────────────────────────────────────────────
+
+function TrialDialog({ user, token, onClose }: { user: AdminUser; token: string; onClose: () => void }) {
+  const [dateValue, setDateValue] = useState(user.trialEndsAt ?? "");
+  const queryClient = useQueryClient();
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const mutation = useMutation({
+    mutationFn: () => apiUpdateUser(token, user.id, { trialEndsAt: dateValue || null }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+      onClose();
+    },
+  });
+
+  function resetToDefault() {
+    const d = new Date();
+    d.setDate(d.getDate() + DEFAULT_TRIAL_DAYS);
+    setDateValue(d.toISOString().split("T")[0]);
+  }
+
+  const { label, color } = trialStatus(dateValue || null);
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Período de prueba — {user.name}</DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
+          <Box>
+            <FormLabel sx={FORM_LABEL_SX}>Vencimiento de la prueba</FormLabel>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <DatePicker
+                value={dateValue ? parseISO(dateValue) : null}
+                onChange={d => setDateValue(d ? format(d, "yyyy-MM-dd") : "")}
+                slotProps={{ textField: { fullWidth: true, size: "small" } }}
+              />
+            </LocalizationProvider>
+          </Box>
+          {dateValue && (
+            <Box sx={{ bgcolor: "grey.50", borderRadius: 2, px: 2, py: 1.5, border: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="body2" fontWeight={700}>Estado actual</Typography>
+              <Chip label={label} color={color} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
+            </Box>
+          )}
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <Button
+              size="small"
+              variant="outlined"
+              sx={{ textTransform: "none", borderRadius: 2, fontSize: "0.8rem" }}
+              onClick={resetToDefault}
+            >
+              Renovar {DEFAULT_TRIAL_DAYS} días desde hoy
+            </Button>
+            {dateValue && (
+              <Button
+                size="small"
+                color="inherit"
+                sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary", fontSize: "0.8rem" }}
+                onClick={() => setDateValue("")}
+              >
+                Quitar restricción
+              </Button>
+            )}
+          </Box>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: fullScreen ? "column-reverse" : "row" }}>
+        <Button onClick={onClose} fullWidth={fullScreen} sx={{ textTransform: "none", borderRadius: 2, color: "text.secondary" }}>Cancelar</Button>
         <Button
           variant="contained"
           onClick={() => mutation.mutate()}
@@ -530,6 +630,7 @@ function UserRow({
   token,
   onDelete,
   onEditPayment,
+  onEditTrial,
   onResetPassword,
   onEditSports,
 }: {
@@ -538,6 +639,7 @@ function UserRow({
   token: string;
   onDelete: () => void;
   onEditPayment: () => void;
+  onEditTrial: () => void;
   onResetPassword: () => void;
   onEditSports: () => void;
 }) {
@@ -563,6 +665,7 @@ function UserRow({
   });
 
   const { nextDate, label: payLabel, color: payColor } = paymentStatus(user.lastPaymentDate);
+  const { label: trialLabel, color: trialColor } = trialStatus(user.trialEndsAt);
   const initials = user.name.split(" ").slice(0, 2).map(w => w[0].toUpperCase()).join("");
 
   return (
@@ -608,6 +711,15 @@ function UserRow({
               variant={payColor === "default" ? "outlined" : "filled"}
               sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700 }}
             />
+            {user.role !== "superadmin" && (
+              <Chip
+                label={trialLabel}
+                size="small"
+                color={trialColor}
+                variant={trialColor === "default" ? "outlined" : "filled"}
+                sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700 }}
+              />
+            )}
           </Box>
 
           {/* Username + sports */}
@@ -683,6 +795,11 @@ function UserRow({
                   <EditCalendarIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+              <Tooltip title="Período de prueba">
+                <IconButton size="small" onClick={onEditTrial} sx={{ color: trialColor === "error" ? "error.main" : "text.secondary" }}>
+                  <HourglassEmptyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Cambiar contraseña">
                 <IconButton size="small" onClick={onResetPassword} sx={{ color: "text.secondary" }}>
                   <LockResetIcon fontSize="small" />
@@ -722,6 +839,7 @@ export default function AdminUsers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<AdminUser | null>(null);
+  const [trialTarget, setTrialTarget] = useState<AdminUser | null>(null);
   const [resetPassTarget, setResetPassTarget] = useState<AdminUser | null>(null);
   const [editSportsTarget, setEditSportsTarget] = useState<AdminUser | null>(null);
   const [search, setSearch] = useState("");
@@ -837,6 +955,7 @@ export default function AdminUsers() {
               token={token!}
               onDelete={() => setDeleteTarget(u)}
               onEditPayment={() => setPaymentTarget(u)}
+              onEditTrial={() => setTrialTarget(u)}
               onResetPassword={() => setResetPassTarget(u)}
               onEditSports={() => setEditSportsTarget(u)}
             />
@@ -860,6 +979,10 @@ export default function AdminUsers() {
 
       {paymentTarget && (
         <PaymentDialog user={paymentTarget} token={token!} onClose={() => setPaymentTarget(null)} />
+      )}
+
+      {trialTarget && (
+        <TrialDialog user={trialTarget} token={token!} onClose={() => setTrialTarget(null)} />
       )}
 
       {resetPassTarget && (

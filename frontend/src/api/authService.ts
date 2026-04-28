@@ -23,6 +23,7 @@ export interface AdminUser {
   role: "superadmin" | "user";
   isActive: boolean;
   lastPaymentDate: string | null;
+  trialEndsAt: string | null;
   sports: string[];
   createdAt: string;
 }
@@ -49,10 +50,15 @@ export async function apiCreateUser(
   return data;
 }
 
+export async function apiVerifySession(): Promise<AdminUser> {
+  const { data } = await axios.get<AdminUser>(`${API}/auth/me`);
+  return data;
+}
+
 export async function apiUpdateUser(
   token: string,
   id: number,
-  payload: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; sports?: string[] }
+  payload: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; trialEndsAt?: string | null; sports?: string[] }
 ): Promise<AdminUser> {
   const { data } = await axios.put<AdminUser>(`${API}/auth/users/${id}`, payload, {
     headers: { Authorization: `Bearer ${token}` },

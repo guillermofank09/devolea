@@ -23,6 +23,9 @@ export class User {
   @Column({ type: "date", nullable: true, default: null })
   lastPaymentDate!: string | null;
 
+  @Column({ type: "date", nullable: true, default: null })
+  trialEndsAt!: string | null;
+
   @Column({
     type: "text",
     nullable: true,

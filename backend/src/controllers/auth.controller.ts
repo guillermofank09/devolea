@@ -28,6 +28,8 @@ export async function login(req: Request, res: Response) {
       res.status(401).json({ message: "Usuario o contraseña incorrectos." });
     } else if (err.message === "ACCOUNT_DISABLED") {
       res.status(403).json({ message: "Tu cuenta está deshabilitada. Contactá al administrador para poder utilizar el sistema." });
+    } else if (err.message === "TRIAL_EXPIRED") {
+      res.status(403).json({ message: "Tu período de prueba ha vencido. Contactá al administrador.", code: "TRIAL_EXPIRED" });
     } else {
       res.status(500).json({ message: "Error al iniciar sesión." });
     }
@@ -60,14 +62,30 @@ export async function getUsers(_req: Request, res: Response) {
   }
 }
 
-export async function updateUser(req: Request, res: Response) {
-  const { name, password, isActive, lastPaymentDate, sports } = req.body;
+export async function getMe(req: Request, res: Response) {
   try {
-    const dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; sports?: string[] } = {};
+    const user = await getService().getMe(req.authUser!.sub);
+    res.json(user);
+  } catch (err: any) {
+    if (err.message === "TRIAL_EXPIRED") {
+      res.status(403).json({ message: "Período de prueba vencido.", code: "TRIAL_EXPIRED" });
+    } else if (err.message === "ACCOUNT_DISABLED") {
+      res.status(403).json({ message: "Cuenta deshabilitada.", code: "ACCOUNT_DISABLED" });
+    } else {
+      res.status(404).json({ message: "Usuario no encontrado." });
+    }
+  }
+}
+
+export async function updateUser(req: Request, res: Response) {
+  const { name, password, isActive, lastPaymentDate, trialEndsAt, sports } = req.body;
+  try {
+    const dto: { name?: string; password?: string; isActive?: boolean; lastPaymentDate?: string | null; trialEndsAt?: string | null; sports?: string[] } = {};
     if (name !== undefined) dto.name = name;
     if (password !== undefined) dto.password = password;
     if (isActive !== undefined) dto.isActive = isActive;
     if ("lastPaymentDate" in req.body) dto.lastPaymentDate = lastPaymentDate ?? null;
+    if ("trialEndsAt" in req.body) dto.trialEndsAt = trialEndsAt ?? null;
     if (Array.isArray(sports)) dto.sports = sports;
     const user = await getService().updateUser(Number(req.params.id), dto);
     res.json(user);

@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { ReactNode } from "react";
-import { apiLogin, apiImpersonate } from "../api/authService";
+import { apiLogin, apiImpersonate, apiVerifySession } from "../api/authService";
 import type { AuthUser } from "../api/authService";
 
 interface AuthContextValue {
@@ -83,6 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSuperadminSession(null);
     persist(superadminSession.token, superadminSession.user);
   }, [superadminSession, persist]);
+
+  // On mount: verify session is still valid (catches expired trials)
+  useEffect(() => {
+    if (!token || user?.role === "superadmin") return;
+    apiVerifySession().catch((err: any) => {
+      if (err?.response?.status === 403 && err?.response?.data?.code === "TRIAL_EXPIRED") {
+        logout();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{
