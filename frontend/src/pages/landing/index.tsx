@@ -334,7 +334,9 @@ export default function Landing() {
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="lp-nav">
         <div className="lp-nav-inner">
-          <img src={logo} alt="Devolea" className="lp-nav-logo" />
+          <a href="#" onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ display: "flex", lineHeight: 0 }}>
+            <img src={logo} alt="Devolea" className="lp-nav-logo" />
+          </a>
           {/* Cambio 11 — anchor links in desktop nav */}
           <div className="lp-nav-links">
             <a href="#features">Funcionalidades</a>
