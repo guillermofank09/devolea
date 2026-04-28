@@ -1168,6 +1168,7 @@
 @media (max-width: 600px) {
   /* Navbar */
   .lp-nav-inner { padding: 0 16px; }
+  .lp-btn-wa { display: none; }
 
   /* Hero */
   .lp-hero { padding: 86px 20px 64px; }
