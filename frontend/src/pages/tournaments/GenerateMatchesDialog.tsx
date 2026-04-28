@@ -12,7 +12,6 @@ import {
   FormControlLabel,
   FormGroup,
   FormLabel,
-  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
@@ -186,16 +185,19 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
   };
 
   const mutation = useMutation({
-    mutationFn: () =>
-      selectedFormat === "PERSONALIZADO"
-        ? setTournamentFormat(tournamentId, "PERSONALIZADO")
-        : generateMatches(
-            tournamentId,
-            startTime ? new Date(startTime).toISOString() : undefined,
-            courtIds.length > 0 ? courtIds : undefined,
-            matchDuration,
-            selectedFormat,
-          ),
+    mutationFn: async () => {
+      if (selectedFormat === "PERSONALIZADO") {
+        await setTournamentFormat(tournamentId, "PERSONALIZADO");
+      } else {
+        await generateMatches(
+          tournamentId,
+          startTime ? new Date(startTime).toISOString() : undefined,
+          courtIds.length > 0 ? courtIds : undefined,
+          matchDuration,
+          selectedFormat,
+        );
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
       onGenerated();
