@@ -342,14 +342,6 @@ export default function Landing() {
             <a href="#precios">Precios</a>
           </div>
           <div className="lp-nav-actions">
-            <a
-              className="lp-btn-primary lp-btn-wa"
-              href={WA_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Prueba Devolea
-            </a>
             <button className="lp-btn-outline lp-nav-login" onClick={() => navigate("/login")}>
               Iniciar sesión
             </button>

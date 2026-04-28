@@ -1168,8 +1168,6 @@
 @media (max-width: 600px) {
   /* Navbar */
   .lp-nav-inner { padding: 0 16px; }
-  .lp-btn-wa { padding: 7px 14px; font-size: 13px; }
-  .lp-btn-outline.lp-nav-login { display: none; }
 
   /* Hero */
   .lp-hero { padding: 86px 20px 64px; }
