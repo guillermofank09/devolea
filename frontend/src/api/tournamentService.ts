@@ -72,6 +72,9 @@ export const updateMatch = (matchId: number, data: {
 }): Promise<TournamentMatch> =>
   axios.put(`${BASE}/tournaments/matches/${matchId}`, data).then(r => r.data);
 
+export const deleteMatch = (matchId: number): Promise<void> =>
+  axios.delete(`${BASE}/tournaments/matches/${matchId}`).then(() => undefined);
+
 export const disqualifyPair = (tournamentId: number, pairId: number): Promise<Pair> =>
   axios.post(`${BASE}/tournaments/${tournamentId}/pairs/${pairId}/disqualify`).then(r => r.data);
 

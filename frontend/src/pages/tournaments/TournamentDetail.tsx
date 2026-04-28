@@ -26,7 +26,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import BlockIcon from "@mui/icons-material/Block";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTournamentById, removePair, removeTeam, resetMatches, triggerRepechage, disqualifyPair, disqualifyTeam, createPlaceholderMatch } from "../../api/tournamentService";
+import { fetchTournamentById, removePair, removeTeam, resetMatches, triggerRepechage, disqualifyPair, disqualifyTeam, createPlaceholderMatch, deleteMatch } from "../../api/tournamentService";
 import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentTeam } from "../../types/Tournament";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
@@ -176,6 +176,9 @@ export default function TournamentDetail() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] }),
   });
 
+  const [deleteMatchTarget, setDeleteMatchTarget] = useState<number | null>(null);
+  const [deletePhaseTarget, setDeletePhaseTarget] = useState<number | null>(null);
+
   const [addMatchError, setAddMatchError] = useState<string | null>(null);
   const addMatchMutation = useMutation({
     mutationFn: ({ round, matchNumber }: { round: number; matchNumber: number }) =>
@@ -189,12 +192,31 @@ export default function TournamentDetail() {
     ),
   });
 
+  const deleteMatchMutation = useMutation({
+    mutationFn: (matchId: number) => deleteMatch(matchId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
+      setDeleteMatchTarget(null);
+    },
+  });
+
+  const deletePhaseMutation = useMutation({
+    mutationFn: async (round: number) => {
+      const matchIds = data?.matches.filter(m => m.round === round).map(m => m.id) ?? [];
+      await Promise.all(matchIds.map(deleteMatch));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
+      setDeletePhaseTarget(null);
+    },
+  });
+
   const resetMutation = useMutation({
     mutationFn: () => resetMatches(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
       setResetConfirmOpen(false);
-      setGenerateOpen(true);
+      if (data?.format !== "PERSONALIZADO") setGenerateOpen(true);
     },
   });
 
@@ -467,7 +489,7 @@ export default function TournamentDetail() {
             </Button>
           )}
           {canTriggerRepechaje && <RepechajeButton tournamentId={Number(id)} />}
-          {hasMatches && !isCustom && (!isBracket || !round1Done) && (
+          {hasMatches && (isCustom || !isBracket || !round1Done) && (
             <Button
               size="small"
               variant="contained"
@@ -503,11 +525,15 @@ export default function TournamentDetail() {
       {/* Personalizado */}
       {isCustom && (
         <CustomView
+          tournamentId={Number(id)}
           matches={data.matches}
           teamMode={teamMode}
+          sex={data.sex}
           onEditMatch={m => setEditMatch(m)}
           onAddMatchToPhase={handleAddMatchToRound}
           onAddPhase={handleAddNewRound}
+          onDeleteMatch={id => setDeleteMatchTarget(id)}
+          onDeletePhase={round => setDeletePhaseTarget(round)}
           loading={addMatchMutation.isPending}
           error={addMatchError}
           onClearError={() => setAddMatchError(null)}
@@ -619,8 +645,8 @@ export default function TournamentDetail() {
               />
             )}
             <Chip
-              label={getDateStatus(data.startDate, data.endDate).label}
-              color={getDateStatus(data.startDate, data.endDate).color}
+              label={isCustom && data.status === "COMPLETED" ? "Finalizado" : getDateStatus(data.startDate, data.endDate).label}
+              color={isCustom && data.status === "COMPLETED" ? "primary" : getDateStatus(data.startDate, data.endDate).color}
               size="small"
               sx={{ fontWeight: 700 }}
             />
@@ -725,6 +751,7 @@ export default function TournamentDetail() {
           tournamentId={Number(id)}
           sport={data.sport}
           totalRounds={isBracket && bracketMatches.length > 0 ? Math.max(...bracketMatches.map(m => m.round)) : undefined}
+          isCustomTournament={isCustom}
           tournamentStartDate={data.startDate}
           tournamentEndDate={data.endDate}
         />
@@ -755,6 +782,24 @@ export default function TournamentDetail() {
         loading={resetMutation.isPending}
         onClose={() => setResetConfirmOpen(false)}
         onConfirm={() => resetMutation.mutate()}
+      />
+      <DeleteDialog
+        open={deleteMatchTarget !== null}
+        title="Eliminar partido"
+        description="¿Eliminar este partido de la fase? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={deleteMatchMutation.isPending}
+        onClose={() => setDeleteMatchTarget(null)}
+        onConfirm={() => deleteMatchTarget !== null && deleteMatchMutation.mutate(deleteMatchTarget)}
+      />
+      <DeleteDialog
+        open={deletePhaseTarget !== null}
+        title="Eliminar fase"
+        description="Se eliminarán todos los partidos de esta fase. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar fase"
+        loading={deletePhaseMutation.isPending}
+        onClose={() => setDeletePhaseTarget(null)}
+        onConfirm={() => deletePhaseTarget !== null && deletePhaseMutation.mutate(deletePhaseTarget)}
       />
     </Box>
   );

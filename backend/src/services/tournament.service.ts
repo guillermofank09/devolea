@@ -218,6 +218,10 @@ export class TournamentService {
     await this.tRepo.update(tournamentId, { format: null as any, status: "DRAFT" });
   }
 
+  async deleteMatch(matchId: number): Promise<void> {
+    await this.mRepo.delete(matchId);
+  }
+
   private async generateMatchesTeamMode(tournamentId: number, startTime: Date | null, courtIds: number[], matchDuration: number, formatOverride?: string): Promise<TournamentMatch[]> {
     const teams = await this.ttRepo.find({ where: { tournament: { id: tournamentId } } });
     if (teams.length < 2) throw new Error("Se necesitan al menos 2 equipos para generar cruces");
@@ -917,6 +921,11 @@ export class TournamentService {
       this.propagateWinnerToNextRound(match).catch(() => {});
     }
 
+    // Auto-complete PERSONALIZADO tournament when no pending matches remain
+    if (match.tournament?.id) {
+      this.checkAndCompletePersonalizado(match.tournament.id).catch(() => {});
+    }
+
     // Reload after save to get full relations (especially court)
     return await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true } });
   }
@@ -1035,5 +1044,22 @@ export class TournamentService {
     }
 
     if (toSave.length) await this.mRepo.save(toSave);
+  }
+
+  private async checkAndCompletePersonalizado(tournamentId: number): Promise<void> {
+    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    if (!tournament || tournament.format !== "PERSONALIZADO") return;
+
+    const allMatches = await this.mRepo.find({ where: { tournament: { id: tournamentId } } });
+    if (allMatches.length === 0) return;
+
+    const maxRound = Math.max(...allMatches.map(m => m.round));
+    const lastRound = allMatches.filter(m => m.round === maxRound);
+    const isDone = lastRound.every(m => m.status !== "PENDING") && lastRound.some(m => m.winnerId != null);
+
+    const newStatus = isDone ? "COMPLETED" : "ACTIVE";
+    if (tournament.status !== newStatus) {
+      await this.tRepo.update(tournamentId, { status: newStatus as any });
+    }
   }
 }

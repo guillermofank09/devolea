@@ -58,7 +58,8 @@ import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail
 import type { PublicBookingSlot, PublicCourt, PublicProfesor, PaginatedTournaments } from "../../api/publicService";
 import PageLoader from "../../components/common/PageLoader";
 import GoogleMapView from "../../components/common/GoogleMapView";
-import BracketView from "../tournaments/BracketView";
+import BracketView, { getRoundLabel } from "../tournaments/BracketView";
+import ChampionBanner from "../../components/common/ChampionBanner";
 import { trackEvent } from "../../lib/analytics";
 import { SPORT_LABEL } from "../../constants/sports";
 
@@ -254,10 +255,193 @@ function RoundRobinList({ matches, teamMode = false }: { matches: TournamentMatc
   );
 }
 
+// ─── custom (PERSONALIZADO) bracket view ─────────────────────────────────────
+
+const PUB_COL_W = 210;
+const PUB_COL_GAP = 24;
+const PUB_MATCH_H = 90;
+
+function PublicPhaseMatchCard({ match, teamMode }: { match: TournamentMatch; teamMode?: boolean }) {
+  const isCompleted = match.status === "COMPLETED";
+  const isForfeit = match.status === "FORFEIT";
+  const live = match.liveStatus ? LIVE_STATUS_COLORS[match.liveStatus] : null;
+  const pair1Won = match.winnerId != null && (teamMode ? match.team1?.id === match.winnerId : match.pair1?.id === match.winnerId);
+  const pair2Won = match.winnerId != null && (teamMode ? match.team2?.id === match.winnerId : match.pair2?.id === match.winnerId);
+  const stripeColor = live ? live.stripe : isCompleted ? "#10b981" : isForfeit ? "#94a3b8" : "#cbd5e1";
+
+  const label = (id: number | undefined, winner: boolean, loser: boolean, name: string) => (
+    <Box sx={{ flex: 1, display: "flex", alignItems: "center", px: 1.5, gap: 0.75, overflow: "hidden", bgcolor: winner ? "rgba(16,185,129,0.05)" : "transparent" }}>
+      <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: winner ? 700 : 500, color: loser ? "text.disabled" : "text.primary", flex: 1, minWidth: 0 }}>
+        {name}
+      </Typography>
+      {winner && <EmojiEventsIcon sx={{ fontSize: 13, color: "#f5ad27", flexShrink: 0 }} />}
+    </Box>
+  );
+
+  const n1 = teamMode ? teamLabel(match.team1) : pairLabel(match.pair1);
+  const n2 = teamMode ? teamLabel(match.team2) : pairLabel(match.pair2);
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        width: "100%", height: PUB_MATCH_H,
+        border: "1px solid",
+        borderColor: live ? live.border : isCompleted ? "#d1fae5" : "#e2e8f0",
+        bgcolor: live ? live.bg : "#fff",
+        borderRadius: 3, overflow: "hidden", display: "flex",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 16px rgba(0,0,0,0.08)" },
+      }}
+    >
+      <Box sx={{ width: 6, flexShrink: 0, bgcolor: stripeColor }} />
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {label(teamMode ? match.team1?.id : match.pair1?.id, pair1Won, pair2Won, n1)}
+        <Box sx={{ height: "1px", bgcolor: "#f1f5f9" }} />
+        {label(teamMode ? match.team2?.id : match.pair2?.id, pair2Won, pair1Won, n2)}
+        <Box sx={{ px: 1.5, py: 0.4, bgcolor: "grey.50", display: "flex", alignItems: "center", gap: 1, mt: "auto" }}>
+          {match.result ? (
+            <Typography variant="caption" fontWeight={800} sx={{ fontSize: "0.68rem" }}>{match.result}</Typography>
+          ) : live ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: live.stripe, animation: "pulse 2s infinite" }} />
+              <Typography variant="caption" fontWeight={700} sx={{ fontSize: "0.65rem", color: live.text, textTransform: "uppercase" }}>{live.label}</Typography>
+            </Box>
+          ) : match.scheduledAt ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, color: "text.disabled" }}>
+              <AccessTimeIcon sx={{ fontSize: 10 }} />
+              <Typography variant="caption" sx={{ fontSize: "0.63rem", fontWeight: 600 }}>
+                {new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="caption" sx={{ fontSize: "0.63rem", color: "text.disabled" }}>Pendiente</Typography>
+          )}
+        </Box>
+      </Box>
+    </Paper>
+  );
+}
+
+const PUB_CARD_GAP = 16;
+
+function PublicCustomView({ matches, teamMode = false, sex }: { matches: TournamentMatch[]; teamMode?: boolean; sex?: string | null }) {
+  const phases: Record<number, TournamentMatch[]> = {};
+  matches.forEach(m => {
+    if (!phases[m.round]) phases[m.round] = [];
+    phases[m.round].push(m);
+  });
+  const rounds = Object.keys(phases).map(Number).sort((a, b) => a - b);
+  const totalRounds = rounds.length;
+  const allRoundCounts = rounds.map(r => phases[r].length);
+
+  if (rounds.length === 0) return null;
+
+  // BracketView-style posMap: Y center of each card
+  const posMap = new Map<string, number>();
+  const span0 = PUB_MATCH_H + PUB_CARD_GAP;
+
+  phases[rounds[0]].forEach((_, i) => {
+    posMap.set(`${rounds[0]}-${i}`, PUB_MATCH_H / 2 + i * span0);
+  });
+
+  for (let rIdx = 1; rIdx < rounds.length; rIdx++) {
+    const prev = rounds[rIdx - 1];
+    const curr = rounds[rIdx];
+    const prevCount = allRoundCounts[rIdx - 1];
+    const currCount = allRoundCounts[rIdx];
+    phases[curr].forEach((_, i) => {
+      if (currCount === prevCount) {
+        posMap.set(`${curr}-${i}`, posMap.get(`${prev}-${i}`) ?? 0);
+      } else {
+        const ratio = prevCount / currCount;
+        const start = Math.floor(i * ratio);
+        const end = Math.min(Math.ceil((i + 1) * ratio) - 1, prevCount - 1);
+        const cy1 = posMap.get(`${prev}-${start}`) ?? 0;
+        const cy2 = posMap.get(`${prev}-${end}`) ?? cy1;
+        posMap.set(`${curr}-${i}`, (cy1 + cy2) / 2);
+      }
+    });
+  }
+
+  const allCenters = Array.from(posMap.values());
+  const totalH = Math.max(...allCenters) + PUB_MATCH_H / 2;
+  const totalW = rounds.length * PUB_COL_W + (rounds.length - 1) * PUB_COL_GAP;
+
+  // Champion from last phase
+  const lastRound = rounds[rounds.length - 1];
+  const lastCompleted = (phases[lastRound] ?? []).find(m => m.winnerId != null && m.status === "COMPLETED");
+  let champion: Pair | null = null;
+  let championLabel: string | undefined;
+  if (lastCompleted) {
+    if (teamMode) {
+      const t = lastCompleted.team1?.id === lastCompleted.winnerId ? lastCompleted.team1 : lastCompleted.team2;
+      championLabel = t?.equipo?.name;
+    } else {
+      champion = lastCompleted.pair1?.id === lastCompleted.winnerId ? (lastCompleted.pair1 ?? null) : (lastCompleted.pair2 ?? null);
+    }
+  }
+
+  return (
+    <Box>
+      <Box sx={{ overflowX: "auto", pb: 2 }}>
+        <Box sx={{ minWidth: totalW }}>
+          {/* Column headers */}
+          <Box sx={{ display: "flex", mb: 2 }}>
+            {rounds.map((round, rIdx) => (
+              <Box key={round} sx={{ width: PUB_COL_W, flexShrink: 0, textAlign: "center", mr: rIdx < rounds.length - 1 ? `${PUB_COL_GAP}px` : 0 }}>
+                <Paper elevation={0} sx={{ py: 0.75, px: 2, borderRadius: 2, bgcolor: "grey.50", display: "inline-flex", alignItems: "center" }}>
+                  <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: 1.2, fontSize: "0.7rem", color: "primary.main" }}>
+                    {getRoundLabel(rIdx + 1, totalRounds, allRoundCounts)}
+                  </Typography>
+                </Paper>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Absolutely-positioned match cards */}
+          <Box sx={{ position: "relative", width: totalW, height: totalH }}>
+            {rounds.map((round, rIdx) =>
+              phases[round].map((m, mIdx) => {
+                const cy = posMap.get(`${round}-${mIdx}`) ?? 0;
+                return (
+                  <Box
+                    key={m.id}
+                    sx={{
+                      position: "absolute",
+                      top: cy - PUB_MATCH_H / 2,
+                      left: rIdx * (PUB_COL_W + PUB_COL_GAP),
+                      width: PUB_COL_W,
+                      height: PUB_MATCH_H,
+                    }}
+                  >
+                    <PublicPhaseMatchCard match={m} teamMode={teamMode} />
+                  </Box>
+                );
+              })
+            )}
+          </Box>
+        </Box>
+      </Box>
+
+      {(champion || championLabel) && (
+        <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+          <Box sx={{ width: "100%", maxWidth: 360 }}>
+            <ChampionBanner champion={champion ?? undefined} championLabel={championLabel} sex={sex} />
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 // ─── tournament card ──────────────────────────────────────────────────────────
 
 function PublicTournamentCard({ tournament, onSelect }: { tournament: any; onSelect: (t: any) => void }) {
-  const status = getTournamentStatus(tournament.startDate, tournament.endDate);
+  const isCompleted = tournament.format === "PERSONALIZADO" && tournament.status === "COMPLETED";
+  const status = isCompleted
+    ? { label: "Finalizado", color: "primary" as const }
+    : getTournamentStatus(tournament.startDate, tournament.endDate);
   const statusColor: Record<string, string> = { success: "#16a34a", primary: "#1d4ed8", default: "#64748b", info: "#0284c7" };
   const dotColor = statusColor[status.color] ?? "#64748b";
 
@@ -387,6 +571,8 @@ function TournamentDetailView({ username, tournament }: { username: string; tour
         <Box sx={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {data.format === "BRACKET"
             ? <BracketView matches={data.matches} sex={data.sex} readOnly teamMode={teamMode} />
+            : data.format === "PERSONALIZADO"
+            ? <PublicCustomView matches={data.matches} teamMode={teamMode} sex={data.sex} />
             : <RoundRobinList matches={data.matches} teamMode={teamMode} />
           }
         </Box>

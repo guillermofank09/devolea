@@ -121,13 +121,14 @@ interface Props {
   sport?: string;
   tournamentStartDate?: string;
   tournamentEndDate?: string;
+  isCustomTournament?: boolean;
 }
 
-export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds, sport, tournamentStartDate, tournamentEndDate }: Props) {
+export default function EditMatchDialog({ open, onClose, match, pairs, teams = [], teamMode = false, tournamentId, totalRounds, sport, tournamentStartDate, tournamentEndDate, isCustomTournament = false }: Props) {
   const { user } = useAuth();
   const isFootball = sport?.startsWith("FUTBOL") ?? false;
   const isVirtual = match.id < 0;
-  const isPlaceholder = isVirtual || (!match.pair1 && !match.pair2 && !match.team1 && !match.team2);
+  const isPlaceholder = isVirtual || (!isCustomTournament && !match.pair1 && !match.pair2 && !match.team1 && !match.team2);
 
   const [scheduledAt, setScheduledAt] = useState("");
   const [courtId, setCourtId] = useState<number | "">("");

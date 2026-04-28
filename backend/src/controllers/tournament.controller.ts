@@ -103,7 +103,6 @@ export const nextRound = async (req: Request, res: Response) => {
 export const createPlaceholderMatch = async (req: Request, res: Response) => {
   try {
     const { round, matchNumber } = req.body ?? {};
-    console.log("[placeholder-match] id=%s round=%s matchNumber=%s user=%s", req.params.id, round, matchNumber, req.authUser?.sub);
     if (!round || !matchNumber) return res.status(400).json({ error: "round y matchNumber requeridos" });
     res.status(201).json(await getService().createPlaceholderMatch(Number(req.params.id), Number(round), Number(matchNumber)));
   } catch (e: any) { res.status(400).json({ error: e.message }); }
@@ -120,6 +119,11 @@ export const updateMatch = async (req: Request, res: Response) => {
     if (!m) return res.status(404).json({ error: "Partido no encontrado" });
     res.json(m);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+};
+
+export const deleteMatch = async (req: Request, res: Response) => {
+  try { await getService().deleteMatch(Number(req.params.matchId)); res.json({ message: "Partido eliminado" }); }
+  catch (e: any) { res.status(500).json({ error: e.message }); }
 };
 
 export const triggerRepechage = async (req: Request, res: Response) => {
