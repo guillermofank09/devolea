@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -38,6 +37,7 @@ import type { Booking } from "../../types/Booking";
 import { FORM_LABEL_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
+import PageLoader from "../../components/common/PageLoader";
 
 interface SetScore { p1: string; p2: string; }
 
@@ -942,7 +942,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
           fullWidth={fullScreen}
-          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+          startIcon={mutation.isPending ? <PageLoader size={14} /> : undefined}
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
         >
           {mutation.isPending ? "Guardando…" : "Guardar cambios"}

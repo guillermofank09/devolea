@@ -3,7 +3,6 @@ import {
   Avatar,
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -23,6 +22,7 @@ import type { Player } from "../../types/Player";
 import type { Pair } from "../../types/Tournament";
 import AddEditPlayer from "../players/AddEditPlayer";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
+import PageLoader from "../../components/common/PageLoader";
 
 const CREATE_OPTION_ID = -1;
 type Option = Player | { id: typeof CREATE_OPTION_ID; name: string };
@@ -123,7 +123,7 @@ export default function AddPlayerDialog({ open, onClose, tournamentId, existingP
                   size="small"
                   InputProps={{
                     ...params.InputProps,
-                    endAdornment: <>{isFetching && <CircularProgress size={16} />}{params.InputProps.endAdornment}</>,
+                    endAdornment: <>{isFetching && <PageLoader size={16} />}{params.InputProps.endAdornment}</>,
                   }}
                 />
               )}
@@ -171,7 +171,7 @@ export default function AddPlayerDialog({ open, onClose, tournamentId, existingP
             fullWidth={fullScreen}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
-            {mutation.isPending ? <CircularProgress size={18} /> : "Agregar jugador"}
+            {mutation.isPending ? <PageLoader size={18} /> : "Agregar jugador"}
           </Button>
         </DialogActions>
       </Dialog>

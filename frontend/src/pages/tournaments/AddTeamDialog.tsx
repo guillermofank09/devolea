@@ -3,7 +3,6 @@ import {
   Avatar,
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -156,7 +155,7 @@ export default function AddTeamDialog({ open, onClose, tournamentId, existingTea
           disabled={!equipoId || mutation.isPending}
           onClick={() => mutation.mutate()}
           fullWidth={fullScreen}
-          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+          startIcon={mutation.isPending ? <PageLoader size={14} /> : undefined}
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
         >
           {mutation.isPending ? "Agregando…" : "Agregar"}

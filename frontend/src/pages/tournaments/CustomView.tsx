@@ -1,7 +1,8 @@
-import { Alert, Box, Button, Chip, CircularProgress, Divider, IconButton, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Divider, IconButton, Tooltip, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import type { TournamentMatch, Pair, TournamentTeam } from "../../types/Tournament";
+import PageLoader from "../../components/common/PageLoader";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -102,9 +103,10 @@ interface Props {
   onAddPhase: () => void;
   loading?: boolean;
   error?: string | null;
+  onClearError?: () => void;
 }
 
-export default function CustomView({ matches, onEditMatch, onAddMatchToPhase, onAddPhase, loading, error }: Props) {
+export default function CustomView({ matches, onEditMatch, onAddMatchToPhase, onAddPhase, loading, error, onClearError }: Props) {
   const phases: Record<number, TournamentMatch[]> = {};
   matches.forEach(m => {
     if (!phases[m.round]) phases[m.round] = [];
@@ -118,10 +120,10 @@ export default function CustomView({ matches, onEditMatch, onAddMatchToPhase, on
         <Typography variant="body2" color="text.secondary" textAlign="center">
           No hay fases ni partidos. Comenzá agregando la primera fase.
         </Typography>
-        {error && <Alert severity="error" sx={{ width: "100%", maxWidth: 360 }}>{error}</Alert>}
+        {error && <Alert severity="error" onClose={onClearError} sx={{ width: "100%", maxWidth: 360 }}>{error}</Alert>}
         <Button
           variant="contained"
-          startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <AddIcon />}
+          startIcon={loading ? <PageLoader size={14} /> : <AddIcon />}
           onClick={onAddPhase}
           disabled={loading}
           sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}

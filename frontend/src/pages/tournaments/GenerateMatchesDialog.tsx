@@ -4,7 +4,6 @@ import {
   Button,
   Checkbox,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,6 +21,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import PageLoader from "../../components/common/PageLoader";
 import { es } from "date-fns/locale";
 import { format, parseISO } from "date-fns";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
@@ -366,7 +366,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           fullWidth={fullScreen}
           sx={{ textTransform: "none", fontWeight: 600 }}
         >
-          {mutation.isPending ? <CircularProgress size={18} /> : selectedFormat === "PERSONALIZADO" ? "Confirmar" : "Generar"}
+          {mutation.isPending ? <PageLoader size={18} /> : selectedFormat === "PERSONALIZADO" ? "Confirmar" : "Generar"}
         </Button>
       </DialogActions>
     </Dialog>

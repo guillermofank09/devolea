@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Divider,
   IconButton,
   LinearProgress,
@@ -185,7 +184,9 @@ export default function TournamentDetail() {
       setAddMatchError(null);
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", id] });
     },
-    onError: (e: any) => setAddMatchError(e?.response?.data?.error ?? "Error al agregar el partido"),
+    onError: (e: any) => setAddMatchError(
+      e?.response?.data?.error ?? e?.response?.data?.message ?? e?.message ?? "Error al agregar el partido"
+    ),
   });
 
   const resetMutation = useMutation({
@@ -237,12 +238,14 @@ export default function TournamentDetail() {
   const maxBracketRound = bracketMatches.length > 0 ? Math.max(...bracketMatches.map(m => m.round)) : 0;
 
   const handleAddMatchToRound = (round: number) => {
-    const inRound = bracketMatches.filter(m => m.round === round);
+    setAddMatchError(null);
+    const inRound = data.matches.filter(m => m.round === round && !m.isRepechage);
     const nextMatchNumber = inRound.length + 1;
     addMatchMutation.mutate({ round, matchNumber: nextMatchNumber });
   };
 
   const handleAddNewRound = (round?: number) => {
+    setAddMatchError(null);
     const next = round ?? (data.matches.length > 0 ? Math.max(...data.matches.map(m => m.round)) + 1 : 1);
     addMatchMutation.mutate({ round: next, matchNumber: 1 });
   };
@@ -507,6 +510,7 @@ export default function TournamentDetail() {
           onAddPhase={handleAddNewRound}
           loading={addMatchMutation.isPending}
           error={addMatchError}
+          onClearError={() => setAddMatchError(null)}
         />
       )}
 
@@ -771,7 +775,7 @@ function RepechajeButton({ tournamentId }: { tournamentId: number }) {
       onClick={() => mutation.mutate()}
       sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}
     >
-      {mutation.isPending ? <CircularProgress size={14} color="inherit" /> : "Configurar repechaje"}
+      {mutation.isPending ? <PageLoader size={14} /> : "Configurar repechaje"}
     </Button>
   );
 }

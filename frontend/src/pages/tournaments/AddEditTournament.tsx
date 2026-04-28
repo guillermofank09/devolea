@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -27,6 +26,7 @@ import { FORM_LABEL_SX, FORM_INPUT_SX } from "../../styles/formStyles";
 import { useAuth } from "../../context/AuthContext";
 import { fetchCourts } from "../../api/courtService";
 import type { Court } from "../../types/Court";
+import PageLoader from "../../components/common/PageLoader";
 
 const toDate = (s: string): Date | null => (s ? parseISO(s) : null);
 const fromDate = (d: Date | null): string => (d ? format(d, "yyyy-MM-dd") : "");
@@ -306,7 +306,7 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
             type="submit"
             disabled={!isValid || mutation.isPending}
             fullWidth={fullScreen}
-            startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+            startIcon={mutation.isPending ? <PageLoader size={14} /> : undefined}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
           >
             {mutation.isPending ? "Guardando…" : isEditing ? "Guardar cambios" : "Agregar"}

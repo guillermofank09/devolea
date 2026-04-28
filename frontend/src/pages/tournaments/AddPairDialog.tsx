@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -34,6 +33,7 @@ import type { Booking } from "../../types/Booking";
 import AddEditPlayer from "../players/AddEditPlayer";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import { FORM_LABEL_SX } from "../../styles/formStyles";
+import PageLoader from "../../components/common/PageLoader";
 
 const CATEGORY_LABEL: Record<PlayerCategory, string> = {
   PRIMERA: "1ra", SEGUNDA: "2da", TERCERA: "3ra", CUARTA: "4ta",
@@ -136,7 +136,7 @@ function PlayerSelector({
           size="small"
           InputProps={{
             ...params.InputProps,
-            endAdornment: <>{isFetching && <CircularProgress size={16} />}{params.InputProps.endAdornment}</>,
+            endAdornment: <>{isFetching && <PageLoader size={16} />}{params.InputProps.endAdornment}</>,
           }}
         />
       )}
@@ -465,7 +465,7 @@ export default function AddPairDialog({
             fullWidth={fullScreen}
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
-            {mutation.isPending ? <CircularProgress size={18} /> : "Agregar pareja"}
+            {mutation.isPending ? <PageLoader size={18} /> : "Agregar pareja"}
           </Button>
         </DialogActions>
       </Dialog>
