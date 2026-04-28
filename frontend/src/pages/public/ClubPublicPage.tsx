@@ -1762,12 +1762,63 @@ export default function ClubPublicPage() {
 
   if (profileError || !profile) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", bgcolor: COLORS.panelBg }}>
-        <Box sx={{ textAlign: "center", p: 4 }}>
-          <SportsTennisIcon sx={{ fontSize: 64, color: COLORS.accent, mb: 2 }} />
-          <Typography variant="h5" fontWeight={800} mb={1} sx={{ color: "#fff" }}>Club no encontrado</Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.5)" }}>No existe un club con ese nombre de usuario.</Typography>
-          <Button onClick={() => navigate("/")} sx={{ mt: 3, color: COLORS.accent, fontWeight: 700 }}>Volver al inicio</Button>
+      <Box sx={{
+        display: "flex", justifyContent: "center", alignItems: "center",
+        minHeight: "100vh",
+        bgcolor: "#08111f",
+        backgroundImage: "radial-gradient(ellipse 80% 55% at 50% -10%, rgba(245,173,39,0.13), transparent)",
+      }}>
+        <Box sx={{ textAlign: "center", px: 4, py: 6, maxWidth: 480 }}>
+
+          {/* Court icon badge */}
+          <Box sx={{
+            mx: "auto", mb: 3,
+            width: 120, height: 120, borderRadius: "50%",
+            bgcolor: "rgba(245,173,39,0.07)",
+            border: "1.5px solid rgba(245,173,39,0.18)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="68" height="68" viewBox="0 0 68 68" fill="none" aria-hidden>
+              {/* Court outline */}
+              <rect x="7" y="11" width="54" height="46" rx="3" stroke="#F5AD27" strokeWidth="2.5"/>
+              {/* Center horizontal */}
+              <line x1="7" y1="34" x2="61" y2="34" stroke="#F5AD27" strokeWidth="1.8"/>
+              {/* Center vertical dashed */}
+              <line x1="34" y1="11" x2="34" y2="57" stroke="#F5AD27" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.7"/>
+              {/* Service lines */}
+              <line x1="7" y1="23" x2="61" y2="23" stroke="#F5AD27" strokeWidth="1" opacity="0.4"/>
+              <line x1="7" y1="45" x2="61" y2="45" stroke="#F5AD27" strokeWidth="1" opacity="0.4"/>
+              {/* Question mark overlay */}
+              <text x="34" y="38" textAnchor="middle" fontSize="20" fontWeight="900" fill="#F5AD27" opacity="0.35" fontFamily="sans-serif">?</text>
+            </svg>
+          </Box>
+
+          {/* Sport icons row */}
+          <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mb: 3.5 }}>
+            {[SportsTennisIcon, SportsSoccerIcon, SportsBasketballIcon, SportsVolleyballIcon].map((Icon, i) => (
+              <Icon key={i} sx={{ fontSize: 22, color: "rgba(245,173,39,0.35)" }} />
+            ))}
+          </Box>
+
+          <Typography variant="h4" fontWeight={900} sx={{ color: "#fff", letterSpacing: "-0.5px", lineHeight: 1.15, mb: 1.5 }}>
+            Club no encontrado
+          </Typography>
+          <Typography sx={{ color: "rgba(255,255,255,0.38)", fontSize: "0.95rem", lineHeight: 1.75, mb: 4 }}>
+            No existe un club registrado con ese nombre de usuario.
+            Verificá la dirección o pedile el link correcto al club.
+          </Typography>
+
+          <Button
+            onClick={() => navigate("/")}
+            sx={{
+              bgcolor: "#F5AD27", color: "#111", fontWeight: 700,
+              borderRadius: 2, px: 4, py: 1.25,
+              textTransform: "none", fontSize: "0.95rem",
+              "&:hover": { bgcolor: "#e09b18" },
+            }}
+          >
+            Ir al inicio
+          </Button>
         </Box>
       </Box>
     );
