@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Devolea — seed script
- * Genera jugadores, profesores, equipos y torneos de prueba.
+ * Genera canchas, jugadores, profesores, equipos y torneos de prueba.
  *
  * Uso:
  *   node seed.js --url http://localhost:3001 --user demo@club.com --pass 123456
@@ -11,7 +11,7 @@
  *   --user        Email del club a poblar       (requerido)
  *   --pass        Password del club             (requerido)
  *   --players     Cantidad de jugadores         (default: 60)
- *   --profesores  Cantidad de profesores        (default: 5)
+ *   --profesores  Cantidad de profesores        (default: 6)
  *   --no-torneos  Omitir generación de torneos
  *   --dry         Solo muestra los datos, no los inserta
  */
@@ -24,7 +24,7 @@ const BASE_URL    = get("--url", "http://localhost:3001");
 const USERNAME    = get("--user", "");
 const PASSWORD    = get("--pass", "");
 const N_PLAYERS   = parseInt(get("--players", "60"), 10);
-const N_PROF      = parseInt(get("--profesores", "5"), 10);
+const N_PROF      = parseInt(get("--profesores", "6"), 10);
 const DRY         = has("--dry");
 const NO_TORNEOS  = has("--no-torneos");
 
@@ -36,18 +36,18 @@ if (!USERNAME || !PASSWORD) {
 
 // ── datos de muestra ──────────────────────────────────────────────────────────
 
-const FIRST_M = ["Matías","Santiago","Nicolás","Facundo","Lucas","Ignacio","Tomás","Agustín","Franco","Ramiro","Ezequiel","Rodrigo","Leandro","Sebastián","Diego","Pablo","Martín","Gustavo","Emiliano","Fernando","Cristian","Damián","Javier","Claudio","Adrián"];
-const FIRST_F = ["Valentina","Sofía","Lucía","Camila","Florencia","Agustina","Micaela","Paula","Natalia","Carolina","Julieta","Romina","Vanesa","Daniela","Mariana","Cecilia","Jimena","Lorena","Rocío","Milagros","Sabrina","Verónica","Claudia","Aldana","Belén"];
-const LAST    = ["García","Rodríguez","González","Fernández","López","Martínez","Sánchez","Pérez","Romero","Díaz","Torres","Álvarez","Ruiz","Ramírez","Flores","Acosta","Benítez","Castro","Herrera","Medina","Morales","Ortiz","Silva","Vargas","Cabrera","Ríos","Molina","Vega","Guerrero","Muñoz"];
+const FIRST_M = ["Matías","Santiago","Nicolás","Facundo","Lucas","Ignacio","Tomás","Agustín","Franco","Ramiro","Ezequiel","Rodrigo","Leandro","Sebastián","Diego","Pablo","Martín","Gustavo","Emiliano","Fernando","Cristian","Damián","Javier","Claudio","Adrián","Maximiliano","Hernán","Alejandro","Roberto","Carlos"];
+const FIRST_F = ["Valentina","Sofía","Lucía","Camila","Florencia","Agustina","Micaela","Paula","Natalia","Carolina","Julieta","Romina","Vanesa","Daniela","Mariana","Cecilia","Jimena","Lorena","Rocío","Milagros","Sabrina","Verónica","Claudia","Aldana","Belén","Valeria","Fernanda","Gabriela","Andrea","Patricia"];
+const LAST    = ["García","Rodríguez","González","Fernández","López","Martínez","Sánchez","Pérez","Romero","Díaz","Torres","Álvarez","Ruiz","Ramírez","Flores","Acosta","Benítez","Castro","Herrera","Medina","Morales","Ortiz","Silva","Vargas","Cabrera","Ríos","Molina","Vega","Guerrero","Muñoz","Suárez","Rojas","Reyes","Gómez","Mendoza"];
 
 const PADEL_CATEGORIES = ["PRIMERA","SEGUNDA","TERCERA","CUARTA","QUINTA","SEXTA","SEPTIMA"];
 const TENIS_CATEGORIES = ["PRIMERA","SEGUNDA","TERCERA","CUARTA"];
-const CITIES           = ["Buenos Aires","Córdoba","Rosario","Mendoza","La Plata","Mar del Plata","Tucumán","Salta","Quilmes","Bahía Blanca","Neuquén","Santa Fe","Posadas","Resistencia"];
+const CITIES           = ["Buenos Aires","Córdoba","Rosario","Mendoza","La Plata","Mar del Plata","Tucumán","Salta","Quilmes","Bahía Blanca","Neuquén","Santa Fe","Posadas","Resistencia","Corrientes"];
 const DAYS             = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 
-const TEAM_PREFIXES  = ["Club","Atlético","Deportivo","Unión","San","Real","FC","Racing","River","Boca","Independiente","Huracán","Ferro","Platense","Villa"];
-const TEAM_SUFFIXES  = ["Norte","Sur","Central","Oeste","Junior","United","City","Stars","Lions","Eagles","Warriors","United","FC","Rovers","Rangers"];
-const TEAM_CITIES    = ["Posadas","Oberá","Eldorado","Apóstoles","Montecarlo","Leandro N. Alem","Aristóbulo del Valle","San Vicente","Campo Grande"];
+const TEAM_PREFIXES  = ["Club","Atlético","Deportivo","Unión","San","Real","FC","Racing","River","Boca","Independiente","Huracán","Ferro","Platense","Villa","Juventud","Estudiantes","Olimpo"];
+const TEAM_SUFFIXES  = ["Norte","Sur","Central","Oeste","Junior","United","City","Stars","Lions","Eagles","Warriors","Rovers","Rangers","Futbol Club","Fútbol Club","Sport","Boys"];
+const TEAM_CITIES    = ["Posadas","Oberá","Eldorado","Apóstoles","Montecarlo","Leandro N. Alem","Aristóbulo del Valle","San Vicente","Campo Grande","Iguazú","Puerto Rico","Jardín América"];
 
 const rand    = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -90,7 +90,7 @@ function makePadelPlayer() {
 function makeTenisPlayer() {
   const sex  = Math.random() < 0.5 ? "MASCULINO" : "FEMENINO";
   const name = uniqueName(sex);
-  const catWeights = [15, 30, 35, 20]; // PRIMERA→CUARTA
+  const catWeights = [15, 30, 35, 20];
   const roll = randInt(1,100);
   let cum = 0, catIdx = 0;
   for (let w = 0; w < catWeights.length; w++) { cum += catWeights[w]; if (roll <= cum) { catIdx = w; break; } }
@@ -105,16 +105,29 @@ function makeTenisPlayer() {
   };
 }
 
-function makeGenericPlayer(sport) {
+function makeFutbolPlayer() {
+  const sex  = "MASCULINO";
+  const name = uniqueName(sex);
+  return {
+    name, sex,
+    category: "SIN_CATEGORIA",
+    city: rand(CITIES),
+    birthDate: randDate(16, 38),
+    phone: Math.random() < 0.75 ? randPhone() : undefined,
+    sports: ["FUTBOL"],
+  };
+}
+
+function makeVoleyPlayer() {
   const sex  = Math.random() < 0.5 ? "MASCULINO" : "FEMENINO";
   const name = uniqueName(sex);
   return {
     name, sex,
     category: "SIN_CATEGORIA",
     city: rand(CITIES),
-    birthDate: randDate(15, 45),
-    phone: Math.random() < 0.6 ? randPhone() : undefined,
-    sports: [sport],
+    birthDate: randDate(16, 40),
+    phone: Math.random() < 0.65 ? randPhone() : undefined,
+    sports: ["VOLEY"],
   };
 }
 
@@ -131,8 +144,8 @@ function makeProfesor() {
   return { name, phone: Math.random() < 0.8 ? randPhone() : undefined, hourlyRate: randInt(3000,12000), schedule };
 }
 
+const usedEquipoNames = new Set();
 function makeEquipo(sport) {
-  const usedEquipoNames = makeEquipo._used ??= new Set();
   for (let i = 0; i < 30; i++) {
     const name = `${rand(TEAM_PREFIXES)} ${rand(TEAM_SUFFIXES)}`;
     if (!usedEquipoNames.has(name)) { usedEquipoNames.add(name); return { name, sport, city: rand(TEAM_CITIES), sex: "" }; }
@@ -140,7 +153,22 @@ function makeEquipo(sport) {
   return { name: `Equipo ${randInt(100,999)}`, sport, city: rand(TEAM_CITIES), sex: "" };
 }
 
-// Tournaments config
+// ── courts ────────────────────────────────────────────────────────────────────
+
+const COURTS = [
+  { name: "Pádel 1",                   type: "TECHADA",    sport: "PADEL"  },
+  { name: "Pádel 2",                   type: "DESCUBIERTA",sport: "PADEL"  },
+  { name: "Pádel 3",                   type: "TECHADA",    sport: "PADEL"  },
+  { name: "Fútbol 5 - Cancha 1",       type: "FUTBOL5",    sport: "FUTBOL" },
+  { name: "Fútbol 5 - Cancha 2",       type: "FUTBOL5",    sport: "FUTBOL" },
+  { name: "Fútbol 7 - Cancha Principal",type: "FUTBOL7",   sport: "FUTBOL" },
+  { name: "Fútbol 7 - Cancha B",       type: "FUTBOL7",    sport: "FUTBOL" },
+  { name: "Fútbol 11 - Campo Grande",  type: "FUTBOL11",   sport: "FUTBOL" },
+  { name: "Vóley - Cancha Central",    type: "PARQUET",    sport: "VOLEY"  },
+];
+
+// ── tournaments ───────────────────────────────────────────────────────────────
+
 const today = new Date();
 const dateStr = (offsetDays) => {
   const d = new Date(today);
@@ -149,78 +177,83 @@ const dateStr = (offsetDays) => {
 };
 
 const TOURNAMENTS = [
+  // Pádel
   {
     name: "Torneo Pádel Mixto 2026",
-    sport: "PADEL",
-    category: "SIN_CATEGORIA",
-    sex: "MIXTO",
-    startDate: dateStr(7),
-    endDate: dateStr(60),
-    pairsCount: randInt(14, 20),
-    type: "padel",
+    sport: "PADEL", category: "SIN_CATEGORIA", sex: "MIXTO",
+    startDate: dateStr(7), endDate: dateStr(60),
+    pairsCount: randInt(14, 20), type: "padel",
   },
   {
     name: "Torneo Pádel Masculino 3ra",
-    sport: "PADEL",
-    category: "TERCERA",
-    sex: "MASCULINO",
-    startDate: dateStr(14),
-    endDate: dateStr(75),
-    pairsCount: randInt(12, 18),
-    type: "padel",
+    sport: "PADEL", category: "TERCERA", sex: "MASCULINO",
+    startDate: dateStr(14), endDate: dateStr(75),
+    pairsCount: randInt(12, 18), type: "padel",
   },
   {
     name: "Torneo Pádel Femenino 4ta",
-    sport: "PADEL",
-    category: "CUARTA",
-    sex: "FEMENINO",
-    startDate: dateStr(21),
-    endDate: dateStr(80),
-    pairsCount: randInt(12, 16),
-    type: "padel",
+    sport: "PADEL", category: "CUARTA", sex: "FEMENINO",
+    startDate: dateStr(21), endDate: dateStr(80),
+    pairsCount: randInt(10, 16), type: "padel",
   },
+  {
+    name: "Torneo Pádel 1ra Categoría",
+    sport: "PADEL", category: "PRIMERA", sex: "MASCULINO",
+    startDate: dateStr(30), endDate: dateStr(90),
+    pairsCount: randInt(8, 12), type: "padel",
+  },
+  // Tenis
   {
     name: "Torneo Tenis Open 2026",
-    sport: "TENIS",
-    category: "SIN_CATEGORIA",
-    sex: "MIXTO",
-    startDate: dateStr(10),
-    endDate: dateStr(55),
-    playersCount: randInt(12, 20),
-    type: "tenis",
+    sport: "TENIS", category: "SIN_CATEGORIA", sex: "MIXTO",
+    startDate: dateStr(10), endDate: dateStr(55),
+    playersCount: randInt(12, 20), type: "tenis",
   },
+  // Fútbol 5
+  {
+    name: "Copa Fútbol 5 Apertura",
+    sport: "FUTBOL5", category: "SIN_CATEGORIA", sex: "MASCULINO",
+    startDate: dateStr(3), endDate: dateStr(60),
+    teamsCount: randInt(6, 8), type: "equipo", equipoSport: "FUTBOL5",
+  },
+  {
+    name: "Torneo Fútbol 5 Todos Contra Todos",
+    sport: "FUTBOL5", category: "SIN_CATEGORIA", sex: "MASCULINO",
+    startDate: dateStr(5), endDate: dateStr(50),
+    teamsCount: randInt(4, 6), type: "equipo", equipoSport: "FUTBOL5",
+  },
+  // Fútbol 7
   {
     name: "Torneo Fútbol 7 Apertura",
-    sport: "FUTBOL7",
-    category: "SIN_CATEGORIA",
-    sex: "MASCULINO",
-    startDate: dateStr(5),
-    endDate: dateStr(90),
-    teamsCount: randInt(10, 12),
-    type: "equipo",
-    equipoSport: "FUTBOL7",
+    sport: "FUTBOL7", category: "SIN_CATEGORIA", sex: "MASCULINO",
+    startDate: dateStr(7), endDate: dateStr(90),
+    teamsCount: randInt(10, 12), type: "equipo", equipoSport: "FUTBOL7",
   },
+  {
+    name: "Copa Fútbol 7 Clausura",
+    sport: "FUTBOL7", category: "SIN_CATEGORIA", sex: "MASCULINO",
+    startDate: dateStr(45), endDate: dateStr(120),
+    teamsCount: randInt(8, 10), type: "equipo", equipoSport: "FUTBOL7",
+  },
+  // Fútbol 11
+  {
+    name: "Torneo Fútbol 11 Liga Local",
+    sport: "FUTBOL11", category: "SIN_CATEGORIA", sex: "MASCULINO",
+    startDate: dateStr(14), endDate: dateStr(180),
+    teamsCount: randInt(8, 12), type: "equipo", equipoSport: "FUTBOL11",
+  },
+  // Vóley
   {
     name: "Torneo Vóley Copa Verano",
-    sport: "VOLEY",
-    category: "SIN_CATEGORIA",
-    sex: "MIXTO",
-    startDate: dateStr(3),
-    endDate: dateStr(70),
-    teamsCount: randInt(10, 12),
-    type: "equipo",
-    equipoSport: "VOLEY",
+    sport: "VOLEY", category: "SIN_CATEGORIA", sex: "MIXTO",
+    startDate: dateStr(3), endDate: dateStr(70),
+    teamsCount: randInt(8, 10), type: "equipo", equipoSport: "VOLEY",
   },
   {
-    name: "Torneo Básquet Clausura",
-    sport: "BASQUET",
-    category: "SIN_CATEGORIA",
-    sex: "MASCULINO",
-    startDate: dateStr(12),
-    endDate: dateStr(85),
-    teamsCount: randInt(10, 12),
-    type: "equipo",
-    equipoSport: "BASQUET",
+    name: "Torneo Vóley Femenino",
+    sport: "VOLEY", category: "SIN_CATEGORIA", sex: "FEMENINO",
+    startDate: dateStr(20), endDate: dateStr(80),
+    teamsCount: randInt(6, 8), type: "equipo", equipoSport: "VOLEY",
   },
 ];
 
@@ -299,23 +332,48 @@ async function main() {
     console.log("(saltado en dry run)");
   }
 
-  // 2. Jugadores de Pádel
-  const nPadel = Math.ceil(N_PLAYERS * 0.5);
+  // 2. Canchas
+  console.log(`\n🏟️   Creando ${COURTS.length} canchas...`);
+  if (!DRY) {
+    await insertMany("canchas", COURTS, "/api/courts", token);
+  } else {
+    console.log("   (dry run)");
+    COURTS.slice(0, 3).forEach(c => console.log("  ", JSON.stringify(c)));
+  }
+
+  // 3. Jugadores de Pádel
+  const nPadel = Math.ceil(N_PLAYERS * 0.45);
   console.log(`\n🎾  Generando ${nPadel} jugadores de Pádel...`);
   const padelPlayers = Array.from({ length: nPadel }, makePadelPlayer);
   let createdPadelPlayers = [];
   if (!DRY) createdPadelPlayers = await insertMany("jugadores pádel", padelPlayers, "/api/players", token);
   else { console.log("   (dry run)"); padelPlayers.slice(0,2).forEach(p => console.log("  ", JSON.stringify(p))); }
 
-  // 3. Jugadores de Tenis
-  const nTenis = Math.ceil(N_PLAYERS * 0.25);
+  // 4. Jugadores de Tenis
+  const nTenis = Math.ceil(N_PLAYERS * 0.15);
   console.log(`\n🎾  Generando ${nTenis} jugadores de Tenis...`);
   const tenisPlayers = Array.from({ length: nTenis }, makeTenisPlayer);
   let createdTenisPlayers = [];
   if (!DRY) createdTenisPlayers = await insertMany("jugadores tenis", tenisPlayers, "/api/players", token);
   else { console.log("   (dry run)"); }
 
-  // 4. Profesores
+  // 5. Jugadores de Fútbol
+  const nFutbol = Math.ceil(N_PLAYERS * 0.25);
+  console.log(`\n⚽  Generando ${nFutbol} jugadores de Fútbol...`);
+  const futbolPlayers = Array.from({ length: nFutbol }, makeFutbolPlayer);
+  let createdFutbolPlayers = [];
+  if (!DRY) createdFutbolPlayers = await insertMany("jugadores fútbol", futbolPlayers, "/api/players", token);
+  else { console.log("   (dry run)"); }
+
+  // 6. Jugadores de Vóley
+  const nVoley = Math.ceil(N_PLAYERS * 0.15);
+  console.log(`\n🏐  Generando ${nVoley} jugadores de Vóley...`);
+  const voleyPlayers = Array.from({ length: nVoley }, makeVoleyPlayer);
+  let createdVoleyPlayers = [];
+  if (!DRY) createdVoleyPlayers = await insertMany("jugadores vóley", voleyPlayers, "/api/players", token);
+  else { console.log("   (dry run)"); }
+
+  // 7. Profesores
   console.log(`\n👨‍🏫  Generando ${N_PROF} profesores...`);
   const profes = Array.from({ length: N_PROF }, makeProfesor);
   if (!DRY) await insertMany("profesores", profes, "/api/profesores", token);
@@ -327,7 +385,7 @@ async function main() {
     return;
   }
 
-  // 5. Equipos y torneos
+  // 8. Equipos y torneos
   for (const t of TOURNAMENTS) {
     console.log(`\n🏆  Torneo: ${t.name}`);
 
@@ -346,10 +404,13 @@ async function main() {
       const n = t.pairsCount;
       console.log(`   → Agregando ${n} parejas...`);
       if (!DRY) {
-        // shuffle para variedad, filtrar por sexo si aplica
         let pool = [...createdPadelPlayers];
         if (t.sex === "MASCULINO") pool = pool.filter(p => p.sex === "MASCULINO");
         if (t.sex === "FEMENINO")  pool = pool.filter(p => p.sex === "FEMENINO");
+        if (t.category && t.category !== "SIN_CATEGORIA") {
+          const catPool = pool.filter(p => p.category === t.category);
+          if (catPool.length >= 4) pool = catPool;
+        }
         pool = shuffle(pool);
 
         const used = new Set();
@@ -374,7 +435,7 @@ async function main() {
       }
     }
 
-    // Tenis: agregar jugadores individuales (player2Id = null / omitido)
+    // Tenis: agregar jugadores individuales
     if (t.type === "tenis") {
       const n = t.playersCount;
       console.log(`   → Agregando ${n} jugadores de tenis...`);
