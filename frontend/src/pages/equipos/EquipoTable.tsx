@@ -1,9 +1,12 @@
+import { useState } from "react";
 import {
-  Avatar, Box, Divider, IconButton, Paper, Table, TableBody,
+  Avatar, Box, Divider, IconButton, ListItemIcon, ListItemText,
+  Menu, MenuItem, Paper, Table, TableBody,
   TableCell, TableHead, TableRow, Typography, useMediaQuery, useTheme,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { Equipo } from "../../types/Equipo";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import { SPORT_LABELS } from "../tournaments/AddEditTournament";
@@ -26,6 +29,12 @@ function EquipoAvatar({ equipo, size = 36 }: { equipo: Equipo; size?: number }) 
 }
 
 function MobileList({ equipos, onEdit, onDelete }: Props) {
+  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; equipoId: number } | null>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>, equipoId: number) => setMenuAnchor({ el: e.currentTarget, equipoId });
+  const closeMenu = () => setMenuAnchor(null);
+  const active = equipos.find((e) => e.id === menuAnchor?.equipoId) ?? null;
+
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, overflow: "hidden" }}>
       {equipos.map((e, idx) => (
@@ -40,10 +49,9 @@ function MobileList({ equipos, onEdit, onDelete }: Props) {
                   .filter(Boolean).join(" · ") || "—"}
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 0.5 }}>
-              <IconButton size="small" onClick={() => onEdit(e)}><EditIcon fontSize="small" /></IconButton>
-              <IconButton size="small" color="error" onClick={() => onDelete(e)}><DeleteIcon fontSize="small" /></IconButton>
-            </Box>
+            <IconButton size="small" onClick={(ev) => openMenu(ev, e.id)}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Box>
         </Box>
       ))}
@@ -52,6 +60,22 @@ function MobileList({ equipos, onEdit, onDelete }: Props) {
           <Typography variant="body2" color="text.disabled">No hay equipos</Typography>
         </Box>
       )}
+      <Menu
+        anchorEl={menuAnchor?.el}
+        open={!!menuAnchor}
+        onClose={closeMenu}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem onClick={() => { if (active) onEdit(active); closeMenu(); }}>
+          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Editar</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (active) onDelete(active); closeMenu(); }} sx={{ color: "error.main" }}>
+          <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText>Eliminar</ListItemText>
+        </MenuItem>
+      </Menu>
     </Paper>
   );
 }
