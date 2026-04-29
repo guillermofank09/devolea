@@ -44,7 +44,7 @@ export class AuthService {
     if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
     if (user.role !== "superadmin" && this.isTrialExpired(user)) throw new Error("TRIAL_EXPIRED");
     const token = this.signToken(user);
-    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role, sports: user.sports ?? ["PADEL"] } };
+    return { token, user: this.toUserDto(user) };
   }
 
   async getMe(userId: number) {
@@ -96,7 +96,7 @@ export class AuthService {
     if (!user) throw new Error("NOT_FOUND");
     if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
     const token = this.signToken(user);
-    return { token, user: { id: user.id, username: user.username, name: user.name, role: user.role, sports: user.sports ?? ["PADEL"] } };
+    return { token, user: this.toUserDto(user) };
   }
 
   async changePassword(id: number, currentPassword: string, newPassword: string) {
