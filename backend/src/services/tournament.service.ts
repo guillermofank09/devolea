@@ -231,7 +231,7 @@ export class TournamentService {
       : teams.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
-    const effectiveCourts = startTime ? courtIds : [];
+    const effectiveCourts = courtIds;
     const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
     if (startTime) {
       const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
@@ -262,8 +262,15 @@ export class TournamentService {
     };
 
     let cursor = startTime ? startTime.getTime() : 0;
-    const getNextSlot = (): { court: any; scheduledAt: Date } | null => {
+    let courtRrIdx = 0;
+    const getNextSlot = (): { court: any; scheduledAt: Date | null } | null => {
       if (effectiveCourts.length === 0) return null;
+      if (!startTime) {
+        // No time selected — distribute courts round-robin without scheduling times
+        const cId = effectiveCourts[courtRrIdx % effectiveCourts.length];
+        courtRrIdx++;
+        return { court: { id: cId } as any, scheduledAt: null };
+      }
       let bestCId = effectiveCourts[0];
       let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
       for (const cId of effectiveCourts.slice(1)) {
@@ -351,7 +358,7 @@ export class TournamentService {
       : pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
 
-    const effectiveCourts = startTime ? courtIds : [];
+    const effectiveCourts = courtIds;
     const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
     if (startTime) {
       const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
@@ -384,8 +391,15 @@ export class TournamentService {
       return t;
     };
 
-    const getNextSlot = (): { court: any; scheduledAt: Date } | null => {
+    let courtRrIdx = 0;
+    const getNextSlot = (): { court: any; scheduledAt: Date | null } | null => {
       if (effectiveCourts.length === 0) return null;
+      if (!startTime) {
+        // No time selected — distribute courts round-robin without scheduling times
+        const cId = effectiveCourts[courtRrIdx % effectiveCourts.length];
+        courtRrIdx++;
+        return { court: { id: cId } as any, scheduledAt: null };
+      }
       let bestCId = effectiveCourts[0];
       let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
       for (const cId of effectiveCourts.slice(1)) {
@@ -455,7 +469,7 @@ export class TournamentService {
     // Pass 3: one pair prefers + opponent prefers a different slot (conflict).
     // Pass 4: greedy fill with any remaining matchup.
     // nextFreeAt carries between passes — courts never double-booked.
-    const scheduledSlots = new Map<number, { court: any; scheduledAt: Date } | null>();
+    const scheduledSlots = new Map<number, { court: any; scheduledAt: Date | null } | null>();
     const scheduled = new Set<number>();
 
     if (effectiveCourts.length > 0 && startTime) {

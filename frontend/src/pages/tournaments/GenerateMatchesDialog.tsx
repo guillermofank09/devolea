@@ -346,7 +346,9 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
 
               {!startTime && (
                 <Typography variant="body2" color="text.secondary" sx={{ bgcolor: "grey.50", borderRadius: 2, p: 1.5, fontSize: "0.82rem" }}>
-                  Sin horario seleccionado, los cruces se generarán sin cancha ni horario asignados. Podés editarlos después desde cada partido.
+                  {courtIds.length > 0
+                    ? "Sin horario seleccionado, se asignará cancha pero no horario. Podés editarlos después desde cada partido."
+                    : "Sin horario ni cancha seleccionados, los cruces se generarán sin asignación. Podés editarlos después desde cada partido."}
                 </Typography>
               )}
           </>
