@@ -193,7 +193,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
       const delayedParts = toLocalDatetimeParts(match.delayedUntil);
       setDelayedUntilTime(delayedParts.time);
       setError(null);
-      setShowCalendar(false);
+      // Auto-open calendar when court is set but no time yet
+      setShowCalendar(!!(match.court?.id) && !match.scheduledAt);
     }
   }, [open, match, setsCount, isFootball]);
 
@@ -422,9 +423,10 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           size="small"
           value={courtId}
           onChange={e => {
-            setCourtId(e.target.value as number | "");
+            const val = e.target.value as number | "";
+            setCourtId(val);
             setScheduledAt("");
-            setShowCalendar(false);
+            setShowCalendar(val !== "");
           }}
           displayEmpty
           sx={{ height: 40, fontSize: "0.875rem" }}
@@ -446,7 +448,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                 label={formatSelected(scheduledAt)}
                 color="primary"
                 variant="outlined"
-                onDelete={() => { setScheduledAt(""); setShowCalendar(false); }}
+                onDelete={() => { setScheduledAt(""); setShowCalendar(true); }}
                 sx={{ fontWeight: 700, fontSize: "0.8rem", height: 32 }}
               />
               <Button
@@ -455,18 +457,13 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                 onClick={() => setShowCalendar(v => !v)}
                 sx={{ textTransform: "none", fontSize: "0.78rem", color: "text.secondary", minWidth: 0 }}
               >
-                {showCalendar ? "Ocultar" : "Editar"}
+                {showCalendar ? "Ocultar" : "Editar horario"}
               </Button>
             </Box>
           ) : (
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => setShowCalendar(true)}
-              sx={{ textTransform: "none", fontSize: "0.82rem", borderRadius: 2 }}
-            >
-              Elegir horario
-            </Button>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.82rem" }}>
+              Tocá un slot en el calendario para elegir horario.
+            </Typography>
           )}
         </Box>
       ) : (
