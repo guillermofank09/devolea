@@ -40,6 +40,7 @@ import EditMatchDialog from "./EditMatchDialog";
 import DeleteDialog from "../../components/common/DeleteDialog";
 import BracketView from "./BracketView";
 import CustomView from "./CustomView";
+import RoundRobinView from "./RoundRobinView";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
 
@@ -227,6 +228,7 @@ export default function TournamentDetail() {
   const hasMatches = data.matches.length > 0;
   const isBracket = data.format === "BRACKET";
   const isCustom = data.format === "PERSONALIZADO";
+  const isRoundRobin = data.format === "ROUND_ROBIN";
   const teamMode = isTeamSport(data.sport);
   const tennisMode = data.sport === "TENIS";
 
@@ -551,8 +553,19 @@ export default function TournamentDetail() {
         </Box>
       )}
 
-      {/* Round robin list */}
-      {!isCustom && hasMatches && !isBracket && (
+      {/* Round robin — standings + matches */}
+      {isRoundRobin && hasMatches && (
+        <RoundRobinView
+          tournamentId={Number(id)}
+          matches={data.matches}
+          isTeamSport={teamMode}
+          onEditMatch={m => setEditMatch(m)}
+          MatchCardComponent={MatchCard}
+        />
+      )}
+
+      {/* Generic match list (non-bracket, non-custom, non-round-robin) */}
+      {!isCustom && !isBracket && !isRoundRobin && hasMatches && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {data.matches.map(m => (
             <MatchCard key={m.id} match={m} onEdit={() => setEditMatch(m)} />

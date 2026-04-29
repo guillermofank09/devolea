@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Tournament, TournamentDetail, TournamentFormData, Pair, TournamentMatch, TournamentTeam } from "../types/Tournament";
+import type { Tournament, TournamentDetail, TournamentFormData, Pair, TournamentMatch, TournamentTeam, StandingsEntry } from "../types/Tournament";
 import { API_BASE } from "./config";
 
 const BASE = `${API_BASE}/api`;
@@ -89,3 +89,6 @@ export const addTeam = (tournamentId: number, equipoId: number): Promise<Tournam
 
 export const removeTeam = (tournamentId: number, teamId: number): Promise<void> =>
   axios.delete(`${BASE}/tournaments/${tournamentId}/teams/${teamId}`).then(() => undefined);
+
+export const fetchStandings = (tournamentId: number): Promise<StandingsEntry[]> =>
+  axios.get(`${BASE}/tournaments/${tournamentId}/standings`).then(r => r.data);

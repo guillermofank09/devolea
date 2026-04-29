@@ -369,6 +369,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tournamentDetail", String(tournamentId)] });
+      queryClient.invalidateQueries({ queryKey: ["standings", tournamentId] });
       if (courtId !== "") {
         queryClient.invalidateQueries({ queryKey: ["courtTournamentMatches", Number(courtId)] });
       }

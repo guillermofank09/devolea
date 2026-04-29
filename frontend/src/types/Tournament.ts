@@ -77,3 +77,15 @@ export interface TournamentDetail extends Tournament {
   teams: TournamentTeam[];
   matches: TournamentMatch[];
 }
+
+export interface StandingsEntry {
+  id: number;
+  name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+}
