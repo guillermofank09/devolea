@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Box, Button, Typography } from '@mui/material';
+import { Alert, Box, Button, Typography } from '@mui/material';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Landing from './pages/landing';
 import Header from './components/common/header';
 import Sidebar from './components/sidebar';
@@ -79,6 +80,29 @@ function ImpersonationBanner() {
   );
 }
 
+function TrialExpiryBanner() {
+  const { user } = useAuth();
+  if (!user || user.role === "superadmin" || !user.trialEndsAt) return null;
+
+  const expiryDate = new Date(user.trialEndsAt + "T23:59:59");
+  const now = new Date();
+  const msLeft = expiryDate.getTime() - now.getTime();
+  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0 || daysLeft >= 7) return null;
+
+  return (
+    <Alert
+      icon={<WarningAmberIcon fontSize="small" />}
+      severity="warning"
+      sx={{ borderRadius: 0, px: { xs: 2, md: 3 }, py: 0.75, "& .MuiAlert-message": { fontSize: "0.82rem" } }}
+    >
+      <strong>Restan {daysLeft} {daysLeft === 1 ? "día" : "días"} para el vencimiento de su Período de prueba.</strong>{" "}
+      Por favor, póngase en contacto con la administración de Devolea para activar su cuenta paga si desea continuar utilizando el sistema.
+    </Alert>
+  );
+}
+
 function ProtectedApp() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -125,6 +149,7 @@ function ProtectedApp() {
     <div className="root-layout">
       <Header onMenuClick={() => setMobileOpen(true)} />
       {isImpersonating && <ImpersonationBanner />}
+      {!isImpersonating && <TrialExpiryBanner />}
       <div className="body-area">
         <Sidebar
           initialActive={activeSection}

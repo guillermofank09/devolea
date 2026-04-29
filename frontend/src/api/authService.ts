@@ -9,6 +9,7 @@ export interface AuthUser {
   name: string;
   role: "superadmin" | "user";
   sports: string[];
+  trialEndsAt?: string | null;
 }
 
 export interface AuthResponse {
