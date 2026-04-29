@@ -49,15 +49,15 @@ export default function ProfesorBillingCard({ data, isLoading, isError }: Props)
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3 }}>
       <CardContent sx={{ p: 3 }}>
         {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mb: 2.5, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, gap: { xs: 0.5, sm: 1.5 }, mb: 2.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, minWidth: 0 }}>
             <SchoolIcon sx={{ color: "#F5AD27", flexShrink: 0 }} />
-            <Typography variant="subtitle1" fontWeight={700} noWrap>
+            <Typography variant="subtitle1" fontWeight={700}>
               Facturación por Profesor
             </Typography>
           </Box>
           {!isLoading && !isError && (
-            <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ pl: { xs: "36px", sm: 0 } }}>
               Este mes · {fmt(totalGanancia)} ganancia club
             </Typography>
           )}
