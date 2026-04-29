@@ -673,9 +673,9 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                 {goals.length === 0 && (
                   <Typography variant="caption" color="text.disabled">Sin goles registrados.</Typography>
                 )}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   {goals.map((goal, i) => (
-                    <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box key={i} sx={{ bgcolor: "grey.50", borderRadius: 2, p: 1.25, display: "flex", flexDirection: "column", gap: 1 }}>
                       <Autocomplete
                         freeSolo
                         size="small"
@@ -690,7 +690,6 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                             setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, playerName: value.name } : g));
                           }
                         }}
-                        sx={{ flex: 1 }}
                         renderOption={(props, opt) => (
                           <li {...props} key={opt.id}>
                             <Typography variant="body2">{opt.name}</Typography>
@@ -704,27 +703,29 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                           />
                         )}
                       />
-                      <Select
-                        size="small"
-                        value={goal.teamId || (currentTeam1?.id ?? 0)}
-                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, teamId: Number(e.target.value) } : g))}
-                        sx={{ minWidth: 90, fontSize: "0.8rem" }}
-                      >
-                        {currentTeam1 && <MenuItem value={currentTeam1.id}>{currentTeam1.equipo.name}</MenuItem>}
-                        {currentTeam2 && <MenuItem value={currentTeam2.id}>{currentTeam2.equipo.name}</MenuItem>}
-                      </Select>
-                      <TextField
-                        size="small"
-                        type="number"
-                        value={goal.minute || ""}
-                        onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, minute: parseInt(e.target.value) || 0 } : g))}
-                        placeholder="Min"
-                        inputProps={{ min: 0, max: 120, style: { textAlign: "center", padding: "6px 4px", width: 44 } }}
-                        sx={{ width: 60, flexShrink: 0 }}
-                      />
-                      <IconButton size="small" color="error" onClick={() => setGoals(prev => prev.filter((_, idx) => idx !== i))}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Select
+                          size="small"
+                          value={goal.teamId || (currentTeam1?.id ?? 0)}
+                          onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, teamId: Number(e.target.value) } : g))}
+                          sx={{ flex: 1, fontSize: "0.8rem" }}
+                        >
+                          {currentTeam1 && <MenuItem value={currentTeam1.id}>{currentTeam1.equipo.name}</MenuItem>}
+                          {currentTeam2 && <MenuItem value={currentTeam2.id}>{currentTeam2.equipo.name}</MenuItem>}
+                        </Select>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={goal.minute || ""}
+                          onChange={e => setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, minute: parseInt(e.target.value) || 0 } : g))}
+                          placeholder="Min"
+                          inputProps={{ min: 0, max: 120, style: { textAlign: "center", padding: "6px 4px" } }}
+                          sx={{ width: 64, flexShrink: 0 }}
+                        />
+                        <IconButton size="small" color="error" onClick={() => setGoals(prev => prev.filter((_, idx) => idx !== i))}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
                   ))}
                 </Box>
