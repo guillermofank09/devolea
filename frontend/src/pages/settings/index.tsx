@@ -314,55 +314,56 @@ export default function Settings() {
               </Box>
             ) : (
               // ── Multi-sport: table with one row per sport ──
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-                  <Box sx={{ minWidth: 80 }} />
-                  <Typography variant="caption" color="text.disabled" fontWeight={700}
-                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem", width: 130 }}>
-                    Duración
-                  </Typography>
-                  <Typography variant="caption" color="text.disabled" fontWeight={700}
-                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
-                    Sets
-                  </Typography>
-                </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {clubSports.map(sport => {
                   const hasSets = SPORTS_WITH_SETS.includes(sport);
                   return (
-                    <Box key={sport} sx={{ display: "flex", alignItems: "center", gap: 2, py: 0.5 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ minWidth: 80 }}>
+                    <Box key={sport} sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1, sm: 2 }, py: 0.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: "none" } }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ minWidth: { sm: 80 } }}>
                         {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
                       </Typography>
-                      <TextField
-                        type="text" inputMode="numeric" size="small" placeholder="60"
-                        value={tournamentDurations[sport] != null ? String(tournamentDurations[sport]) : ""}
-                        onChange={e => {
-                          const v = e.target.value;
-                          if (v === "" || /^\d+$/.test(v)) {
-                            setTournamentDurations(prev => { const n = { ...prev }; if (v === "") delete n[sport]; else n[sport] = Number(v); return n; });
-                          }
-                        }}
-                        slotProps={{ input: { endAdornment: <InputAdornment position="end">min</InputAdornment> } }}
-                        sx={{ width: 130 }}
-                      />
-                      {hasSets ? (
-                        <ToggleButtonGroup
-                          value={tournamentSets[sport] ?? 3}
-                          exclusive
-                          onChange={(_, val) => { if (val !== null) setTournamentSets(prev => ({ ...prev, [sport]: val })); }}
-                          size="small"
-                          sx={{
-                            "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 1.5, fontSize: "0.78rem" },
-                            "& .MuiToggleButton-root.Mui-selected": { bgcolor: "#F5AD27", color: "#111", "&:hover": { bgcolor: "#e09b18" } },
-                          }}
-                        >
-                          <ToggleButton value={1}>1</ToggleButton>
-                          <ToggleButton value={3}>3</ToggleButton>
-                          <ToggleButton value={5}>5</ToggleButton>
-                        </ToggleButtonGroup>
-                      ) : (
-                        <Typography variant="body2" color="text.disabled" sx={{ pl: 0.5 }}>—</Typography>
-                      )}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Box>
+                          <Typography variant="caption" color="text.disabled" fontWeight={700}
+                            sx={{ display: { sm: "none" }, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.62rem", mb: 0.5 }}>
+                            Duración
+                          </Typography>
+                          <TextField
+                            type="text" inputMode="numeric" size="small" placeholder="60"
+                            value={tournamentDurations[sport] != null ? String(tournamentDurations[sport]) : ""}
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (v === "" || /^\d+$/.test(v)) {
+                                setTournamentDurations(prev => { const n = { ...prev }; if (v === "") delete n[sport]; else n[sport] = Number(v); return n; });
+                              }
+                            }}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">min</InputAdornment> } }}
+                            sx={{ width: 130, flexShrink: 0 }}
+                          />
+                        </Box>
+                        {hasSets && (
+                          <Box>
+                            <Typography variant="caption" color="text.disabled" fontWeight={700}
+                              sx={{ display: { sm: "none" }, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.62rem", mb: 0.5 }}>
+                              Sets
+                            </Typography>
+                            <ToggleButtonGroup
+                              value={tournamentSets[sport] ?? 3}
+                              exclusive
+                              onChange={(_, val) => { if (val !== null) setTournamentSets(prev => ({ ...prev, [sport]: val })); }}
+                              size="small"
+                              sx={{
+                                "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 1.5, fontSize: "0.78rem" },
+                                "& .MuiToggleButton-root.Mui-selected": { bgcolor: "#F5AD27", color: "#111", "&:hover": { bgcolor: "#e09b18" } },
+                              }}
+                            >
+                              <ToggleButton value={1}>1</ToggleButton>
+                              <ToggleButton value={3}>3</ToggleButton>
+                              <ToggleButton value={5}>5</ToggleButton>
+                            </ToggleButtonGroup>
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   );
                 })}
