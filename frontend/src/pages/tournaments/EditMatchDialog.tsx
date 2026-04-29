@@ -866,11 +866,11 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           controlsPanel
         )}
 
-        {/* Calendar */}
-        {showCalendar && courtId && (
+        {/* Calendar — desktop/tablet: inline */}
+        {showCalendar && courtId && !fullScreen && (
           <Box sx={{
             flex: sideLayout ? 1 : "none",
-            height: sideLayout ? undefined : (fullScreen ? 300 : 400),
+            height: sideLayout ? undefined : 400,
             flexShrink: 0,
             overflow: "hidden",
             borderTop: !sideLayout ? "1px solid" : "none",
@@ -930,6 +930,40 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
               pair2Slots={calendarPair2Slots.length > 0 ? calendarPair2Slots : undefined}
             />
           </Box>
+        )}
+
+        {/* Calendar — mobile: separate full-screen dialog */}
+        {fullScreen && (
+          <Dialog
+            open={showCalendar && !!courtId}
+            onClose={() => setShowCalendar(false)}
+            fullScreen
+            PaperProps={{ sx: { borderRadius: 0, display: "flex", flexDirection: "column" } }}
+          >
+            <DialogTitle sx={{ fontWeight: 700, pb: 1, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              Elegir horario
+              <Button size="small" onClick={() => setShowCalendar(false)} sx={{ textTransform: "none", color: "text.secondary" }}>
+                Cerrar
+              </Button>
+            </DialogTitle>
+            <Box sx={{ flex: 1, overflow: "hidden" }}>
+              <WeeklyCalendar
+                key={`mobile-${match.id}-${courtId}`}
+                events={calendarEvents}
+                onSelectSlot={handleSlotSelect as any}
+                onSelectEvent={() => {}}
+                initialDate={calendarInitialDate}
+                height="100%"
+                highlightedDateRange={
+                  tournamentStartDate && tournamentEndDate
+                    ? { start: tournamentStartDate, end: tournamentEndDate }
+                    : undefined
+                }
+                pair1Slots={calendarPair1Slots.length > 0 ? calendarPair1Slots : undefined}
+                pair2Slots={calendarPair2Slots.length > 0 ? calendarPair2Slots : undefined}
+              />
+            </Box>
+          </Dialog>
         )}
       </DialogContent>
 
