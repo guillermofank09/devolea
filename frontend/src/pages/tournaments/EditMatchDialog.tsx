@@ -158,8 +158,12 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
     queryFn: fetchSettings,
     enabled: open,
   });
-  const matchDuration = settings?.tournamentMatchDuration ?? 60;
-  const setsCount = settings?.tournamentSetsCount ?? 3;
+  const matchDuration = (sport && settings?.tournamentDurations?.[sport] != null)
+    ? settings.tournamentDurations[sport]
+    : settings?.tournamentMatchDuration ?? 60;
+  const setsCount = (sport && settings?.tournamentSets?.[sport] != null)
+    ? settings.tournamentSets[sport]
+    : settings?.tournamentSetsCount ?? 3;
 
   const { data: allPlayers = [] } = useQuery<Player[]>({
     queryKey: ["playersData"],

@@ -123,7 +123,9 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     enabled: open,
   });
 
-  const matchDuration = settings?.tournamentMatchDuration ?? 60;
+  const matchDuration = (sport && settings?.tournamentDurations?.[sport] != null)
+    ? settings.tournamentDurations[sport]
+    : settings?.tournamentMatchDuration ?? 60;
 
   const { data: allCourts = [] } = useQuery<Court[]>({
     queryKey: ["courtsData"],
