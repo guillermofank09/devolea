@@ -4,6 +4,10 @@ import {
   Box,
   Divider,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -20,6 +24,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { Profesor } from "../../types/Profesor";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
@@ -57,6 +62,15 @@ function sexLabel(sex?: string) {
 }
 
 function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
+  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; profesorId: number } | null>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>, profesorId: number) => {
+    setMenuAnchor({ el: e.currentTarget, profesorId });
+  };
+  const closeMenu = () => setMenuAnchor(null);
+
+  const activeProfesor = profesores.find((p) => p.id === menuAnchor?.profesorId) ?? null;
+
   return (
     <Paper sx={{ borderRadius: 3, boxShadow: 1, overflow: "hidden" }}>
       {profesores.map((p, idx) => (
@@ -69,7 +83,7 @@ function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
               {getInitials(p.name)}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={700} noWrap sx={{ maxWidth: "50vw" }}>
+              <Typography variant="body2" fontWeight={700} noWrap>
                 {p.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
@@ -80,21 +94,33 @@ function MobileList({ profesores, onEdit, onDelete, onSchedule }: Props) {
                 ].filter(Boolean).join(" · ")}
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", flexShrink: 0 }}>
-              <IconButton size="small" onClick={() => onSchedule(p)} title="Ver horarios">
-                <CalendarMonthIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={() => onEdit(p)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" color="error" onClick={() => onDelete(p)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
+            <IconButton size="small" onClick={(e) => openMenu(e, p.id)}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Box>
           {idx < profesores.length - 1 && <Divider />}
         </Box>
       ))}
+      <Menu
+        anchorEl={menuAnchor?.el}
+        open={!!menuAnchor}
+        onClose={closeMenu}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem onClick={() => { if (activeProfesor) onSchedule(activeProfesor); closeMenu(); }}>
+          <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Ver horarios</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (activeProfesor) onEdit(activeProfesor); closeMenu(); }}>
+          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Editar</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (activeProfesor) onDelete(activeProfesor); closeMenu(); }} sx={{ color: "error.main" }}>
+          <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText>Eliminar</ListItemText>
+        </MenuItem>
+      </Menu>
     </Paper>
   );
 }
