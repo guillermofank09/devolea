@@ -951,22 +951,22 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
         fullScreen={isMobile}
         PaperProps={{ sx: { borderRadius: { xs: 0, sm: 3 } } }}
       >
-        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
-          <Box>
-            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>{selectedCourt?.name}</Typography>
-            {selectedCourt && (
-              <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                {selectedCourt.sport?.toLowerCase()} · {selectedCourt.type?.toLowerCase()}
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, bgcolor: "grey.50", p: 0.5, borderRadius: 2, mr: 1 }}>
-              <IconButton size="small" onClick={() => shiftWindow(-1)} disabled={isAtToday}><ChevronLeftIcon /></IconButton>
-              <Typography variant="caption" fontWeight={800}>{fromLabel} — {toLabel}</Typography>
-              <IconButton size="small" onClick={() => shiftWindow(1)}><ChevronRightIcon /></IconButton>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>{selectedCourt?.name}</Typography>
+              {selectedCourt && (
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
+                  {selectedCourt.sport?.toLowerCase()} · {selectedCourt.type?.toLowerCase()}
+                </Typography>
+              )}
             </Box>
-            <IconButton size="small" onClick={() => setSelectedCourt(null)}><CloseIcon /></IconButton>
+            <IconButton size="small" onClick={() => setSelectedCourt(null)} sx={{ ml: 1, flexShrink: 0 }}><CloseIcon /></IconButton>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, bgcolor: "grey.50", p: 0.5, borderRadius: 2, mt: 1, alignSelf: "flex-start" }}>
+            <IconButton size="small" onClick={() => shiftWindow(-1)} disabled={isAtToday}><ChevronLeftIcon /></IconButton>
+            <Typography variant="caption" fontWeight={800} noWrap>{fromLabel} — {toLabel}</Typography>
+            <IconButton size="small" onClick={() => shiftWindow(1)}><ChevronRightIcon /></IconButton>
           </Box>
         </DialogTitle>
 
