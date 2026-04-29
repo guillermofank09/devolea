@@ -133,20 +133,11 @@ export default function RoundRobinView({ tournamentId, matches, isTeamSport, onE
         onChange={(_, v) => setTab(v)}
         sx={{ borderBottom: 1, borderColor: "divider", mb: 2, minHeight: 40, "& .MuiTab-root": { minHeight: 40, textTransform: "none", fontWeight: 600, fontSize: "0.875rem" } }}
       >
-        <Tab label="Tabla de posiciones" />
         <Tab label={`Partidos${playable.length > 0 ? ` (${completed.length}/${playable.length})` : ""}`} />
+        <Tab label="Tabla de posiciones" />
       </Tabs>
 
       {tab === 0 && (
-        <Box>
-          <StandingsTable entries={standings} isTeamSport={isTeamSport} />
-          <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
-            Puntos: Victoria 3 pts · Empate 1 pt · Derrota 0 pts
-          </Typography>
-        </Box>
-      )}
-
-      {tab === 1 && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {matches.map(m => (
             <MatchCardComponent key={m.id} match={m} onEdit={() => onEditMatch(m)} />
@@ -156,6 +147,15 @@ export default function RoundRobinView({ tournamentId, matches, isTeamSport, onE
               Los partidos aparecerán aquí tras generar los cruces.
             </Typography>
           )}
+        </Box>
+      )}
+
+      {tab === 1 && (
+        <Box>
+          <StandingsTable entries={standings} isTeamSport={isTeamSport} />
+          <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
+            Puntos: Victoria 3 pts · Empate 1 pt · Derrota 0 pts
+          </Typography>
         </Box>
       )}
     </Box>
