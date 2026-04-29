@@ -662,7 +662,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
               </Box>
 
               {/* Football: goal scorers */}
-              <Box>
+              <Box sx={{ mt: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
                   <FormLabel sx={FORM_LABEL_SX}>Goles</FormLabel>
                   <Button
