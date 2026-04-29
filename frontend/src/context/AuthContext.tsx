@@ -87,7 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // On mount: verify session is still valid (catches expired trials)
   useEffect(() => {
     if (!token || user?.role === "superadmin") return;
-    apiVerifySession().catch((err: any) => {
+    apiVerifySession().then((me) => {
+      // Sync trialEndsAt into stored user so the banner has up-to-date data
+      if (user && me.trialEndsAt !== user.trialEndsAt) {
+        const updated = { ...user, trialEndsAt: me.trialEndsAt };
+        localStorage.setItem(USER_KEY, JSON.stringify(updated));
+        setUser(updated);
+      }
+    }).catch((err: any) => {
       if (err?.response?.status === 403 && err?.response?.data?.code === "TRIAL_EXPIRED") {
         logout();
       }
