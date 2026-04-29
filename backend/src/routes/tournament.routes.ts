@@ -3,7 +3,7 @@ import {
   createTournament, getTournaments, getTournamentById,
   updateTournament, deleteTournament, addPair, removePair, updatePair,
   generateMatches, resetMatches, nextRound, updateMatch, deleteMatch, createPlaceholderMatch, getMatchesByCourt, triggerRepechage,
-  addTeam, removeTeam, disqualifyPair, disqualifyTeam,
+  addTeam, removeTeam, disqualifyPair, disqualifyTeam, getStandings,
 } from "../controllers/tournament.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 
@@ -25,6 +25,7 @@ router.post("/tournaments/:id/placeholder-match", requireAuth, createPlaceholder
 router.put("/tournaments/matches/:matchId", requireAuth, updateMatch);
 router.delete("/tournaments/matches/:matchId", requireAuth, deleteMatch);
 router.get("/tournaments/matches/court/:courtId", requireAuth, getMatchesByCourt);
+router.get("/tournaments/:id/standings", requireAuth, getStandings);
 router.post("/tournaments/:id/teams", requireAuth, addTeam);
 router.delete("/tournaments/:id/teams/:teamId", requireAuth, removeTeam);
 router.post("/tournaments/:id/pairs/:pairId/disqualify", requireAuth, disqualifyPair);

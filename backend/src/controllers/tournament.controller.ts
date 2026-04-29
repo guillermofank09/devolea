@@ -152,3 +152,8 @@ export const removeTeam = async (req: Request, res: Response) => {
   try { await getService().removeTeam(Number(req.params.teamId)); res.json({ message: "Equipo eliminado" }); }
   catch (e: any) { res.status(400).json({ error: e.message }); }
 };
+
+export const getStandings = async (req: Request, res: Response) => {
+  try { res.json(await getService().getStandings(Number(req.params.id))); }
+  catch (e: any) { res.status(404).json({ error: e.message }); }
+};

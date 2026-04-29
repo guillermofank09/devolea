@@ -1046,6 +1046,72 @@ export class TournamentService {
     if (toSave.length) await this.mRepo.save(toSave);
   }
 
+  async getStandings(tournamentId: number) {
+    const tournament = await this.tRepo.findOneBy({ id: tournamentId });
+    if (!tournament) throw new Error("NOT_FOUND");
+
+    const teamMode = isTeamSport(tournament.sport);
+
+    const matches = await this.mRepo.find({
+      where: { tournament: { id: tournamentId } },
+      relations: teamMode
+        ? ["team1", "team1.equipo", "team2", "team2.equipo"]
+        : ["pair1", "pair1.player1", "pair1.player2", "pair2", "pair2.player1", "pair2.player2"],
+    });
+
+    interface Entry {
+      id: number; name: string;
+      played: number; won: number; drawn: number; lost: number; points: number;
+      goalsFor: number; goalsAgainst: number;
+    }
+    const map = new Map<number, Entry>();
+
+    const getOrCreate = (id: number, name: string): Entry => {
+      if (!map.has(id)) map.set(id, { id, name, played: 0, won: 0, drawn: 0, lost: 0, points: 0, goalsFor: 0, goalsAgainst: 0 });
+      return map.get(id)!;
+    };
+
+    for (const m of matches) {
+      if (m.status !== "COMPLETED" && m.status !== "FORFEIT") continue;
+
+      if (teamMode) {
+        if (!m.team1 || !m.team2) continue;
+        const t1 = getOrCreate(m.team1.id, m.team1.equipo?.name ?? String(m.team1.id));
+        const t2 = getOrCreate(m.team2.id, m.team2.equipo?.name ?? String(m.team2.id));
+        t1.played++; t2.played++;
+        if (m.winnerId === m.team1.id) { t1.won++; t1.points += 3; t2.lost++; }
+        else if (m.winnerId === m.team2.id) { t2.won++; t2.points += 3; t1.lost++; }
+        else { t1.drawn++; t1.points++; t2.drawn++; t2.points++; }
+        if (m.result) {
+          const [g1, g2] = m.result.split("-").map(Number);
+          if (!isNaN(g1) && !isNaN(g2)) { t1.goalsFor += g1; t1.goalsAgainst += g2; t2.goalsFor += g2; t2.goalsAgainst += g1; }
+        }
+      } else {
+        if (!m.pair1 || !m.pair2) continue;
+        const pairName = (p: any) => p.player2 ? `${p.player1.name} / ${p.player2.name}` : p.player1.name;
+        const p1 = getOrCreate(m.pair1.id, pairName(m.pair1));
+        const p2 = getOrCreate(m.pair2.id, pairName(m.pair2));
+        p1.played++; p2.played++;
+        if (m.winnerId === m.pair1.id) { p1.won++; p1.points += 3; p2.lost++; }
+        else if (m.winnerId === m.pair2.id) { p2.won++; p2.points += 3; p1.lost++; }
+        if (m.result) {
+          const sets = m.result.trim().split(/\s+/);
+          let sf = 0, sa = 0;
+          for (const s of sets) { const [a, b] = s.split("-").map(Number); if (!isNaN(a) && !isNaN(b)) { sf += a; sa += b; } }
+          p1.goalsFor += sf; p1.goalsAgainst += sa; p2.goalsFor += sa; p2.goalsAgainst += sf;
+        }
+      }
+    }
+
+    return [...map.values()].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.won !== a.won) return b.won - a.won;
+      const da = a.goalsFor - a.goalsAgainst, db = b.goalsFor - b.goalsAgainst;
+      if (db !== da) return db - da;
+      return b.goalsFor - a.goalsFor;
+    });
+  }
+
   private async checkAndCompletePersonalizado(tournamentId: number): Promise<void> {
     const tournament = await this.tRepo.findOneBy({ id: tournamentId });
     if (!tournament || tournament.format !== "PERSONALIZADO") return;
