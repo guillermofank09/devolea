@@ -84,12 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(superadminSession.token, superadminSession.user);
   }, [superadminSession, persist]);
 
-  // On mount: verify session is still valid (catches expired trials)
+  // On mount: verify session is still valid and sync trialEndsAt for the banner
   useEffect(() => {
     if (!token || user?.role === "superadmin") return;
-    apiVerifySession().then((me) => {
-      // Sync trialEndsAt into stored user so the banner has up-to-date data
-      if (user && me.trialEndsAt !== user.trialEndsAt) {
+    apiVerifySession(token).then((me) => {
+      if (user && me.trialEndsAt !== (user.trialEndsAt ?? null)) {
         const updated = { ...user, trialEndsAt: me.trialEndsAt };
         localStorage.setItem(USER_KEY, JSON.stringify(updated));
         setUser(updated);

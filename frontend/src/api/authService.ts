@@ -51,8 +51,10 @@ export async function apiCreateUser(
   return data;
 }
 
-export async function apiVerifySession(): Promise<AdminUser> {
-  const { data } = await axios.get<AdminUser>(`${API}/auth/me`);
+export async function apiVerifySession(token: string): Promise<AdminUser> {
+  const { data } = await axios.get<AdminUser>(`${API}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return data;
 }
 
