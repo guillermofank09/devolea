@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Alert, Box, Button, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Landing from './pages/landing';
 import Header from './components/common/header';
 import Sidebar from './components/sidebar';
@@ -86,20 +85,21 @@ function TrialExpiryBanner() {
 
   const expiryDate = new Date(user.trialEndsAt + "T23:59:59");
   const now = new Date();
-  const msLeft = expiryDate.getTime() - now.getTime();
-  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
   if (daysLeft < 0 || daysLeft >= 7) return null;
 
+  const isUrgent = daysLeft <= 3;
+  const bg = isUrgent ? "#ffd5d5" : "#fff9e0";
+  const color = isUrgent ? "#7f1d1d" : "#78350f";
+
   return (
-    <Alert
-      icon={<WarningAmberIcon fontSize="small" />}
-      severity="warning"
-      sx={{ borderRadius: 0, px: { xs: 2, md: 3 }, py: 0.75, "& .MuiAlert-message": { fontSize: "0.82rem" } }}
-    >
-      <strong>Restan {daysLeft} {daysLeft === 1 ? "día" : "días"} para el vencimiento de su Período de prueba.</strong>{" "}
-      Por favor, póngase en contacto con la administración de Devolea para activar su cuenta paga si desea continuar utilizando el sistema.
-    </Alert>
+    <Box sx={{ bgcolor: bg, px: { xs: 2, md: 3 }, py: 0.75, display: "flex", alignItems: "center", flexShrink: 0 }}>
+      <Typography variant="caption" fontWeight={700} sx={{ color }}>
+        <strong>Restan {daysLeft} {daysLeft === 1 ? "día" : "días"} para el vencimiento de su Período de prueba.</strong>{" "}
+        Por favor, póngase en contacto con la administración de Devolea para activar su cuenta paga si desea continuar utilizando el sistema.
+      </Typography>
+    </Box>
   );
 }
 
