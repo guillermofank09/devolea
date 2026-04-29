@@ -381,7 +381,7 @@ function SummaryCard({ icon, label, value, bookings, color }: { icon: React.Reac
           <Box sx={{ width: 30, height: 30, borderRadius: 1.5, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: `${accent}22`, color: accent }}>
             {icon}
           </Box>
-          <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap>{label}</Typography>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.3 }}>{label}</Typography>
         </Box>
         <Typography fontWeight={800} noWrap sx={{ lineHeight: 1.1, fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" } }}>
           {fmt(value)}
