@@ -5,6 +5,10 @@ import {
   Chip,
   Divider,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -20,6 +24,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { Player, PlayerCategory } from "../../types/Player";
 import { getInitials, stringToColor } from "../../utils/uiUtils";
 import EmptyState from "../../components/common/EmptyState";
@@ -106,6 +111,15 @@ interface Props {
 // ── Mobile card list ──────────────────────────────────────────────────────────
 
 function MobileList({ players, onEdit, onDelete }: Props) {
+  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; playerId: number } | null>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>, playerId: number) => {
+    setMenuAnchor({ el: e.currentTarget, playerId });
+  };
+  const closeMenu = () => setMenuAnchor(null);
+
+  const activePlayer = players.find((p) => p.id === menuAnchor?.playerId) ?? null;
+
   return (
     <Paper sx={{ borderRadius: 3, boxShadow: 1, overflow: "hidden" }}>
       {players.map((player, idx) => (
@@ -127,18 +141,14 @@ function MobileList({ players, onEdit, onDelete }: Props) {
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                <Typography variant="body2" fontWeight={700} noWrap sx={{ maxWidth: "55vw" }}>
+                <Typography variant="body2" fontWeight={700} noWrap>
                   {player.name}
                 </Typography>
                 {player.sports?.includes("PADEL") || player.sport === "PADEL" || (!player.sports?.length && !player.sport) ? (
-                  <Tooltip title={CATEGORY_FULL[player.category]} placement="top">
-                    <Chip label={CATEGORY_LABEL[player.category]} color={CATEGORY_COLOR[player.category]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
-                  </Tooltip>
+                  <Chip label={CATEGORY_LABEL[player.category]} color={CATEGORY_COLOR[player.category]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
                 ) : null}
                 {player.tenisCategory && (player.sports?.includes("TENIS") || player.sport === "TENIS") ? (
-                  <Tooltip title={`Tenis: ${CATEGORY_FULL[player.tenisCategory]}`} placement="top">
-                    <Chip label={`T: ${CATEGORY_LABEL[player.tenisCategory]}`} color={CATEGORY_COLOR[player.tenisCategory]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
-                  </Tooltip>
+                  <Chip label={`T: ${CATEGORY_LABEL[player.tenisCategory]}`} color={CATEGORY_COLOR[player.tenisCategory]} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
                 ) : null}
               </Box>
               <Typography variant="caption" color="text.secondary">
@@ -148,18 +158,29 @@ function MobileList({ players, onEdit, onDelete }: Props) {
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", flexShrink: 0 }}>
-              <IconButton size="small" onClick={() => onEdit(player)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" color="error" onClick={() => onDelete(player)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
+            <IconButton size="small" onClick={(e) => openMenu(e, player.id)}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Box>
           {idx < players.length - 1 && <Divider />}
         </Box>
       ))}
+      <Menu
+        anchorEl={menuAnchor?.el}
+        open={!!menuAnchor}
+        onClose={closeMenu}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem onClick={() => { if (activePlayer) onEdit(activePlayer); closeMenu(); }}>
+          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Editar</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (activePlayer) onDelete(activePlayer); closeMenu(); }} sx={{ color: "error.main" }}>
+          <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText>Eliminar</ListItemText>
+        </MenuItem>
+      </Menu>
     </Paper>
   );
 }
