@@ -335,7 +335,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           else if (s2 > s1) fbWinnerId = t2Id;
           else fbWinnerId = winnerId ?? null; // draw: keep manual selection
         }
-        const fbStatus = fbWinnerId ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
+        const hasScore = fbScore1 !== "" && fbScore2 !== "";
+        const fbStatus = (fbWinnerId != null || hasScore) ? "COMPLETED" : wasBye && pair2IsNowSet ? "PENDING" : match.status;
         return updateMatch(match.id, {
           scheduledAt: scheduledAtISO,
           courtId: courtIdNum,
@@ -640,11 +641,11 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
                     />
                   </Box>
                 </Box>
-                {/* Draw: manual winner */}
+                {/* Draw: optional tiebreaker winner (penalties / knockout) */}
                 {showWinner && fbScore1 !== "" && fbScore2 !== "" && parseInt(fbScore1) === parseInt(fbScore2) && (
                   <Box sx={{ mt: 1.5 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
-                      Empate — seleccioná el ganador (penales/desempate):
+                      Empate — ¿hubo definición por penales? <span style={{ opacity: 0.6 }}>(opcional, para fases eliminatorias)</span>
                     </Typography>
                     <ToggleButtonGroup
                       value={winnerId} exclusive onChange={(_, val) => setWinnerId(val)}
