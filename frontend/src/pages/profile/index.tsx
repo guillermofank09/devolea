@@ -35,6 +35,8 @@ import ShowerOutlinedIcon from "@mui/icons-material/ShowerOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import OutdoorGrillOutlinedIcon from "@mui/icons-material/OutdoorGrillOutlined";
 import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
+import LocalParkingOutlinedIcon from "@mui/icons-material/LocalParkingOutlined";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, saveProfile } from "../../api/profileService";
@@ -144,7 +146,9 @@ const AMENITY_OPTIONS: { key: string; label: string; Icon: SvgIconComponent }[] 
   { key: "Duchas",    label: "Duchas",    Icon: ShowerOutlinedIcon       },
   { key: "Wifi",      label: "Wifi",      Icon: WifiOutlinedIcon         },
   { key: "Parrillas", label: "Parrillas", Icon: OutdoorGrillOutlinedIcon },
-  { key: "Quinchos",  label: "Quinchos",  Icon: DeckOutlinedIcon         },
+  { key: "Quinchos",        label: "Quinchos",          Icon: DeckOutlinedIcon              },
+  { key: "Estacionamiento", label: "Estacionamiento",   Icon: LocalParkingOutlinedIcon       },
+  { key: "Artículos Deportivos", label: "Artículos Deportivos", Icon: ShoppingBagOutlinedIcon },
 ];
 
 // ─── Password section ─────────────────────────────────────────────────────────
@@ -372,13 +376,13 @@ export default function Profile() {
 
           {/* ── Datos del club ── */}
           <Section icon={<StorefrontOutlinedIcon />} title="Datos del club">
-            <Box sx={{ display: "flex", gap: 2.5, alignItems: "flex-start" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2.5, alignItems: { xs: "center", sm: "flex-start" } }}>
               <LogoUploader
                 logoUrl={logoUrl} logoPreview={logoPreview}
                 uploading={logoUploading} error={logoError}
                 onChange={handleLogoChange} onRemove={() => { setLogoUrl(""); setLogoError(false); }}
               />
-              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.25 }}>
+              <Box sx={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", gap: 1.25 }}>
                 <Box>
                   <FieldLabel>Nombre del club</FieldLabel>
                   <TextField
@@ -528,28 +532,28 @@ export default function Profile() {
       {/* ── Sticky save bar ── */}
       <Box sx={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1200,
-        px: { xs: 2, md: 4 }, py: 1.5,
+        px: { xs: 2, md: 4 }, py: { xs: 1.25, md: 1.5 },
         bgcolor: "background.paper",
         borderTop: "1.5px solid", borderColor: "divider",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 2, boxShadow: "0 -4px 20px rgba(0,0,0,0.06)",
       }}>
-        <Typography variant="body2" color={isDirty ? "text.primary" : "text.disabled"} fontWeight={isDirty ? 600 : 400}>
+        <Typography variant="body2" color={isDirty ? "text.primary" : "text.disabled"} fontWeight={isDirty ? 600 : 400}
+          sx={{ display: { xs: "none", sm: "block" } }}>
           {isDirty ? "Tenés cambios sin guardar" : "Sin cambios"}
         </Typography>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Button
-            variant="contained"
-            size="medium"
-            startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : <SaveOutlinedIcon />}
-            disabled={!isDirty || mutation.isPending || logoUploading}
-            onClick={handleSave}
-            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3, minWidth: 160 }}
-          >
-            {mutation.isPending ? "Guardando…" : "Guardar cambios"}
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          size="medium"
+          fullWidth
+          startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : <SaveOutlinedIcon />}
+          disabled={!isDirty || mutation.isPending || logoUploading}
+          onClick={handleSave}
+          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3, maxWidth: { xs: "100%", sm: 200 } }}
+        >
+          {mutation.isPending ? "Guardando…" : "Guardar cambios"}
+        </Button>
       </Box>
 
     </Box>

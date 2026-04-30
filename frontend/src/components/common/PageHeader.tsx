@@ -42,9 +42,9 @@ export default function PageHeader({ title, subtitle, action, stackOnMobile }: P
               letterSpacing: "-0.5px",
               color: "text.primary",
               textTransform: "uppercase",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              whiteSpace: stackOnMobile ? { xs: "normal", sm: "nowrap" } : "nowrap",
+              overflow: stackOnMobile ? { xs: "visible", sm: "hidden" } : "hidden",
+              textOverflow: stackOnMobile ? { xs: "unset", sm: "ellipsis" } : "ellipsis",
             }}
           >
             {title}

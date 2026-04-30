@@ -371,41 +371,55 @@ export default function Settings() {
                 );
               }
 
-              // Multiple rows — compact table layout
+              // Multiple rows — responsive table layout
+              const hasAnySets = tournamentRows.some(r => SPORTS_WITH_SETS.includes(r.key));
+              const captionSx = { textTransform: "uppercase" as const, letterSpacing: "0.06em", fontSize: "0.62rem", fontWeight: 700, color: "text.disabled" };
               return (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box>
+                  {/* Desktop column headers */}
+                  <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2, pb: 1, mb: 0.5, borderBottom: "1px solid", borderColor: "divider" }}>
+                    {showLabel && <Box sx={{ minWidth: 110 }} />}
+                    <Typography variant="caption" sx={{ ...captionSx, minWidth: 130 }}>Duración</Typography>
+                    {hasAnySets && <Typography variant="caption" sx={captionSx}>Sets</Typography>}
+                  </Box>
+
                   {tournamentRows.map(({ key, label }) => {
                     const hasSets = SPORTS_WITH_SETS.includes(key);
                     return (
-                      <Box key={key} sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1, sm: 2 }, py: 0.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: "none" } }}>
+                      <Box key={key} sx={{ py: 1.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: "none" } }}>
+                        {/* Sport label — always visible, bold header on mobile, inline on desktop */}
                         {showLabel && (
-                          <Typography variant="body2" fontWeight={600} sx={{ minWidth: { sm: 90 } }}>
+                          <Typography variant="body2" fontWeight={700}
+                            sx={{ mb: { xs: 1, sm: 0 }, display: { sm: "none" } }}>
                             {label}
                           </Typography>
                         )}
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <Box>
-                            <Typography variant="caption" color="text.disabled" fontWeight={700}
-                              sx={{ display: { sm: "none" }, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.62rem", mb: 0.5 }}>
-                              Duración
+                        <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, flexWrap: "wrap" }}>
+                          {showLabel && (
+                            <Typography variant="body2" fontWeight={600}
+                              sx={{ display: { xs: "none", sm: "block" }, minWidth: 110 }}>
+                              {label}
                             </Typography>
-                            <TextField
-                              type="text" inputMode="numeric" size="small" placeholder="60"
-                              value={tournamentDurations[key] != null ? String(tournamentDurations[key]) : ""}
-                              onChange={e => {
-                                const v = e.target.value;
-                                if (v === "" || /^\d+$/.test(v)) {
-                                  setTournamentDurations(prev => { const n = { ...prev }; if (v === "") delete n[key]; else n[key] = Number(v); return n; });
-                                }
-                              }}
-                              slotProps={{ input: { endAdornment: <InputAdornment position="end">min</InputAdornment> } }}
-                              sx={{ width: 130, flexShrink: 0 }}
-                            />
-                          </Box>
+                          )}
+                          <TextField
+                            type="text" inputMode="numeric" size="small" placeholder="60"
+                            value={tournamentDurations[key] != null ? String(tournamentDurations[key]) : ""}
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (v === "" || /^\d+$/.test(v)) {
+                                setTournamentDurations(prev => { const n = { ...prev }; if (v === "") delete n[key]; else n[key] = Number(v); return n; });
+                              }
+                            }}
+                            label="Duración"
+                            slotProps={{
+                              input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                              inputLabel: { shrink: true, sx: { display: { sm: "none" } } },
+                            }}
+                            sx={{ width: { xs: 160, sm: 130 }, flexShrink: 0 }}
+                          />
                           {hasSets && (
-                            <Box>
-                              <Typography variant="caption" color="text.disabled" fontWeight={700}
-                                sx={{ display: { sm: "none" }, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.62rem", mb: 0.5 }}>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                              <Typography variant="caption" sx={{ ...captionSx, display: { xs: "block", sm: "none" } }}>
                                 Sets
                               </Typography>
                               <ToggleButtonGroup
@@ -414,7 +428,7 @@ export default function Settings() {
                                 onChange={(_, val) => { if (val !== null) setTournamentSets(prev => ({ ...prev, [key]: val })); }}
                                 size="small"
                                 sx={{
-                                  "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 1.5, fontSize: "0.78rem" },
+                                  "& .MuiToggleButton-root": { textTransform: "none", fontWeight: 600, px: 2, fontSize: "0.78rem" },
                                   "& .MuiToggleButton-root.Mui-selected": { bgcolor: "#F5AD27", color: "#111", "&:hover": { bgcolor: "#e09b18" } },
                                 }}
                               >

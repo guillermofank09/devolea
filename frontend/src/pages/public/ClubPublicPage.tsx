@@ -50,6 +50,8 @@ import ShowerOutlinedIcon from "@mui/icons-material/ShowerOutlined";
 import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import OutdoorGrillOutlinedIcon from "@mui/icons-material/OutdoorGrillOutlined";
 import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
+import LocalParkingOutlinedIcon from "@mui/icons-material/LocalParkingOutlined";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam } from "../../types/Tournament";
 import { isTeamSport } from "../tournaments/AddEditTournament";
@@ -114,7 +116,9 @@ const AMENITY_ICONS: Record<string, SvgIconComponent> = {
   Duchas:    ShowerOutlinedIcon,
   Wifi:      WifiOutlinedIcon,
   Parrillas: OutdoorGrillOutlinedIcon,
-  Quinchos:  DeckOutlinedIcon,
+  Quinchos:            DeckOutlinedIcon,
+  Estacionamiento:     LocalParkingOutlinedIcon,
+  "Artículos Deportivos": ShoppingBagOutlinedIcon,
 };
 
 function getNextOpenInfo(
@@ -437,7 +441,7 @@ function PublicCustomView({ matches, teamMode = false, sex }: { matches: Tournam
 
 // ─── tournament card ──────────────────────────────────────────────────────────
 
-function PublicTournamentCard({ tournament, onSelect }: { tournament: any; onSelect: (t: any) => void }) {
+function PublicTournamentCard({ tournament, onSelect, isLast }: { tournament: any; onSelect: (t: any) => void; isLast?: boolean }) {
   const isCompleted = tournament.format === "PERSONALIZADO" && tournament.status === "COMPLETED";
   const status = isCompleted
     ? { label: "Finalizado", color: "primary" as const }
@@ -456,7 +460,7 @@ function PublicTournamentCard({ tournament, onSelect }: { tournament: any; onSel
         px: 2,
         py: 1.5,
         cursor: "pointer",
-        borderBottom: `1px solid ${COLORS.lightBorder}`,
+        borderBottom: isLast ? "none" : `1px solid ${COLORS.lightBorder}`,
         transition: "background 0.15s",
         "&:hover": { bgcolor: "#f8fafc" },
         "&:active": { bgcolor: "#f1f5f9" },
@@ -467,8 +471,10 @@ function PublicTournamentCard({ tournament, onSelect }: { tournament: any; onSel
         <Typography variant="body2" fontWeight={700} noWrap sx={{ color: COLORS.text }}>
           {tournament.name}
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.25 }}>
-          <Chip label={`Cat. ${CATEGORY_LABEL[tournament.category] ?? tournament.category}`} size="small" color="info" sx={{ height: 18, fontSize: "0.6rem", fontWeight: 700 }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.25, flexWrap: "wrap" }}>
+          {tournament.category && tournament.category !== "SIN_CATEGORIA" && (
+            <Chip label={`Cat. ${CATEGORY_LABEL[tournament.category] ?? tournament.category}`} size="small" color="info" sx={{ height: 18, fontSize: "0.6rem", fontWeight: 700 }} />
+          )}
           {tournament.sex && <Chip label={SEX_LABEL[tournament.sex] ?? tournament.sex} size="small" variant="outlined" sx={{ height: 18, fontSize: "0.6rem" }} />}
           <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.65rem" }}>
             {formatDateShort(tournament.startDate)}
@@ -925,18 +931,25 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
           ))}
         </Box>
       )}
-      <Grid container spacing={2}>
-        {(data?.courts ?? []).map(court => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={court.id}>
-            <PublicCourtCard court={court} onSelect={setSelectedCourt} />
-          </Grid>
-        ))}
-        {(data?.courts ?? []).length === 0 && (
-          <Grid size={12}>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>No hay canchas registradas.</Typography>
-          </Grid>
-        )}
-      </Grid>
+      {(data?.courts ?? []).length === 0 && !isLoading ? (
+        <Box sx={{ py: 8, textAlign: "center", px: 2 }}>
+          <RoofingIcon sx={{ fontSize: 48, color: "#e2e8f0", mb: 2 }} />
+          <Typography variant="subtitle2" fontWeight={700} color="text.disabled" mb={0.5}>
+            {sportFilter ? "Sin canchas para este deporte" : "No hay canchas publicadas"}
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            {sportFilter ? "Probá con otro deporte o quitá el filtro." : "Cuando el club agregue canchas vas a verlas acá."}
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={2}>
+          {(data?.courts ?? []).map(court => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={court.id}>
+              <PublicCourtCard court={court} onSelect={setSelectedCourt} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
       {totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} size="small" />
@@ -1193,8 +1206,6 @@ function ProfesoresSection({ username }: { username: string }) {
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  if (!isLoading && total === 0 && !debouncedSearch) return null;
-
   return (
     <Box>
       <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: { xs: "flex-start", md: "center" }, gap: { xs: 1.5, md: 2 }, mb: { xs: 2.5, md: 3 } }}>
@@ -1205,7 +1216,7 @@ function ProfesoresSection({ username }: { username: string }) {
             <Chip label={total} size="small" sx={{ height: 20, fontSize: "0.7rem", fontWeight: 700, bgcolor: "#f1f5f9", color: COLORS.muted }} />
           )}
         </Box>
-        {!isLoading && (total > 1 || search !== "") && (
+        {!isLoading && total > 0 && (total > 1 || search !== "") && (
           <TextField
             size="small"
             placeholder="Buscar profesor..."
@@ -1240,7 +1251,15 @@ function ProfesoresSection({ username }: { username: string }) {
       {isLoading && <PageLoader />}
 
       {!isLoading && profesores.length === 0 && (
-        <Typography variant="body2" color="text.secondary">No se encontraron profesores.</Typography>
+        <Box sx={{ py: 8, textAlign: "center", px: 2 }}>
+          <PersonIcon sx={{ fontSize: 48, color: "#e2e8f0", mb: 2 }} />
+          <Typography variant="subtitle2" fontWeight={700} color="text.disabled" mb={0.5}>
+            {debouncedSearch ? "Sin resultados" : "No hay profesores publicados"}
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            {debouncedSearch ? "Probá con otro nombre." : "Cuando el club agregue profesores vas a verlos acá."}
+          </Typography>
+        </Box>
       )}
 
       {!isLoading && profesores.length > 0 && (
@@ -1892,6 +1911,28 @@ export default function ClubPublicPage() {
                   </Box>
                 </Box>
 
+                {/* WA contact CTA */}
+                {profile.phone && (
+                  <Box sx={{ px: 2, pb: 1.5 }}>
+                    <Box
+                      component="a"
+                      href={`https://wa.me/${profile.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackEvent("whatsapp_contacto")}
+                      sx={{
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 1.25,
+                        py: 1.5, borderRadius: 2.5, bgcolor: "#16a34a", color: "#fff",
+                        textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", fontFamily: "inherit",
+                        transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
+                      }}
+                    >
+                      <WhatsAppIcon sx={{ fontSize: 20 }} />
+                      Contactar por WhatsApp
+                    </Box>
+                  </Box>
+                )}
+
                 {/* Amenities */}
                 {profile.amenities && profile.amenities.length > 0 && (
                   <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
@@ -2022,8 +2063,8 @@ export default function ClubPublicPage() {
 
                 {/* Mobile: list, Desktop: grid */}
                 <Box sx={{ display: { xs: "block", sm: "none" }, bgcolor: "#fff", border: `1px solid ${COLORS.lightBorder}`, borderRadius: 3, overflow: "hidden", mx: 2 }}>
-                  {tournaments.map((t: any) => (
-                    <PublicTournamentCard key={t.id} tournament={t} onSelect={setSelectedTournament} />
+                  {tournaments.map((t: any, i: number) => (
+                    <PublicTournamentCard key={t.id} tournament={t} onSelect={setSelectedTournament} isLast={i === tournaments.length - 1} />
                   ))}
                 </Box>
                 <Grid container spacing={2} sx={{ display: { xs: "none", sm: "flex" } }}>

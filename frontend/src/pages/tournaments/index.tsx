@@ -101,8 +101,12 @@ export default function Tournaments() {
     },
   });
 
+  const categoryRelevantSports = ["PADEL", "TENIS"];
+  const showCategoryFilter = categoryRelevantSports.includes(sportFilter);
   const availableCategories = data
-    ? CATEGORY_ORDER.filter((cat) => data.some((t) => t.category === cat))
+    ? CATEGORY_ORDER.filter((cat) =>
+        data.some((t) => t.category === cat && (sportFilter === "" || t.sport === sportFilter))
+      )
     : CATEGORY_ORDER;
 
   const filtered = (data ?? []).filter((t) => {
@@ -138,7 +142,11 @@ export default function Tournaments() {
       <Select
         value={sportFilter}
         displayEmpty
-        onChange={(e) => setSportFilter(e.target.value)}
+        onChange={(e) => {
+          const val = e.target.value;
+          setSportFilter(val);
+          if (!categoryRelevantSports.includes(val)) setCategoryFilter("");
+        }}
         renderValue={(val) => val ? (SPORT_LABELS[val] ?? SPORT_LABEL[val as keyof typeof SPORT_LABEL] ?? val) : "Deporte"}
       >
         <MenuItem value="">Todos</MenuItem>
@@ -149,7 +157,7 @@ export default function Tournaments() {
     </FormControl>
   ) : null;
 
-  const categorySelect = (
+  const categorySelect = showCategoryFilter ? (
     <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 150 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
       <Select
         value={categoryFilter}
@@ -163,7 +171,7 @@ export default function Tournaments() {
         ))}
       </Select>
     </FormControl>
-  );
+  ) : null;
 
   const sexSelect = (
     <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 130 }, flex: { xs: 1, sm: "none" }, "& .MuiOutlinedInput-root": selectSx }}>
