@@ -456,28 +456,30 @@ function RankingSection() {
       <CardContent sx={{ p: 3 }}>
         <ChartHeader icon={<LeaderboardIcon />} title="Ranking de Torneos" />
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mb={3}>
-          <FormControl sx={{ minWidth: 160 }} size="small">
-            <InputLabel>Deporte</InputLabel>
-            <Select value={selectedSport} label="Deporte" onChange={e => handleSport(e.target.value)}>
-              {availableSports.map(s => (
-                <MenuItem key={s} value={s}>{SPORT_LABEL[s] ?? s}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {showCategoryFilter && (
+        {availableSports.length > 0 && (
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mb={3}>
             <FormControl sx={{ minWidth: 160 }} size="small">
-              <InputLabel>Categoría</InputLabel>
-              <Select value={selectedCategory} label="Categoría" onChange={e => handleCategory(e.target.value)}>
-                <MenuItem value="">Todas</MenuItem>
-                {availableCategories.map(c => (
-                  <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
+              <InputLabel>Deporte</InputLabel>
+              <Select value={selectedSport} label="Deporte" onChange={e => handleSport(e.target.value)}>
+                {availableSports.map(s => (
+                  <MenuItem key={s} value={s}>{SPORT_LABEL[s] ?? s}</MenuItem>
                 ))}
               </Select>
             </FormControl>
-          )}
-        </Stack>
+
+            {showCategoryFilter && (
+              <FormControl sx={{ minWidth: 160 }} size="small">
+                <InputLabel>Categoría</InputLabel>
+                <Select value={selectedCategory} label="Categoría" onChange={e => handleCategory(e.target.value)}>
+                  <MenuItem value="">Todas</MenuItem>
+                  {availableCategories.map(c => (
+                    <MenuItem key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Stack>
+        )}
 
         {isError && (
           <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudo cargar el ranking.</Alert>
