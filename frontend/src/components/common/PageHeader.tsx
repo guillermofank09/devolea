@@ -5,14 +5,16 @@ interface Props {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  stackOnMobile?: boolean;
 }
 
-export default function PageHeader({ title, subtitle, action }: Props) {
+export default function PageHeader({ title, subtitle, action, stackOnMobile }: Props) {
   return (
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
+        alignItems: stackOnMobile ? { xs: "flex-start", sm: "center" } : "center",
+        flexDirection: stackOnMobile ? { xs: "column", sm: "row" } : "row",
         justifyContent: "space-between",
         gap: 2,
         mb: 4,
@@ -21,7 +23,7 @@ export default function PageHeader({ title, subtitle, action }: Props) {
         borderColor: "divider",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "stretch", gap: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "stretch", gap: 2, minWidth: 0, flex: 1 }}>
         <Box
           sx={{
             width: 4,
@@ -30,7 +32,7 @@ export default function PageHeader({ title, subtitle, action }: Props) {
             flexShrink: 0,
           }}
         />
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Typography
             variant="h1"
             sx={{
@@ -40,6 +42,9 @@ export default function PageHeader({ title, subtitle, action }: Props) {
               letterSpacing: "-0.5px",
               color: "text.primary",
               textTransform: "uppercase",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {title}

@@ -624,6 +624,7 @@ export default function TournamentDetail() {
       <PageHeader
         title={data.name}
         subtitle={`${formatDate(data.startDate)} → ${formatDate(data.endDate)}`}
+        stackOnMobile
         action={
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
             {data.category && data.category !== "SIN_CATEGORIA" && (
