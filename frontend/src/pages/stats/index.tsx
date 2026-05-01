@@ -376,18 +376,39 @@ function SummaryCard({ icon, label, value, bookings, color }: { icon: React.Reac
   const accent = color ?? "#F5AD27";
   return (
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3, height: "100%" }}>
-      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-          <Box sx={{ width: 30, height: 30, borderRadius: 1.5, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: `${accent}22`, color: accent }}>
+      <CardContent sx={{ p: { xs: 1.25, sm: 2 }, "&:last-child": { pb: { xs: 1.25, sm: 2 } } }}>
+        {/* Mobile: icon centered above label; desktop: icon + label side by side */}
+        <Box sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: "center",
+          gap: { xs: 0.5, sm: 1 },
+          mb: { xs: 0.75, sm: 1 },
+        }}>
+          <Box sx={{
+            width: { xs: 28, sm: 30 }, height: { xs: 28, sm: 30 },
+            borderRadius: 1.5, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            bgcolor: `${accent}22`, color: accent,
+          }}>
             {icon}
           </Box>
-          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.3 }}>{label}</Typography>
+          <Typography variant="caption" color="text.secondary" fontWeight={600}
+            sx={{ lineHeight: 1.3, textAlign: { xs: "center", sm: "left" } }}>
+            {label}
+          </Typography>
         </Box>
-        <Typography fontWeight={800} noWrap sx={{ lineHeight: 1.1, fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" } }}>
+        <Typography fontWeight={800} sx={{
+          lineHeight: 1.1,
+          fontSize: { xs: "0.78rem", sm: "1rem", md: "1.1rem" },
+          textAlign: { xs: "center", sm: "left" },
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
           {fmt(value)}
         </Typography>
         {bookings != null && (
-          <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+          <Typography variant="caption" color="text.disabled"
+            sx={{ mt: 0.5, display: { xs: "none", sm: "block" } }}>
             {bookings} {bookings === 1 ? "reserva" : "reservas"}
           </Typography>
         )}

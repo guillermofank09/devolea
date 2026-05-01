@@ -16,7 +16,7 @@ function positionColor(pos: number): string {
   return "transparent";
 }
 
-function StandingsTable({ entries, isTeamSport }: { entries: StandingsEntry[]; isTeamSport: boolean }) {
+export function StandingsTable({ entries, isTeamSport }: { entries: StandingsEntry[]; isTeamSport: boolean }) {
   const hasDraw = entries.some(e => e.drawn > 0);
 
   return (

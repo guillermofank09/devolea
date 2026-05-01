@@ -19,6 +19,8 @@ import {
   InputAdornment,
   Pagination,
   Paper,
+  Tab,
+  Tabs,
   TextField,
   Typography,
   useMediaQuery,
@@ -53,8 +55,9 @@ import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
 import LocalParkingOutlinedIcon from "@mui/icons-material/LocalParkingOutlined";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
-import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam } from "../../types/Tournament";
+import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam, StandingsEntry } from "../../types/Tournament";
 import { isTeamSport } from "../tournaments/AddEditTournament";
+import { StandingsTable } from "../tournaments/RoundRobinView";
 import type { DaySchedule } from "../../types/ClubProfile";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
 import type { PublicBookingSlot, PublicCourt, PublicProfesor, PaginatedTournaments } from "../../api/publicService";
@@ -183,78 +186,169 @@ const LIVE_STATUS_COLORS: Record<string, { stripe: string; border: string; bg: s
   EARLY:    { stripe: "#3b82f6", border: "#bfdbfe", bg: "#eff6ff", text: "#1e40af", label: "Adelantado" },
 };
 
-// ─── round-robin match list ───────────────────────────────────────────────────
+// ─── round-robin public view (matches + standings tabs) ──────────────────────
 
-function RoundRobinList({ matches, teamMode = false }: { matches: TournamentMatch[]; teamMode?: boolean }) {
+function computePublicStandings(
+  matches: TournamentMatch[],
+  pairs: Pair[],
+  teams: TournamentTeam[],
+  teamMode: boolean,
+): StandingsEntry[] {
+  const pairMap = new Map(pairs.map(p => [p.id, p]));
+  const teamMap = new Map(teams.map(t => [t.id, t]));
+  const map = new Map<number, StandingsEntry>();
+
+  const getOrCreate = (id: number, name: string): StandingsEntry => {
+    if (!map.has(id)) map.set(id, { id, name, played: 0, won: 0, drawn: 0, lost: 0, points: 0, goalsFor: 0, goalsAgainst: 0 });
+    return map.get(id)!;
+  };
+
+  for (const m of matches) {
+    if (m.status !== "COMPLETED" && m.status !== "FORFEIT") continue;
+    const raw = m as any;
+
+    if (teamMode) {
+      const id1 = raw.team1Id ?? m.team1?.id;
+      const id2 = raw.team2Id ?? m.team2?.id;
+      if (!id1 || !id2) continue;
+      const name1 = teamMap.get(id1)?.equipo?.name ?? teamLabel(m.team1);
+      const name2 = teamMap.get(id2)?.equipo?.name ?? teamLabel(m.team2);
+      const t1 = getOrCreate(id1, name1);
+      const t2 = getOrCreate(id2, name2);
+      t1.played++; t2.played++;
+      if (m.winnerId === id1)      { t1.won++; t1.points += 3; t2.lost++; }
+      else if (m.winnerId === id2) { t2.won++; t2.points += 3; t1.lost++; }
+      else                         { t1.drawn++; t1.points++; t2.drawn++; t2.points++; }
+      if (m.result) {
+        const [g1, g2] = m.result.split("-").map(Number);
+        if (!isNaN(g1) && !isNaN(g2)) { t1.goalsFor += g1; t1.goalsAgainst += g2; t2.goalsFor += g2; t2.goalsAgainst += g1; }
+      }
+    } else {
+      const id1 = raw.pair1Id ?? m.pair1?.id;
+      const id2 = raw.pair2Id ?? m.pair2?.id;
+      if (!id1 || !id2) continue;
+      const p1obj = pairMap.get(id1) ?? m.pair1;
+      const p2obj = pairMap.get(id2) ?? m.pair2;
+      const name1 = pairLabel(p1obj);
+      const name2 = pairLabel(p2obj);
+      const p1 = getOrCreate(id1, name1);
+      const p2 = getOrCreate(id2, name2);
+      p1.played++; p2.played++;
+      if (m.winnerId === id1)      { p1.won++; p1.points += 3; p2.lost++; }
+      else if (m.winnerId === id2) { p2.won++; p2.points += 3; p1.lost++; }
+      else                         { p1.drawn++; p1.points++; p2.drawn++; p2.points++; }
+    }
+  }
+
+  return [...map.values()].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.won !== a.won) return b.won - a.won;
+    const da = a.goalsFor - a.goalsAgainst, db = b.goalsFor - b.goalsAgainst;
+    if (db !== da) return db - da;
+    return b.goalsFor - a.goalsFor;
+  });
+}
+
+function PublicRoundRobinView({ matches, pairs, teams, teamMode = false }: {
+  matches: TournamentMatch[];
+  pairs: Pair[];
+  teams: TournamentTeam[];
+  teamMode?: boolean;
+}) {
+  const [tab, setTab] = useState(0);
+  const pairMap = new Map(pairs.map(p => [p.id, p]));
+  const teamMap = new Map(teams.map(t => [t.id, t]));
+
+  const playable = matches.filter(m => m.status !== "BYE");
+  const completed = playable.filter(m => m.status === "COMPLETED" || m.status === "FORFEIT");
+  const standings = computePublicStandings(matches, pairs, teams, teamMode);
+
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-      {matches.map(m => {
-        const live = m.liveStatus ? LIVE_STATUS_COLORS[m.liveStatus] : null;
-        const isCompleted = m.status === "COMPLETED";
-        const label1 = teamMode ? teamLabel(m.team1) : pairLabel(m.pair1);
-        const label2 = teamMode ? teamLabel(m.team2) : pairLabel(m.pair2);
-        return (
-          <Paper
-            key={m.id}
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              overflow: "hidden",
-              border: "1px solid",
-              borderColor: live ? live.border : isCompleted ? "#d1fae5" : "#e2e8f0",
-              bgcolor: live ? live.bg : isCompleted ? "#f0fdf4" : "background.paper",
-              display: "flex",
-              transition: "transform 0.2s, box-shadow 0.2s",
-              "&:hover": {
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-              }
-            }}
-          >
-            <Box sx={{ width: 6, flexShrink: 0, bgcolor: live ? live.stripe : isCompleted ? "#10b981" : "#cbd5e1" }} />
-            <Box sx={{ flex: 1, p: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: COLORS.text }}>
-                    {label1}
-                    <Typography component="span" variant="caption" sx={{ mx: 1, color: "text.disabled", fontWeight: 400 }}>vs</Typography>
-                    {label2}
-                  </Typography>
+    <Box>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        sx={{ borderBottom: 1, borderColor: "divider", mb: 2, minHeight: 40, "& .MuiTab-root": { minHeight: 40, textTransform: "none", fontWeight: 600, fontSize: "0.875rem" } }}
+      >
+        <Tab label={`Partidos${playable.length > 0 ? ` (${completed.length}/${playable.length})` : ""}`} />
+        <Tab label="Posiciones" />
+      </Tabs>
+
+      {tab === 0 && (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          {matches.map(m => {
+            const raw = m as any;
+            const live = m.liveStatus ? LIVE_STATUS_COLORS[m.liveStatus] : null;
+            const isCompleted = m.status === "COMPLETED";
+            const pair1 = teamMode ? null : (pairMap.get(raw.pair1Id) ?? m.pair1);
+            const pair2 = teamMode ? null : (pairMap.get(raw.pair2Id) ?? m.pair2);
+            const team1 = teamMode ? (teamMap.get(raw.team1Id) ?? m.team1) : null;
+            const team2 = teamMode ? (teamMap.get(raw.team2Id) ?? m.team2) : null;
+            const label1 = teamMode ? teamLabel(team1) : pairLabel(pair1);
+            const label2 = teamMode ? teamLabel(team2) : pairLabel(pair2);
+            return (
+              <Paper key={m.id} elevation={0} sx={{
+                borderRadius: 3, overflow: "hidden", border: "1px solid",
+                borderColor: live ? live.border : isCompleted ? "#d1fae5" : "#e2e8f0",
+                bgcolor: live ? live.bg : isCompleted ? "#f0fdf4" : "background.paper",
+                display: "flex",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": { transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" },
+              }}>
+                <Box sx={{ width: 6, flexShrink: 0, bgcolor: live ? live.stripe : isCompleted ? "#10b981" : "#cbd5e1" }} />
+                <Box sx={{ flex: 1, p: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: COLORS.text }}>
+                        {label1}
+                        <Typography component="span" variant="caption" sx={{ mx: 1, color: "text.disabled", fontWeight: 400 }}>vs</Typography>
+                        {label2}
+                      </Typography>
+                    </Box>
+                    {m.result && (
+                      <Box sx={{ px: 1.5, py: 0.5, bgcolor: "#d1fae5", borderRadius: 1.5 }}>
+                        <Typography variant="caption" fontWeight={800} sx={{ color: "#065f46", letterSpacing: 0.5 }}>{m.result}</Typography>
+                      </Box>
+                    )}
+                    {live && !m.result && (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: live.stripe, animation: "pulse 2s infinite" }} />
+                        <Typography variant="caption" fontWeight={700} sx={{ color: live.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          {live.label}{m.liveStatus === "DELAYED" && m.delayedUntil ? ` · ${new Date(m.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                        </Typography>
+                      </Box>
+                    )}
+                    {!live && m.scheduledAt && !m.result && (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "text.secondary" }}>
+                        <AccessTimeIcon sx={{ fontSize: 14 }} />
+                        <Typography variant="caption" fontWeight={500}>
+                          {new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          {m.court?.name ? ` · ${m.court.name}` : ""}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
-                {m.result && (
-                  <Box sx={{ px: 1.5, py: 0.5, bgcolor: "#d1fae5", borderRadius: 1.5 }}>
-                    <Typography variant="caption" fontWeight={800} sx={{ color: "#065f46", letterSpacing: 0.5 }}>{m.result}</Typography>
-                  </Box>
-                )}
-                {live && !m.result && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: live.stripe, animation: "pulse 2s infinite" }} />
-                    <Typography variant="caption" fontWeight={700} sx={{ color: live.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                      {live.label}{m.liveStatus === "DELAYED" && m.delayedUntil ? ` · ${new Date(m.delayedUntil).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}` : ""}
-                    </Typography>
-                  </Box>
-                )}
-                {!live && m.scheduledAt && !m.result && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "text.secondary" }}>
-                    <AccessTimeIcon sx={{ fontSize: 14 }} />
-                    <Typography variant="caption" fontWeight={500}>
-                      {new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      {m.court?.name ? ` · ${m.court.name}` : ""}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Paper>
-        );
-      })}
-      <style>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.4; }
-          100% { opacity: 1; }
-        }
-      `}</style>
+              </Paper>
+            );
+          })}
+          {matches.length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
+              Los partidos aparecerán aquí tras generar los cruces.
+            </Typography>
+          )}
+          <style>{`@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}`}</style>
+        </Box>
+      )}
+
+      {tab === 1 && (
+        <Box>
+          <StandingsTable entries={standings} isTeamSport={teamMode} />
+          <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
+            Puntos: Victoria 3 pts · Empate 1 pt · Derrota 0 pts
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -579,7 +673,7 @@ function TournamentDetailView({ username, tournament }: { username: string; tour
             ? <BracketView matches={data.matches} sex={data.sex} readOnly teamMode={teamMode} />
             : data.format === "PERSONALIZADO"
             ? <PublicCustomView matches={data.matches} teamMode={teamMode} sex={data.sex} />
-            : <RoundRobinList matches={data.matches} teamMode={teamMode} />
+            : <PublicRoundRobinView matches={data.matches} pairs={data.pairs} teams={data.teams ?? []} teamMode={teamMode} />
           }
         </Box>
       )}
@@ -1865,27 +1959,47 @@ export default function ClubPublicPage() {
 
                 {/* Courts by sport */}
                 {profile.courtsBySport && Object.keys(profile.courtsBySport).length > 0 && (
-                  <Box sx={{ mx: 2, mt: 2, mb: 1.5 }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                      {Object.entries(profile.courtsBySport).map(([sport, names]) => (
-                        <Box key={sport} sx={{ p: 2, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, bgcolor: "#fff" }}>
+                  <Box sx={{ mx: 2, mt: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
+                    {/* Header */}
+                    <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.muted }}>
+                        Cuenta con canchas de
+                      </Typography>
+                    </Box>
+                    {/* One row per sport */}
+                    {Object.entries(profile.courtsBySport).map(([sport, names], idx, arr) => {
+                      const chip = SPORT_CHIP[sport];
+                      return (
+                        <Box key={sport} sx={{ px: 2, py: 1.5, borderBottom: idx < arr.length - 1 ? `1px solid ${COLORS.lightBorder}` : "none" }}>
+                          {/* Sport badge + count */}
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                            <Box sx={{ width: 3, height: 16, borderRadius: 2, bgcolor: COLORS.accent, flexShrink: 0 }} />
-                            <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.07em", color: COLORS.text }}>
-                              {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: COLORS.muted, ml: "auto" }}>
-                              {names.length} {names.length === 1 ? "cancha" : "canchas"}
-                            </Typography>
+                            <Box sx={{
+                              width: 30, height: 30, borderRadius: 2, flexShrink: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              bgcolor: chip?.bg ?? "rgba(245,173,39,0.1)",
+                              color: chip?.color ?? COLORS.accent,
+                              "& svg": { fontSize: 16 },
+                            }}>
+                              {chip?.icon ?? <RoofingIcon sx={{ fontSize: 16 }} />}
+                            </Box>
+                            <Box>
+                              <Typography variant="body2" fontWeight={700} sx={{ color: COLORS.text, lineHeight: 1.2 }}>
+                                {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: COLORS.muted }}>
+                                {names.length} {names.length === 1 ? "cancha" : "canchas"}
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                          {/* Court name chips */}
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, pl: 0.5 }}>
                             {names.map(name => (
-                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.72rem", fontWeight: 600, bgcolor: "#f1f5f9", color: COLORS.text, border: `1px solid ${COLORS.lightBorder}` }} />
+                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, bgcolor: "#f8fafc", color: COLORS.text, border: `1px solid ${COLORS.lightBorder}` }} />
                             ))}
                           </Box>
                         </Box>
-                      ))}
-                    </Box>
+                      );
+                    })}
                   </Box>
                 )}
 
@@ -1910,28 +2024,6 @@ export default function ClubPublicPage() {
                     </Box>
                   </Box>
                 </Box>
-
-                {/* WA contact CTA */}
-                {profile.phone && (
-                  <Box sx={{ px: 2, pb: 1.5 }}>
-                    <Box
-                      component="a"
-                      href={`https://wa.me/${profile.phone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackEvent("whatsapp_contacto")}
-                      sx={{
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 1.25,
-                        py: 1.5, borderRadius: 2.5, bgcolor: "#16a34a", color: "#fff",
-                        textDecoration: "none", fontWeight: 700, fontSize: "0.9rem", fontFamily: "inherit",
-                        transition: "opacity 0.15s", "&:hover": { opacity: 0.88 },
-                      }}
-                    >
-                      <WhatsAppIcon sx={{ fontSize: 20 }} />
-                      Contactar por WhatsApp
-                    </Box>
-                  </Box>
-                )}
 
                 {/* Amenities */}
                 {profile.amenities && profile.amenities.length > 0 && (
