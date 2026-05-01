@@ -436,11 +436,12 @@ function BracketMatchCard({ match, groupLabel, readOnly, onEdit, teamMode }: { m
                   {live.label}
                 </Typography>
               </Box>
-            ) : match.scheduledAt ? (
+            ) : (match.scheduledAt || match.court?.name) ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.disabled" }}>
-                <AccessTimeIcon sx={{ fontSize: 10 }} />
+                {match.scheduledAt && <AccessTimeIcon sx={{ fontSize: 10 }} />}
                 <Typography variant="caption" sx={{ fontSize: "0.65rem", fontWeight: 600 }}>
-                  {new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  {match.scheduledAt ? new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                  {match.court?.name ? (match.scheduledAt ? ` · ${match.court.name}` : match.court.name) : ""}
                 </Typography>
               </Box>
             ) : null}

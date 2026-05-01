@@ -318,12 +318,12 @@ function PublicRoundRobinView({ matches, pairs, teams, teamMode = false }: {
                         </Typography>
                       </Box>
                     )}
-                    {!live && m.scheduledAt && !m.result && (
+                    {!live && (m.scheduledAt || m.court?.name) && (
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "text.secondary" }}>
-                        <AccessTimeIcon sx={{ fontSize: 14 }} />
+                        {m.scheduledAt && <AccessTimeIcon sx={{ fontSize: 14 }} />}
                         <Typography variant="caption" fontWeight={500}>
-                          {new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          {m.court?.name ? ` · ${m.court.name}` : ""}
+                          {m.scheduledAt ? new Date(m.scheduledAt).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                          {m.court?.name ? (m.scheduledAt ? ` · ${m.court.name}` : m.court.name) : ""}
                         </Typography>
                       </Box>
                     )}
@@ -405,11 +405,12 @@ function PublicPhaseMatchCard({ match, teamMode }: { match: TournamentMatch; tea
               <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: live.stripe, animation: "pulse 2s infinite" }} />
               <Typography variant="caption" fontWeight={700} sx={{ fontSize: "0.65rem", color: live.text, textTransform: "uppercase" }}>{live.label}</Typography>
             </Box>
-          ) : match.scheduledAt ? (
+          ) : (match.scheduledAt || match.court?.name) ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, color: "text.disabled" }}>
-              <AccessTimeIcon sx={{ fontSize: 10 }} />
+              {match.scheduledAt && <AccessTimeIcon sx={{ fontSize: 10 }} />}
               <Typography variant="caption" sx={{ fontSize: "0.63rem", fontWeight: 600 }}>
-                {new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {match.scheduledAt ? new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                {match.court?.name ? (match.scheduledAt ? ` · ${match.court.name}` : match.court.name) : ""}
               </Typography>
             </Box>
           ) : (

@@ -235,11 +235,12 @@ function CustomMatchCard({ match, onEdit, onDelete, teamMode }: { match: Tournam
         <Box sx={{ px: 1.5, py: 0.5, bgcolor: "grey.50", display: "flex", alignItems: "center", gap: 1, mt: "auto" }}>
           {match.result ? (
             <Typography variant="caption" fontWeight={800} sx={{ fontSize: "0.7rem" }}>{match.result}</Typography>
-          ) : match.scheduledAt ? (
+          ) : (match.scheduledAt || match.court?.name) ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.disabled" }}>
-              <AccessTimeIcon sx={{ fontSize: 10 }} />
+              {match.scheduledAt && <AccessTimeIcon sx={{ fontSize: 10 }} />}
               <Typography variant="caption" sx={{ fontSize: "0.65rem", fontWeight: 600 }}>
-                {new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {match.scheduledAt ? new Date(match.scheduledAt).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                {match.court?.name ? (match.scheduledAt ? ` · ${match.court.name}` : match.court.name) : ""}
               </Typography>
             </Box>
           ) : (
