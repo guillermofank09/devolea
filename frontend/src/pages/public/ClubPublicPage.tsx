@@ -1973,7 +1973,7 @@ export default function ClubPublicPage() {
                       return (
                         <Box key={sport} sx={{ px: 2, py: 1.5, borderBottom: idx < arr.length - 1 ? `1px solid ${COLORS.lightBorder}` : "none" }}>
                           {/* Sport badge + count */}
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <Box sx={{
                               width: 30, height: 30, borderRadius: 2, flexShrink: 0,
                               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1983,20 +1983,9 @@ export default function ClubPublicPage() {
                             }}>
                               {chip?.icon ?? <RoofingIcon sx={{ fontSize: 16 }} />}
                             </Box>
-                            <Box>
-                              <Typography variant="body2" fontWeight={700} sx={{ color: COLORS.text, lineHeight: 1.2 }}>
-                                {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: COLORS.muted }}>
-                                {names.length} {names.length === 1 ? "cancha" : "canchas"}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          {/* Court name chips */}
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, pl: 0.5 }}>
-                            {names.map(name => (
-                              <Chip key={name} label={name} size="small" sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, bgcolor: "#f8fafc", color: COLORS.text, border: `1px solid ${COLORS.lightBorder}` }} />
-                            ))}
+                            <Typography variant="body2" fontWeight={700} sx={{ color: COLORS.text }}>
+                              {names.length} {names.length === 1 ? "cancha" : "canchas"} de {SPORT_LABEL[sport as keyof typeof SPORT_LABEL] ?? sport}
+                            </Typography>
                           </Box>
                         </Box>
                       );
