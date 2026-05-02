@@ -1990,6 +1990,13 @@ export default function ClubPublicPage() {
                         </Box>
                       );
                     })}
+                    {/* CTA */}
+                    <Box sx={{ px: 2, py: 1.25, borderTop: `1px solid ${COLORS.lightBorder}`, bgcolor: "rgba(245,173,39,0.04)", display: "flex", alignItems: "center", gap: 1 }}>
+                      <CalendarMonthIcon sx={{ fontSize: 15, color: COLORS.accent, flexShrink: 0 }} />
+                      <Typography variant="caption" sx={{ color: COLORS.muted, fontWeight: 500, lineHeight: 1.4 }}>
+                        Visualizá la disponibilidad de las canchas y hacé tu reserva en la sección de <Typography component="span" variant="caption" fontWeight={800} sx={{ color: COLORS.accent }}>Canchas</Typography>.
+                      </Typography>
+                    </Box>
                   </Box>
                 )}
 
