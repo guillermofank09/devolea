@@ -286,6 +286,7 @@ export default function TournamentDetail() {
       {(data.teams ?? []).length === 0 ? (
         <EmptyState message="No hay equipos registrados. Agregá el primero." />
       ) : (
+        <>
         <List dense sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0, overflow: "hidden" }}>
           {(data.teams ?? []).map((team, idx) => (
             <Box key={team.id}>
@@ -330,6 +331,7 @@ export default function TournamentDetail() {
             </Menu>
           );
         })()}
+        </>
       )}
     </>
   ) : tennisMode ? (
@@ -345,6 +347,7 @@ export default function TournamentDetail() {
       {data.pairs.length === 0 ? (
         <EmptyState message="No hay jugadores registrados. Agregá el primero." />
       ) : (
+        <>
         <List dense sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0, overflow: "hidden" }}>
           {data.pairs.map((pair, idx) => (
             <Box key={pair.id}>
@@ -392,6 +395,7 @@ export default function TournamentDetail() {
             </Menu>
           );
         })()}
+        </>
       )}
     </>
   ) : (
@@ -407,6 +411,7 @@ export default function TournamentDetail() {
       {data.pairs.length === 0 ? (
         <EmptyState message="No hay parejas registradas. Agregá la primera." />
       ) : (
+        <>
         <List dense sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0, overflow: "hidden" }}>
           {data.pairs.map((pair, idx) => (
             <Box key={pair.id}>
@@ -473,6 +478,7 @@ export default function TournamentDetail() {
             </Menu>
           );
         })()}
+        </>
       )}
     </>
   );
