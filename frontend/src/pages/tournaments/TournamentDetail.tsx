@@ -12,7 +12,10 @@ import {
   List,
   ListItem,
   ListItemAvatar,
+  ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Tab,
   Tabs,
   Tooltip,
@@ -25,6 +28,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import BlockIcon from "@mui/icons-material/Block";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchTournamentById, removePair, removeTeam, resetMatches, triggerRepechage, disqualifyPair, disqualifyTeam, createPlaceholderMatch, deleteMatch } from "../../api/tournamentService";
 import type { Pair, TournamentDetail as TournamentDetailType, TournamentMatch, TournamentTeam } from "../../types/Tournament";
@@ -136,6 +140,8 @@ export default function TournamentDetail() {
   // null = not yet initialized; defaults to matches tab if matches exist
   const [mobileTab, setMobileTab] = useState<number | null>(null);
   const [listCollapsed, setListCollapsed] = useState(false);
+  const [pairsMenu, setPairsMenu] = useState<{ el: HTMLElement; id: number } | null>(null);
+  const [teamsMenu, setTeamsMenu] = useState<{ el: HTMLElement; id: number } | null>(null);
 
   const { isPending, error, data } = useQuery<TournamentDetailType>({
     queryKey: ["tournamentDetail", id],
@@ -285,20 +291,10 @@ export default function TournamentDetail() {
             <Box key={team.id}>
               {idx > 0 && <Divider />}
               <ListItem
-                sx={listItemHoverSx}
                 secondaryAction={
-                  <Box className="row-actions" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Tooltip title={team.disqualified ? "Rehabilitar equipo" : "Descalificar equipo"}>
-                      <IconButton size="small" color={team.disqualified ? "warning" : "default"} onClick={() => disqualifyTeamMutation.mutate(team.id)}>
-                        <BlockIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar equipo">
-                      <IconButton edge="end" size="small" color="error" onClick={() => setDeleteTeamTarget(team)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  <IconButton size="small" onClick={(e) => setTeamsMenu({ el: e.currentTarget, id: team.id })}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
                 }
               >
                 <ListItemAvatar>
@@ -317,6 +313,23 @@ export default function TournamentDetail() {
             </Box>
           ))}
         </List>
+        {(() => {
+          const team = (data.teams ?? []).find(t => t.id === teamsMenu?.id) ?? null;
+          return (
+            <Menu anchorEl={teamsMenu?.el} open={!!teamsMenu} onClose={() => setTeamsMenu(null)}
+              transformOrigin={{ horizontal: "right", vertical: "top" }} anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+              <MenuItem onClick={() => { if (team) disqualifyTeamMutation.mutate(team.id); setTeamsMenu(null); }}
+                sx={{ color: team?.disqualified ? "warning.main" : "text.primary" }}>
+                <ListItemIcon><BlockIcon fontSize="small" color={team?.disqualified ? "warning" : "inherit"} /></ListItemIcon>
+                <ListItemText>{team?.disqualified ? "Rehabilitar equipo" : "Descalificar equipo"}</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { if (team) setDeleteTeamTarget(team); setTeamsMenu(null); }} sx={{ color: "error.main" }}>
+                <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+                <ListItemText>Eliminar equipo</ListItemText>
+              </MenuItem>
+            </Menu>
+          );
+        })()}
       )}
     </>
   ) : tennisMode ? (
@@ -337,20 +350,10 @@ export default function TournamentDetail() {
             <Box key={pair.id}>
               {idx > 0 && <Divider />}
               <ListItem
-                sx={listItemHoverSx}
                 secondaryAction={
-                  <Box className="row-actions" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Tooltip title={pair.disqualified ? "Rehabilitar jugador" : "Descalificar jugador"}>
-                      <IconButton size="small" color={pair.disqualified ? "warning" : "default"} onClick={() => disqualifyPairMutation.mutate(pair.id)}>
-                        <BlockIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar jugador">
-                      <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  <IconButton size="small" onClick={(e) => setPairsMenu({ el: e.currentTarget, id: pair.id })}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
                 }
               >
                 <ListItemAvatar>
@@ -372,6 +375,23 @@ export default function TournamentDetail() {
             </Box>
           ))}
         </List>
+        {(() => {
+          const pair = data.pairs.find(p => p.id === pairsMenu?.id) ?? null;
+          return (
+            <Menu anchorEl={pairsMenu?.el} open={!!pairsMenu} onClose={() => setPairsMenu(null)}
+              transformOrigin={{ horizontal: "right", vertical: "top" }} anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+              <MenuItem onClick={() => { if (pair) disqualifyPairMutation.mutate(pair.id); setPairsMenu(null); }}
+                sx={{ color: pair?.disqualified ? "warning.main" : "text.primary" }}>
+                <ListItemIcon><BlockIcon fontSize="small" color={pair?.disqualified ? "warning" : "inherit"} /></ListItemIcon>
+                <ListItemText>{pair?.disqualified ? "Rehabilitar jugador" : "Descalificar jugador"}</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { if (pair) setDeletePairTarget(pair); setPairsMenu(null); }} sx={{ color: "error.main" }}>
+                <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+                <ListItemText>Eliminar jugador</ListItemText>
+              </MenuItem>
+            </Menu>
+          );
+        })()}
       )}
     </>
   ) : (
@@ -392,25 +412,10 @@ export default function TournamentDetail() {
             <Box key={pair.id}>
               {idx > 0 && <Divider />}
               <ListItem
-                sx={listItemHoverSx}
                 secondaryAction={
-                  <Box className="row-actions" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Tooltip title="Editar pareja">
-                      <IconButton size="small" onClick={() => setEditPairTarget(pair)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={pair.disqualified ? "Rehabilitar pareja" : "Descalificar pareja"}>
-                      <IconButton size="small" color={pair.disqualified ? "warning" : "default"} onClick={() => disqualifyPairMutation.mutate(pair.id)}>
-                        <BlockIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar pareja">
-                      <IconButton edge="end" size="small" color="error" onClick={() => setDeletePairTarget(pair)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  <IconButton size="small" onClick={(e) => setPairsMenu({ el: e.currentTarget, id: pair.id })}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
                 }
               >
                 <ListItemAvatar>
@@ -447,6 +452,27 @@ export default function TournamentDetail() {
             </Box>
           ))}
         </List>
+        {(() => {
+          const pair = data.pairs.find(p => p.id === pairsMenu?.id) ?? null;
+          return (
+            <Menu anchorEl={pairsMenu?.el} open={!!pairsMenu} onClose={() => setPairsMenu(null)}
+              transformOrigin={{ horizontal: "right", vertical: "top" }} anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+              <MenuItem onClick={() => { if (pair) setEditPairTarget(pair); setPairsMenu(null); }}>
+                <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+                <ListItemText>Editar pareja</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { if (pair) disqualifyPairMutation.mutate(pair.id); setPairsMenu(null); }}
+                sx={{ color: pair?.disqualified ? "warning.main" : "text.primary" }}>
+                <ListItemIcon><BlockIcon fontSize="small" color={pair?.disqualified ? "warning" : "inherit"} /></ListItemIcon>
+                <ListItemText>{pair?.disqualified ? "Rehabilitar pareja" : "Descalificar pareja"}</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => { if (pair) setDeletePairTarget(pair); setPairsMenu(null); }} sx={{ color: "error.main" }}>
+                <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+                <ListItemText>Eliminar pareja</ListItemText>
+              </MenuItem>
+            </Menu>
+          );
+        })()}
       )}
     </>
   );
