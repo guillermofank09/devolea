@@ -1090,10 +1090,12 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
             </Box>
             <IconButton size="small" onClick={() => setSelectedCourt(null)} sx={{ ml: 1, flexShrink: 0 }}><CloseIcon /></IconButton>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, bgcolor: "grey.50", p: 0.5, borderRadius: 2, mt: 1, alignSelf: "flex-start" }}>
-            <IconButton size="small" onClick={() => shiftWindow(-1)} disabled={isAtToday}><ChevronLeftIcon /></IconButton>
-            <Typography variant="caption" fontWeight={800} noWrap>{fromLabel} — {toLabel}</Typography>
-            <IconButton size="small" onClick={() => shiftWindow(1)}><ChevronRightIcon /></IconButton>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, bgcolor: "grey.50", p: 0.5, borderRadius: 2 }}>
+              <IconButton size="small" onClick={() => shiftWindow(-1)} disabled={isAtToday}><ChevronLeftIcon /></IconButton>
+              <Typography variant="caption" fontWeight={800} noWrap>{fromLabel} — {toLabel}</Typography>
+              <IconButton size="small" onClick={() => shiftWindow(1)}><ChevronRightIcon /></IconButton>
+            </Box>
           </Box>
         </DialogTitle>
 
