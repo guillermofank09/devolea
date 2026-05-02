@@ -541,6 +541,7 @@ function PublicTournamentCard({ tournament, onSelect, isLast }: { tournament: an
   const status = isCompleted
     ? { label: "Finalizado", color: "primary" as const }
     : getTournamentStatus(tournament.startDate, tournament.endDate);
+  const isActive = status.color === "success";
   const statusColor: Record<string, string> = { success: "#16a34a", primary: "#1d4ed8", default: "#64748b", info: "#0284c7" };
   const dotColor = statusColor[status.color] ?? "#64748b";
 
@@ -555,18 +556,27 @@ function PublicTournamentCard({ tournament, onSelect, isLast }: { tournament: an
         px: 2,
         py: 1.5,
         cursor: "pointer",
+        bgcolor: isActive ? "rgba(22,163,74,0.05)" : "transparent",
         borderBottom: isLast ? "none" : `1px solid ${COLORS.lightBorder}`,
         transition: "background 0.15s",
-        "&:hover": { bgcolor: "#f8fafc" },
+        "&:hover": { bgcolor: isActive ? "rgba(22,163,74,0.08)" : "#f8fafc" },
         "&:active": { bgcolor: "#f1f5f9" },
       }}
     >
-      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: dotColor, flexShrink: 0 }} />
+      <Box sx={{ position: "relative", flexShrink: 0 }}>
+        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: dotColor }} />
+        {isActive && <Box sx={{ position: "absolute", inset: 0, borderRadius: "50%", bgcolor: dotColor, animation: "tournamentPulse 2s infinite", opacity: 0.4 }} />}
+      </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={700} noWrap sx={{ color: COLORS.text }}>
-          {tournament.name}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.25, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.1 }}>
+          <Typography variant="body2" fontWeight={700} noWrap sx={{ color: COLORS.text }}>
+            {tournament.name}
+          </Typography>
+          {isActive && (
+            <Chip label="En curso" size="small" color="success" sx={{ height: 16, fontSize: "0.58rem", fontWeight: 800, flexShrink: 0 }} />
+          )}
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
           {tournament.category && tournament.category !== "SIN_CATEGORIA" && (
             <Chip label={`Cat. ${CATEGORY_LABEL[tournament.category] ?? tournament.category}`} size="small" color="info" sx={{ height: 18, fontSize: "0.6rem", fontWeight: 700 }} />
           )}
@@ -592,19 +602,28 @@ function PublicTournamentCard({ tournament, onSelect, isLast }: { tournament: an
         cursor: "pointer",
         transition: "all 0.2s",
         border: "1px solid",
-        borderColor: "divider",
+        borderColor: isActive ? "#86efac" : "divider",
+        bgcolor: isActive ? "rgba(22,163,74,0.02)" : "background.paper",
         "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
       }}
       onClick={() => onSelect(tournament)}
     >
       <CardContent sx={{ flex: 1 }}>
+        {isActive && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#16a34a", animation: "tournamentPulse 2s infinite", flexShrink: 0 }} />
+            <Typography variant="caption" fontWeight={800} sx={{ color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.62rem" }}>
+              En curso
+            </Typography>
+          </Box>
+        )}
         <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2, mb: 1 }}>
           {tournament.name}
         </Typography>
         <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", mb: 1.5 }}>
           <Chip label={`Cat. ${CATEGORY_LABEL[tournament.category] ?? tournament.category}`} size="small" color="info" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
           {tournament.sex && <Chip label={SEX_LABEL[tournament.sex] ?? tournament.sex} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />}
-          <Chip label={status.label} size="small" color={status.color as any} sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />
+          {!isActive && <Chip label={status.label} size="small" color={status.color as any} sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }} />}
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <CalendarTodayIcon sx={{ fontSize: 14 }} />
@@ -612,14 +631,14 @@ function PublicTournamentCard({ tournament, onSelect, isLast }: { tournament: an
         </Typography>
       </CardContent>
       <CardActions sx={{ pt: 0, px: 2, pb: 1.5 }}>
-        <Button size="small" variant="outlined" fullWidth sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}>
+        <Button size="small" variant={isActive ? "contained" : "outlined"} color={isActive ? "success" : "primary"} fullWidth sx={{ textTransform: "none", fontWeight: 600, borderRadius: 1.5 }}>
           Ver fixture
         </Button>
       </CardActions>
     </Card>
   );
 
-  return <>{mobileRow}{desktopCard}</>;
+  return <>{mobileRow}{desktopCard}<style>{`@keyframes tournamentPulse{0%{transform:scale(1);opacity:.4}50%{transform:scale(2.2);opacity:0}100%{transform:scale(1);opacity:.4}}`}</style></>;
 }
 
 function TournamentDetailView({ username, tournament }: { username: string; tournament: any }) {
@@ -2151,18 +2170,29 @@ export default function ClubPublicPage() {
                 )}
 
                 {/* Mobile: list, Desktop: grid */}
-                <Box sx={{ display: { xs: "block", sm: "none" }, bgcolor: "#fff", border: `1px solid ${COLORS.lightBorder}`, borderRadius: 3, overflow: "hidden", mx: 2 }}>
-                  {tournaments.map((t: any, i: number) => (
-                    <PublicTournamentCard key={t.id} tournament={t} onSelect={setSelectedTournament} isLast={i === tournaments.length - 1} />
-                  ))}
-                </Box>
-                <Grid container spacing={2} sx={{ display: { xs: "none", sm: "flex" } }}>
-                  {tournaments.map((t: any) => (
-                    <Grid size={{ sm: 6, md: 4 }} key={t.id}>
-                      <PublicTournamentCard tournament={t} onSelect={setSelectedTournament} />
-                    </Grid>
-                  ))}
-                </Grid>
+                {(() => {
+                  const sorted = [...tournaments].sort((a: any, b: any) => {
+                    const aActive = getTournamentStatus(a.startDate, a.endDate).color === "success" && !(a.format === "PERSONALIZADO" && a.status === "COMPLETED");
+                    const bActive = getTournamentStatus(b.startDate, b.endDate).color === "success" && !(b.format === "PERSONALIZADO" && b.status === "COMPLETED");
+                    return (bActive ? 1 : 0) - (aActive ? 1 : 0);
+                  });
+                  return (
+                    <>
+                      <Box sx={{ display: { xs: "block", sm: "none" }, bgcolor: "#fff", border: `1px solid ${COLORS.lightBorder}`, borderRadius: 3, overflow: "hidden", mx: 2 }}>
+                        {sorted.map((t: any, i: number) => (
+                          <PublicTournamentCard key={t.id} tournament={t} onSelect={setSelectedTournament} isLast={i === sorted.length - 1} />
+                        ))}
+                      </Box>
+                      <Grid container spacing={2} sx={{ display: { xs: "none", sm: "flex" } }}>
+                        {sorted.map((t: any) => (
+                          <Grid size={{ sm: 6, md: 4 }} key={t.id}>
+                            <PublicTournamentCard tournament={t} onSelect={setSelectedTournament} />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </>
+                  );
+                })()}
                 {tournamentPages > 1 && (
                   <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
                     <Pagination count={tournamentPages} page={tournamentPage} onChange={(_, p) => setTournamentPage(p)} size="small" />
