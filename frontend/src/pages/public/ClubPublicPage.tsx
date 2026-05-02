@@ -1964,7 +1964,7 @@ export default function ClubPublicPage() {
                     {/* Header */}
                     <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${COLORS.lightBorder}`, display: "flex", alignItems: "center", gap: 1 }}>
                       <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.muted }}>
-                        Cuenta con canchas de
+                        El club cuenta con:
                       </Typography>
                     </Box>
                     {/* One row per sport */}
@@ -1993,28 +1993,6 @@ export default function ClubPublicPage() {
                   </Box>
                 )}
 
-                {/* Today status banner */}
-                <Box sx={{ px: 2, pt: profile.courtsBySport && Object.keys(profile.courtsBySport).length > 0 ? 0 : 2, pb: 1.5 }}>
-                  <Box sx={{
-                    display: "flex", alignItems: "center", gap: 1.5,
-                    px: 2, py: 1.5, borderRadius: 3,
-                    bgcolor: todayStatus.open ? "#f0fdf4" : "#fef2f2",
-                    border: `1px solid ${todayStatus.open ? "#bbf7d0" : "#fecaca"}`,
-                  }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: todayStatus.open ? "#16a34a" : "#dc2626", flexShrink: 0 }} />
-                    <Box>
-                      <Typography variant="body2" fontWeight={800} sx={{ color: todayStatus.open ? "#15803d" : "#dc2626", lineHeight: 1.1 }}>
-                        {todayStatus.open ? "Abierto ahora" : "Cerrado ahora"}
-                      </Typography>
-                      {todayStatus.hours && (
-                        <Typography variant="caption" sx={{ color: todayStatus.open ? "#166534" : "#b91c1c", fontWeight: 500 }}>
-                          {todayStatus.todayName} · {todayStatus.hours}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-
                 {/* Amenities */}
                 {profile.amenities && profile.amenities.length > 0 && (
                   <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
@@ -2035,6 +2013,28 @@ export default function ClubPublicPage() {
                     </Box>
                   </Box>
                 )}
+
+                {/* Today status banner */}
+                <Box sx={{ px: 2, pb: 1.5 }}>
+                  <Box sx={{
+                    display: "flex", alignItems: "center", gap: 1.5,
+                    px: 2, py: 1.5, borderRadius: 3,
+                    bgcolor: todayStatus.open ? "#f0fdf4" : "#fef2f2",
+                    border: `1px solid ${todayStatus.open ? "#bbf7d0" : "#fecaca"}`,
+                  }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: todayStatus.open ? "#16a34a" : "#dc2626", flexShrink: 0 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={800} sx={{ color: todayStatus.open ? "#15803d" : "#dc2626", lineHeight: 1.1 }}>
+                        {todayStatus.open ? "Abierto ahora" : "Cerrado ahora"}
+                      </Typography>
+                      {todayStatus.hours && (
+                        <Typography variant="caption" sx={{ color: todayStatus.open ? "#166534" : "#b91c1c", fontWeight: 500 }}>
+                          {todayStatus.todayName} · {todayStatus.hours}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
 
                 {/* Full schedule */}
                 <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid ${COLORS.lightBorder}`, overflow: "hidden", bgcolor: "#fff" }}>
