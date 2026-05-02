@@ -116,12 +116,6 @@ function MatchStatusChip({ status }: { status: string }) {
   return <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600, fontSize: "0.7rem" }} />;
 }
 
-const listItemHoverSx = {
-  "@media (hover: hover)": {
-    "&:hover .row-actions": { opacity: 1 },
-    ".row-actions": { opacity: 0, transition: "opacity 0.15s ease" },
-  },
-} as const;
 
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>();
