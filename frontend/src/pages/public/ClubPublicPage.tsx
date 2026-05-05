@@ -62,6 +62,7 @@ import { StandingsTable } from "../tournaments/RoundRobinView";
 import type { DaySchedule } from "../../types/ClubProfile";
 import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
 import type { PublicBookingSlot, PublicCourt, PublicProfesor, PaginatedTournaments } from "../../api/publicService";
+import type { DiscountSlot } from "../../types/AppSettings";
 import PageLoader from "../../components/common/PageLoader";
 import GoogleMapView from "../../components/common/GoogleMapView";
 import BracketView, { getRoundLabel } from "../tournaments/BracketView";
@@ -749,7 +750,7 @@ function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number
   return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
 }
 
-function PublicCourtCard({ court, onSelect }: { court: PublicCourt; onSelect: (c: any) => void }) {
+function PublicCourtCard({ court, onSelect, hasDiscount }: { court: PublicCourt; onSelect: (c: any) => void; hasDiscount?: boolean }) {
   const { name, status, type, sport } = court;
   const { label, borderColor, chipColor } = STATUS_CONFIG[status] ?? STATUS_CONFIG["AVAILABLE"];
   const sportCfg = sport ? SPORT_CHIP[sport] : null;
@@ -805,11 +806,21 @@ function PublicCourtCard({ court, onSelect }: { court: PublicCourt; onSelect: (c
           )}
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1.25 }}>
-          <CalendarMonthIcon sx={{ fontSize: 12, color: "text.disabled" }} />
-          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.75rem", fontWeight: 600 }}>
-            Ver disponibilidad
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <CalendarMonthIcon sx={{ fontSize: 12, color: "text.disabled" }} />
+            <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.75rem", fontWeight: 600 }}>
+              Ver disponibilidad
+            </Typography>
+          </Box>
+          {hasDiscount && (
+            <Chip
+              icon={<LocalOfferOutlinedIcon />}
+              label="Descuento"
+              size="small"
+              sx={{ height: 18, fontSize: "0.6rem", fontWeight: 700, bgcolor: "rgba(245,173,39,0.15)", color: "#92400e", "& .MuiChip-icon": { fontSize: 11, color: "#92400e" } }}
+            />
+          )}
         </Box>
       </CardContent>
     </Card>
@@ -982,7 +993,7 @@ function CourtCalendar({
   );
 }
 
-function CourtsSection({ username, businessHours, clubPhone }: { username: string; businessHours: DaySchedule[]; clubPhone?: string | null }) {
+function CourtsSection({ username, businessHours, clubPhone, discountSlots }: { username: string; businessHours: DaySchedule[]; clubPhone?: string | null; discountSlots?: DiscountSlot[] }) {
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [windowStart, setWindowStart] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
@@ -1060,7 +1071,11 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
         <Grid container spacing={2}>
           {(data?.courts ?? []).map(court => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={court.id}>
-              <PublicCourtCard court={court} onSelect={setSelectedCourt} />
+              <PublicCourtCard
+                court={court}
+                onSelect={setSelectedCourt}
+                hasDiscount={discountSlots?.some(s => s.courtId === court.id)}
+              />
             </Grid>
           ))}
         </Grid>
@@ -1068,6 +1083,56 @@ function CourtsSection({ username, businessHours, clubPhone }: { username: strin
       {totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} size="small" />
+        </Box>
+      )}
+
+      {discountSlots && discountSlots.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <LocalOfferOutlinedIcon sx={{ fontSize: 18, color: "#b07d00" }} />
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: "#78350f" }}>
+              Horarios con Descuento
+            </Typography>
+          </Box>
+          <Grid container spacing={1.5}>
+            {discountSlots.map((slot, i) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+                <Box sx={{
+                  p: 1.75,
+                  borderRadius: 2.5,
+                  bgcolor: "#fffbeb",
+                  border: "1.5px solid #fde68a",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="body2" fontWeight={700} noWrap sx={{ color: "#78350f" }}>
+                      {slot.courtName}
+                    </Typography>
+                    {slot.price != null && (
+                      <Chip
+                        label={`$${slot.price}`}
+                        size="small"
+                        sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800, bgcolor: COLORS.accent, color: "#111", flexShrink: 0 }}
+                      />
+                    )}
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <AccessTimeIcon sx={{ fontSize: 13, color: "#92400e" }} />
+                    <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600 }}>
+                      {slot.dayOfWeek} · {slot.startTime} – {slot.endTime}
+                    </Typography>
+                  </Box>
+                  {slot.label && (
+                    <Typography variant="caption" sx={{ color: "#b07d00", fontStyle: "italic" }}>
+                      {slot.label}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Box>
       )}
 
@@ -2282,7 +2347,7 @@ export default function ClubPublicPage() {
                   <Box sx={{ width: 4, height: 26, bgcolor: COLORS.accent, borderRadius: 2, flexShrink: 0 }} />
                   <Typography variant="h5" fontWeight={800} sx={{ letterSpacing: "-0.02em", color: COLORS.text }}>Canchas</Typography>
                 </Box>
-                <CourtsSection username={username!} businessHours={profile.businessHours} clubPhone={profile.phone} />
+                <CourtsSection username={username!} businessHours={profile.businessHours} clubPhone={profile.phone} discountSlots={profile.discountSlots} />
               </Box>
             )}
 
