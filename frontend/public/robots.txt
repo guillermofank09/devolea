@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://devolea.app/sitemap.xml
+Sitemap: https://devolea.net/sitemap.xml

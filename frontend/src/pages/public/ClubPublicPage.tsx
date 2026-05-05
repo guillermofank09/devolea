@@ -1881,9 +1881,9 @@ export default function ClubPublicPage() {
       setMeta('meta[name="description"]', "content", "Devolea es el software de gestión para clubes deportivos. Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
       setMeta('meta[property="og:title"]', "content", "Devolea · Software de Gestión para Clubes Deportivos");
       setMeta('meta[property="og:description"]', "content", "Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
-      setMeta('meta[property="og:url"]', "content", "https://devolea.app/");
+      setMeta('meta[property="og:url"]', "content", "https://devolea.net/");
       setMeta('meta[property="og:type"]', "content", "website");
-      setMeta('meta[property="og:image"]', "content", "https://devolea.app/og-image.png");
+      setMeta('meta[property="og:image"]', "content", "https://devolea.net/og-image.png");
       setMeta('meta[name="twitter:title"]', "content", "Devolea · Software de Gestión para Clubes Deportivos");
       setMeta('meta[name="twitter:description"]', "content", "Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
       canonical?.remove();
