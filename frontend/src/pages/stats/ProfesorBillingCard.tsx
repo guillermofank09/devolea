@@ -41,7 +41,7 @@ export default function ProfesorBillingCard({ data, isLoading, isError }: Props)
   );
 
   const totalGanancia = filtered.reduce(
-    (s, p) => s + p.classHourlyRate * p.monthlyHours,
+    (s, p) => s + p.classHourlyRate * p.monthlyClasses,
     0
   );
 
@@ -53,7 +53,7 @@ export default function ProfesorBillingCard({ data, isLoading, isError }: Props)
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, minWidth: 0 }}>
             <SchoolIcon sx={{ color: "#F5AD27", flexShrink: 0 }} />
             <Typography variant="subtitle1" fontWeight={700}>
-              Facturación por Profesor
+              Clases por Profesor
             </Typography>
           </Box>
           {!isLoading && !isError && (
@@ -105,21 +105,17 @@ export default function ProfesorBillingCard({ data, isLoading, isError }: Props)
                   <TableHead>
                     <TableRow sx={{ bgcolor: "#f5f5f5" }}>
                       <TableCell sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Profesor</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Tarifa/h</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Clases</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Clases (mes)</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Ganancia Club (mes)</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {filtered.map((p) => {
-                      const gananciaClub = p.classHourlyRate * p.monthlyHours;
+                      const gananciaClub = p.classHourlyRate * p.monthlyClasses;
                       return (
                         <TableRow key={p.profesorId} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
                           <TableCell>
                             <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="body2" color="text.secondary">{fmt(p.effectiveRate)}</Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="body2">{p.monthlyClasses}</Typography>
