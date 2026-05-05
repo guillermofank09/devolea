@@ -1570,7 +1570,7 @@ interface ClubInfoPanelProps {
   businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
   phone?: string | null;
   amenities?: string[];
-  discountSlots?: Array<{ courtName: string; dayOfWeek: string; startTime: string; endTime: string; label?: string }>;
+  discountSlots?: Array<{ courtName: string; dayOfWeek: string; startTime: string; endTime: string; price?: number; label?: string }>;
 }
 
 function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities, discountSlots }: ClubInfoPanelProps) {
@@ -1686,7 +1686,7 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
                   {slot.courtName} · {slot.dayOfWeek}
                 </Typography>
                 <Typography variant="caption" sx={{ color: COLORS.muted }}>
-                  {slot.startTime} – {slot.endTime}{slot.label ? ` · ${slot.label}` : ""}
+                  {slot.startTime} – {slot.endTime}{slot.price != null ? ` · $${slot.price}` : ""}{slot.label ? ` · ${slot.label}` : ""}
                 </Typography>
               </Box>
             ))}
@@ -1833,6 +1833,13 @@ export default function ClubPublicPage() {
     return () => clearTimeout(t);
   }, [tournamentSearch]);
 
+  const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
+    queryKey: ["publicProfile", username],
+    queryFn: () => fetchPublicProfile(username!),
+    enabled: !!username,
+    retry: false,
+  });
+
   // ── Dynamic meta tags for SEO ──────────────────────────────────────────────
   useEffect(() => {
     if (!profile) return;
@@ -1916,13 +1923,6 @@ export default function ClubPublicPage() {
       document.getElementById("club-jsonld")?.remove();
     };
   }, [profile, username]);
-
-  const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
-    queryKey: ["publicProfile", username],
-    queryFn: () => fetchPublicProfile(username!),
-    enabled: !!username,
-    retry: false,
-  });
 
   const { data: tournamentsData, isLoading: tournamentsLoading } = useQuery<PaginatedTournaments>({
     queryKey: ["publicTournaments", username, tournamentPage, tournamentDebouncedSearch, tournamentSportFilter ?? ""],
@@ -2165,7 +2165,7 @@ export default function ClubPublicPage() {
                       <Box key={idx} sx={{ px: 2, py: 1.25, borderBottom: idx < arr.length - 1 ? `1px solid #fde68a` : "none" }}>
                         <Typography variant="body2" fontWeight={700} sx={{ color: "#78350f" }}>{slot.courtName} · {slot.dayOfWeek}</Typography>
                         <Typography variant="caption" sx={{ color: "#92400e" }}>
-                          {slot.startTime} – {slot.endTime}{slot.label ? ` · ${slot.label}` : ""}
+                          {slot.startTime} – {slot.endTime}{slot.price != null ? ` · $${slot.price}` : ""}{slot.label ? ` · ${slot.label}` : ""}
                         </Typography>
                       </Box>
                     ))}

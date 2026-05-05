@@ -534,6 +534,7 @@ export default function Settings() {
                   <Typography variant="body2" fontWeight={700} noWrap>{slot.courtName}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {slot.dayOfWeek} · {slot.startTime} – {slot.endTime}
+                    {slot.price != null ? ` · $${slot.price}` : ""}
                     {slot.label ? ` · ${slot.label}` : ""}
                   </Typography>
                 </Box>
