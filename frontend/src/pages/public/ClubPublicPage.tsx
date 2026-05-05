@@ -1807,6 +1807,90 @@ export default function ClubPublicPage() {
     return () => clearTimeout(t);
   }, [tournamentSearch]);
 
+  // ── Dynamic meta tags for SEO ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!profile) return;
+
+    const DAY_EN: Record<string, string> = {
+      Lunes: "Monday", Martes: "Tuesday", "Miércoles": "Wednesday",
+      Jueves: "Thursday", Viernes: "Friday", Sábado: "Saturday", Domingo: "Sunday",
+    };
+
+    const pageUrl = `${window.location.origin}/${username}`;
+    const sports = profile.courtsBySport
+      ? Object.keys(profile.courtsBySport).map(s => SPORT_LABEL[s as keyof typeof SPORT_LABEL] ?? s).join(", ")
+      : "";
+    const title = `${profile.clubName} · Canchas y Torneos | Devolea`;
+    const desc = [
+      `Reservá canchas en ${profile.clubName}`,
+      sports ? `de ${sports}` : "",
+      profile.address ? `en ${profile.address}` : "",
+      "Consultá disponibilidad y torneos en tiempo real en Devolea.",
+    ].filter(Boolean).join(". ");
+
+    const setMeta = (sel: string, attr: string, val: string) => {
+      document.querySelector(sel)?.setAttribute(attr, val);
+    };
+
+    document.title = title;
+    setMeta('meta[name="description"]', "content", desc);
+    setMeta('meta[name="robots"]', "content", "index, follow");
+    setMeta('meta[property="og:title"]', "content", title);
+    setMeta('meta[property="og:description"]', "content", desc);
+    setMeta('meta[property="og:url"]', "content", pageUrl);
+    setMeta('meta[property="og:type"]', "content", "local.business");
+    if (profile.logoUrl) setMeta('meta[property="og:image"]', "content", profile.logoUrl);
+    setMeta('meta[name="twitter:title"]', "content", title);
+    setMeta('meta[name="twitter:description"]', "content", desc);
+
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = pageUrl;
+
+    // JSON-LD LocalBusiness
+    document.getElementById("club-jsonld")?.remove();
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "club-jsonld";
+    const openDays = (profile.businessHours ?? []).filter(h => h.isOpen);
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SportsActivityLocation",
+      name: profile.clubName,
+      url: pageUrl,
+      ...(profile.address && { address: { "@type": "PostalAddress", streetAddress: profile.address } }),
+      ...(profile.phone && { telephone: `+${profile.phone}` }),
+      ...(profile.logoUrl && { image: profile.logoUrl }),
+      ...(openDays.length > 0 && {
+        openingHoursSpecification: openDays.map(h => ({
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: `https://schema.org/${DAY_EN[h.day] ?? h.day}`,
+          opens: h.openTime,
+          closes: h.closeTime,
+        })),
+      }),
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.title = "Devolea · Software de Gestión para Clubes Deportivos";
+      setMeta('meta[name="description"]', "content", "Devolea es el software de gestión para clubes deportivos. Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
+      setMeta('meta[property="og:title"]', "content", "Devolea · Software de Gestión para Clubes Deportivos");
+      setMeta('meta[property="og:description"]', "content", "Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
+      setMeta('meta[property="og:url"]', "content", "https://devolea.app/");
+      setMeta('meta[property="og:type"]', "content", "website");
+      setMeta('meta[property="og:image"]', "content", "https://devolea.app/og-image.png");
+      setMeta('meta[name="twitter:title"]', "content", "Devolea · Software de Gestión para Clubes Deportivos");
+      setMeta('meta[name="twitter:description"]', "content", "Administrá reservas de canchas de pádel, tenis y fútbol, gestioná torneos y jugadores desde un solo lugar.");
+      canonical?.remove();
+      document.getElementById("club-jsonld")?.remove();
+    };
+  }, [profile, username]);
+
   const { data: profile, isLoading: profileLoading, isError: profileError } = useQuery({
     queryKey: ["publicProfile", username],
     queryFn: () => fetchPublicProfile(username!),
