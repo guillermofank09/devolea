@@ -550,7 +550,7 @@ export default function Settings() {
             )}
 
             {addingSlot && (
-              <Box sx={{ p: 2, mb: 1.5, border: "1.5px solid", borderColor: "warning.main", borderRadius: 2, bgcolor: "#fffbeb" }}>
+              <Box sx={{ p: 2, mb: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 12 }}>
                     <FormControl fullWidth size="small">
@@ -595,7 +595,20 @@ export default function Settings() {
                       slotProps={{ inputLabel: { shrink: true } }}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12 }}>
+                  <Grid size={{ xs: 6 }}>
+                    <TextField
+                      type="text" inputMode="decimal" label="Precio (opcional)" size="small" fullWidth
+                      value={newSlot.price != null ? String(newSlot.price) : ""}
+                      onChange={e => {
+                        const raw = e.target.value;
+                        if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                          setNewSlot(s => ({ ...s, price: raw === "" ? undefined : Number(raw) }));
+                        }
+                      }}
+                      slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
                     <TextField
                       label='Etiqueta (opcional)' placeholder='ej: "Happy Hour"'
                       size="small" fullWidth
@@ -606,7 +619,7 @@ export default function Settings() {
                 </Grid>
                 <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
                   <Button
-                    size="small" variant="contained"
+                    size="small"
                     disabled={!newSlot.courtId || !newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime}
                     onClick={() => {
                       if (!newSlot.courtId || !newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime) return;
@@ -614,7 +627,7 @@ export default function Settings() {
                       setAddingSlot(false);
                       setNewSlot({});
                     }}
-                    sx={{ textTransform: "none", fontWeight: 600, bgcolor: "#F5AD27", color: "#111", "&:hover": { bgcolor: "#e09b18" } }}
+                    sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#F5AD27", color: "#111", px: 2, borderRadius: 1.5, "&:hover": { bgcolor: "#e09b18" }, "&.Mui-disabled": { bgcolor: "action.disabledBackground" } }}
                   >
                     Agregar
                   </Button>

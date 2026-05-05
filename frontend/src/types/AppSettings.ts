@@ -4,6 +4,7 @@ export interface DiscountSlot {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
+  price?: number;
   label?: string;
 }
 
