@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { Tournament, TournamentDetail } from "../types/Tournament";
 import type { DaySchedule } from "../types/ClubProfile";
+import type { DiscountSlot } from "../types/AppSettings";
 import { API_BASE } from "./config";
 
 export interface PublicProfesor {
@@ -29,6 +30,7 @@ export interface PublicProfile {
   showTournaments: boolean;
   showCourts: boolean;
   showProfesores: boolean;
+  discountSlots?: DiscountSlot[];
 }
 
 export const fetchPublicProfile = (username: string): Promise<PublicProfile> =>

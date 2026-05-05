@@ -41,6 +41,9 @@ export class AppSettings {
   @Column({ type: "text", nullable: true })
   tournamentSetsJson?: string;
 
+  @Column({ type: "text", nullable: true })
+  discountHoursJson?: string;
+
   @Column({ nullable: true })
   userId?: number;
 }

@@ -54,6 +54,7 @@ import OutdoorGrillOutlinedIcon from "@mui/icons-material/OutdoorGrillOutlined";
 import DeckOutlinedIcon from "@mui/icons-material/DeckOutlined";
 import LocalParkingOutlinedIcon from "@mui/icons-material/LocalParkingOutlined";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam, StandingsEntry } from "../../types/Tournament";
 import { isTeamSport } from "../tournaments/AddEditTournament";
@@ -1569,9 +1570,10 @@ interface ClubInfoPanelProps {
   businessHours: Array<{ day: string; isOpen?: boolean; openTime?: string; closeTime?: string }>;
   phone?: string | null;
   amenities?: string[];
+  discountSlots?: Array<{ courtName: string; dayOfWeek: string; startTime: string; endTime: string; label?: string }>;
 }
 
-function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities }: ClubInfoPanelProps) {
+function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, businessHours, phone, amenities, discountSlots }: ClubInfoPanelProps) {
   const todayStatus = getTodayStatus(businessHours);
   const nextOpenInfo = !todayStatus.open ? getNextOpenInfo(businessHours, todayStatus.todayName) : null;
   return (
@@ -1664,6 +1666,30 @@ function ClubInfoPanel({ clubName, username, address, logoSrc, lat, lng, busines
                 </Box>
               );
             })}
+          </Box>
+        </Box>
+      )}
+
+      {/* Discount hours */}
+      {discountSlots && discountSlots.length > 0 && (
+        <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${COLORS.lightBorder}` }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <LocalOfferOutlinedIcon sx={{ fontSize: 14, color: COLORS.accent }} />
+            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: COLORS.muted }}>
+              Horarios con descuento
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            {discountSlots.map((slot, i) => (
+              <Box key={i} sx={{ p: 1.25, borderRadius: 2, bgcolor: "#fffbeb", border: "1px solid #fde68a" }}>
+                <Typography variant="caption" fontWeight={700} sx={{ color: COLORS.text, display: "block" }}>
+                  {slot.courtName} · {slot.dayOfWeek}
+                </Typography>
+                <Typography variant="caption" sx={{ color: COLORS.muted }}>
+                  {slot.startTime} – {slot.endTime}{slot.label ? ` · ${slot.label}` : ""}
+                </Typography>
+              </Box>
+            ))}
           </Box>
         </Box>
       )}
@@ -2126,6 +2152,26 @@ export default function ClubPublicPage() {
                   </Box>
                 )}
 
+                {/* Discount hours (mobile) */}
+                {profile.discountSlots && profile.discountSlots.length > 0 && (
+                  <Box sx={{ mx: 2, mb: 1.5, borderRadius: 3, border: `1px solid #fde68a`, overflow: "hidden", bgcolor: "#fffbeb" }}>
+                    <Box sx={{ px: 2, py: 1.25, borderBottom: `1px solid #fde68a`, display: "flex", alignItems: "center", gap: 1 }}>
+                      <LocalOfferOutlinedIcon sx={{ fontSize: 14, color: "#b45309" }} />
+                      <Typography variant="caption" fontWeight={800} sx={{ textTransform: "uppercase", letterSpacing: "0.08em", color: "#92400e" }}>
+                        Horarios con descuento
+                      </Typography>
+                    </Box>
+                    {profile.discountSlots.map((slot, idx, arr) => (
+                      <Box key={idx} sx={{ px: 2, py: 1.25, borderBottom: idx < arr.length - 1 ? `1px solid #fde68a` : "none" }}>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: "#78350f" }}>{slot.courtName} · {slot.dayOfWeek}</Typography>
+                        <Typography variant="caption" sx={{ color: "#92400e" }}>
+                          {slot.startTime} – {slot.endTime}{slot.label ? ` · ${slot.label}` : ""}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
                 {/* Today status banner */}
                 <Box sx={{ px: 2, pb: 1.5 }}>
                   <Box sx={{
@@ -2343,7 +2389,7 @@ export default function ClubPublicPage() {
         </Box>
       </Box>
 
-      <ClubInfoPanel clubName={profile.clubName} username={username!} address={profile.address} logoSrc={profile.logoUrl || profile.logoBase64} lat={profile.latitude} lng={profile.longitude} businessHours={profile.businessHours} phone={profile.phone} amenities={profile.amenities} />
+      <ClubInfoPanel clubName={profile.clubName} username={username!} address={profile.address} logoSrc={profile.logoUrl || profile.logoBase64} lat={profile.latitude} lng={profile.longitude} businessHours={profile.businessHours} phone={profile.phone} amenities={profile.amenities} discountSlots={profile.discountSlots} />
       <MobileBottomNav items={visibleNavItems} activeId={activeSection} onSelect={handleNavSelect} />
 
     </Box>

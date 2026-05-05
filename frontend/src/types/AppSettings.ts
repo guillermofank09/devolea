@@ -1,3 +1,12 @@
+export interface DiscountSlot {
+  courtId: number;
+  courtName: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  label?: string;
+}
+
 export interface AppSettings {
   id?: number;
   hourlyRate: number;
@@ -16,4 +25,6 @@ export interface AppSettings {
   tournamentDurations?: Record<string, number>;
   tournamentSetsJson?: string;
   tournamentSets?: Record<string, number>;
+  discountHoursJson?: string;
+  discountSlots?: DiscountSlot[];
 }

@@ -7,8 +7,13 @@ import {
   CardContent,
   CircularProgress,
   Divider,
+  FormControl,
   Grid,
+  IconButton,
   InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
   Switch,
   TextField,
   ToggleButton,
@@ -22,10 +27,13 @@ import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import SportsTennisOutlinedIcon from "@mui/icons-material/SportsTennisOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddIcon from "@mui/icons-material/Add";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, saveSettings } from "../../api/settingsService";
 import { fetchCourts } from "../../api/courtService";
-import type { AppSettings } from "../../types/AppSettings";
+import type { AppSettings, DiscountSlot } from "../../types/AppSettings";
 import type { Court } from "../../types/Court";
 import PageHeader from "../../components/common/PageHeader";
 import PageLoader from "../../components/common/PageLoader";
@@ -34,6 +42,7 @@ import { SPORT_LABEL } from "../../constants/sports";
 
 const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL", "BASQUET", "VOLEY"];
 const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 const FUTBOL_TYPE_LABEL: Record<string, string> = {
   FUTBOL5: "Fútbol 5", FUTBOL7: "Fútbol 7", FUTBOL9: "Fútbol 9", FUTBOL11: "Fútbol 11",
@@ -146,6 +155,9 @@ export default function Settings() {
   const [tournamentDurations, setTournamentDurations] = useState<Record<string, number>>({});
   const [tournamentSetsCount, setTournamentSetsCount] = useState<number>(3);
   const [tournamentSets, setTournamentSets] = useState<Record<string, number>>({});
+  const [discountSlots, setDiscountSlots] = useState<DiscountSlot[]>([]);
+  const [addingSlot, setAddingSlot] = useState(false);
+  const [newSlot, setNewSlot] = useState<Partial<DiscountSlot>>({});
 
   useEffect(() => {
     if (!data) return;
@@ -162,6 +174,7 @@ export default function Settings() {
     setTournamentDurations(data.tournamentDurations ?? {});
     setTournamentSetsCount(data.tournamentSetsCount ?? 3);
     setTournamentSets(data.tournamentSets ?? {});
+    setDiscountSlots(data.discountSlots ?? []);
   }, [data]);
 
   function handleSave() {
@@ -177,6 +190,7 @@ export default function Settings() {
       tournamentDurations,
       tournamentSetsCount,
       tournamentSets,
+      discountSlots,
       shareSchedules: false
     });
   }
@@ -506,6 +520,120 @@ export default function Settings() {
                 </Box>
               ))}
             </Box>
+          </Section>
+
+          {/* ── Horarios con Descuento ── */}
+          <Section icon={<LocalOfferOutlinedIcon />} title="Horarios con Descuento">
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Publicá horarios disponibles en la página pública para atraer más reservas.
+            </Typography>
+
+            {discountSlots.map((slot, idx) => (
+              <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={700} noWrap>{slot.courtName}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {slot.dayOfWeek} · {slot.startTime} – {slot.endTime}
+                    {slot.label ? ` · ${slot.label}` : ""}
+                  </Typography>
+                </Box>
+                <IconButton size="small" color="error" onClick={() => setDiscountSlots(s => s.filter((_, i) => i !== idx))}>
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+
+            {discountSlots.length === 0 && !addingSlot && (
+              <Typography variant="body2" color="text.disabled" sx={{ mb: 1.5 }}>
+                No hay horarios configurados aún.
+              </Typography>
+            )}
+
+            {addingSlot && (
+              <Box sx={{ p: 2, mb: 1.5, border: "1.5px solid", borderColor: "warning.main", borderRadius: 2, bgcolor: "#fffbeb" }}>
+                <Grid container spacing={1.5}>
+                  <Grid size={{ xs: 12 }}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Cancha</InputLabel>
+                      <Select
+                        value={newSlot.courtId ?? ""}
+                        label="Cancha"
+                        onChange={e => {
+                          const court = courts.find(c => c.id === Number(e.target.value));
+                          setNewSlot(s => ({ ...s, courtId: Number(e.target.value), courtName: court?.name ?? "" }));
+                        }}
+                      >
+                        {courts.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Día de la semana</InputLabel>
+                      <Select
+                        value={newSlot.dayOfWeek ?? ""}
+                        label="Día de la semana"
+                        onChange={e => setNewSlot(s => ({ ...s, dayOfWeek: e.target.value as string }))}
+                      >
+                        {DAYS.map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <TextField
+                      type="time" label="Desde" size="small" fullWidth
+                      value={newSlot.startTime ?? ""}
+                      onChange={e => setNewSlot(s => ({ ...s, startTime: e.target.value }))}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <TextField
+                      type="time" label="Hasta" size="small" fullWidth
+                      value={newSlot.endTime ?? ""}
+                      onChange={e => setNewSlot(s => ({ ...s, endTime: e.target.value }))}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      label='Etiqueta (opcional)' placeholder='ej: "Happy Hour"'
+                      size="small" fullWidth
+                      value={newSlot.label ?? ""}
+                      onChange={e => setNewSlot(s => ({ ...s, label: e.target.value }))}
+                    />
+                  </Grid>
+                </Grid>
+                <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
+                  <Button
+                    size="small" variant="contained"
+                    disabled={!newSlot.courtId || !newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime}
+                    onClick={() => {
+                      if (!newSlot.courtId || !newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime) return;
+                      setDiscountSlots(s => [...s, newSlot as DiscountSlot]);
+                      setAddingSlot(false);
+                      setNewSlot({});
+                    }}
+                    sx={{ textTransform: "none", fontWeight: 600, bgcolor: "#F5AD27", color: "#111", "&:hover": { bgcolor: "#e09b18" } }}
+                  >
+                    Agregar
+                  </Button>
+                  <Button size="small" onClick={() => { setAddingSlot(false); setNewSlot({}); }} sx={{ textTransform: "none" }}>
+                    Cancelar
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
+            {!addingSlot && (
+              <Button
+                size="small" startIcon={<AddIcon />}
+                onClick={() => setAddingSlot(true)}
+                sx={{ textTransform: "none", fontWeight: 600, color: "#F5AD27" }}
+              >
+                Agregar horario
+              </Button>
+            )}
           </Section>
         </Grid>
       </Grid>

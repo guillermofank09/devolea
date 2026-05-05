@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AppSettings } from "../types/AppSettings";
+import type { AppSettings, DiscountSlot } from "../types/AppSettings";
 import { API_BASE } from "./config";
 
 const BASE = `${API_BASE}/api`;
@@ -13,7 +13,9 @@ function parseSettings(raw: any): AppSettings {
   if (raw.tournamentDurationsJson) { try { tournamentDurations = JSON.parse(raw.tournamentDurationsJson); } catch { /* ignore */ } }
   let tournamentSets: Record<string, number> = {};
   if (raw.tournamentSetsJson) { try { tournamentSets = JSON.parse(raw.tournamentSetsJson); } catch { /* ignore */ } }
-  return { ...raw, sportPrices, sportClassPrices, tournamentDurations, tournamentSets };
+  let discountSlots: DiscountSlot[] = [];
+  if (raw.discountHoursJson) { try { discountSlots = JSON.parse(raw.discountHoursJson); } catch { /* ignore */ } }
+  return { ...raw, sportPrices, sportClassPrices, tournamentDurations, tournamentSets, discountSlots };
 }
 
 export async function fetchSettings(): Promise<AppSettings> {
@@ -28,6 +30,7 @@ export async function saveSettings(s: AppSettings): Promise<AppSettings> {
     sportClassPricesJson: JSON.stringify(s.sportClassPrices ?? {}),
     tournamentDurationsJson: JSON.stringify(s.tournamentDurations ?? {}),
     tournamentSetsJson: JSON.stringify(s.tournamentSets ?? {}),
+    discountHoursJson: JSON.stringify(s.discountSlots ?? []),
   };
   const { data } = await axios.put(`${BASE}/settings`, payload);
   return parseSettings(data);

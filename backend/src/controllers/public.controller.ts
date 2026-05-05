@@ -31,6 +31,9 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     let businessHours: unknown[] = [];
     try { businessHours = JSON.parse(profile.businessHoursJson || "[]"); } catch {}
 
+    let discountSlots: unknown[] = [];
+    try { discountSlots = JSON.parse(settings?.discountHoursJson || "[]"); } catch {}
+
     const courts = await AppDataSource.getRepository(Court).find({
       where: { userId: user.id },
       select: ["name", "sport"],
@@ -58,6 +61,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       showTournaments: settings?.showTournaments ?? true,
       showCourts:      settings?.showCourts      ?? true,
       showProfesores:  settings?.showProfesores   ?? true,
+      discountSlots,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
