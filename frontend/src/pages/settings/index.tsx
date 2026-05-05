@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Alert,
   Box,
@@ -19,6 +19,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { useToast } from "../../context/ToastContext";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
@@ -176,6 +177,25 @@ export default function Settings() {
     setTournamentSets(data.tournamentSets ?? {});
     setDiscountSlots(data.discountSlots ?? []);
   }, [data]);
+
+  const isMobile = useMediaQuery("(max-width:600px)");
+
+  const isDirty = useMemo(() => {
+    if (!data) return false;
+    if ((Number(hourlyRate) || 0) !== Number(data.hourlyRate)) return true;
+    if ((Number(classHourlyRate) || 0) !== Number(data.classHourlyRate)) return true;
+    if (showTournaments !== (data.showTournaments ?? true)) return true;
+    if (showCourts !== (data.showCourts ?? true)) return true;
+    if (showProfesores !== (data.showProfesores ?? true)) return true;
+    if ((Number(tournamentMatchDuration) || 60) !== Number(data.tournamentMatchDuration ?? 60)) return true;
+    if (tournamentSetsCount !== (data.tournamentSetsCount ?? 3)) return true;
+    if (JSON.stringify(sportPrices) !== JSON.stringify(data.sportPrices ?? {})) return true;
+    if (JSON.stringify(sportClassPrices) !== JSON.stringify(data.sportClassPrices ?? {})) return true;
+    if (JSON.stringify(tournamentDurations) !== JSON.stringify(data.tournamentDurations ?? {})) return true;
+    if (JSON.stringify(tournamentSets) !== JSON.stringify(data.tournamentSets ?? {})) return true;
+    if (JSON.stringify(discountSlots) !== JSON.stringify(data.discountSlots ?? [])) return true;
+    return false;
+  }, [data, hourlyRate, classHourlyRate, showTournaments, showCourts, showProfesores, tournamentMatchDuration, tournamentSetsCount, sportPrices, sportClassPrices, tournamentDurations, tournamentSets, discountSlots]);
 
   function handleSave() {
     mutation.mutate({
@@ -653,7 +673,7 @@ export default function Settings() {
       </Grid>
 
       {/* ── Floating save button ── */}
-      <Box sx={{ position: "fixed", bottom: 28, right: 28, zIndex: 1200, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+      <Box sx={{ position: "fixed", bottom: 28, right: 28, zIndex: 1200, display: isMobile && !isDirty ? "none" : "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
         {mutation.isError && (
           <Typography variant="caption" color="error" sx={{ bgcolor: "background.paper", px: 1.5, py: 0.5, borderRadius: 2, boxShadow: 2 }}>
             Error al guardar. Intentá de nuevo.
