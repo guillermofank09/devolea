@@ -119,7 +119,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
   const isEditing = !!player;
   const { user } = useAuth();
   const userSports = user?.sports ?? [];
-  const showSportSelector = userSports.length > 0;
+  const showSportSelector = userSports.length > 1;
 
   useEffect(() => {
     if (player) {
@@ -136,7 +136,7 @@ export default function AddEditPlayer({ open, onClose, player, onCreated }: Prop
       });
       setCityInput(player.city ?? "");
     } else {
-      setForm(EMPTY);
+      setForm({ ...EMPTY, sports: userSports.length === 1 ? [userSports[0]] : [] });
       setCityInput("");
     }
     setCityOptions([]);
