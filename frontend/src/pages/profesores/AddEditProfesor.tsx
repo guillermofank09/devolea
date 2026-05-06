@@ -135,7 +135,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
       setHourlyRateStr(profesor.hourlyRate != null ? String(profesor.hourlyRate) : "");
       setSchedule(profesor.schedule?.length ? profesor.schedule : DEFAULT_HOURS);
     } else {
-      setForm(EMPTY);
+      setForm({ ...EMPTY, sports: sportOptions.length === 1 ? [sportOptions[0].key] : [] });
       setCityInput("");
       setHourlyRateStr("");
       setSchedule(DEFAULT_HOURS);
@@ -274,7 +274,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
 
             {/* Deportes + Precio */}
             <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
-              {sportOptions.length > 0 && (
+              {sportOptions.length > 1 && (
                 <Box sx={{ flex: 1 }}>
                   <FormLabel sx={FORM_LABEL_SX}>Deportes</FormLabel>
                   <FormGroup row>
@@ -303,7 +303,7 @@ export default function AddEditProfesor({ open, onClose, profesor }: Props) {
                   </FormGroup>
                 </Box>
               )}
-              <Box sx={{ width: sportOptions.length > 0 ? 160 : "100%" }}>
+              <Box sx={{ width: sportOptions.length > 1 ? 160 : "100%" }}>
                 <FormLabel sx={FORM_LABEL_SX}>Precio por hora</FormLabel>
                 <TextField
                   fullWidth
