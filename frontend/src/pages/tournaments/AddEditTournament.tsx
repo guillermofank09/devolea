@@ -124,7 +124,12 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
         sport: tournament.sport ?? "",
       });
     } else {
-      setForm(EMPTY);
+      if (sportOptions.length === 1) {
+        const onlySport = sportOptions[0].value;
+        setForm({ ...EMPTY, sport: onlySport, name: `Torneo ${SPORT_LABELS[onlySport] ?? onlySport}` });
+      } else {
+        setForm(EMPTY);
+      }
     }
     setError(null);
   }, [tournament, open]);
@@ -187,7 +192,7 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
         <DialogContent sx={{ pt: 1 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 
-            {sportOptions.length > 0 && (
+            {sportOptions.length > 1 && (
               <Box>
                 <FormLabel sx={FORM_LABEL_SX}>Deporte</FormLabel>
                 <Select
