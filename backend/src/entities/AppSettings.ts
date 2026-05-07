@@ -36,6 +36,9 @@ export class AppSettings {
   sportClassPricesJson?: string;
 
   @Column({ type: "text", nullable: true })
+  sportTournamentPricesJson?: string;
+
+  @Column({ type: "text", nullable: true })
   tournamentDurationsJson?: string;
 
   @Column({ type: "text", nullable: true })

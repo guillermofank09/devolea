@@ -149,6 +149,7 @@ export default function Settings() {
   const [classHourlyRate, setClassHourlyRate] = useState<string>("");
   const [sportPrices, setSportPrices] = useState<Record<string, number>>({});
   const [sportClassPrices, setSportClassPrices] = useState<Record<string, number>>({});
+  const [sportTournamentPrices, setSportTournamentPrices] = useState<Record<string, number>>({});
   const [showTournaments, setShowTournaments] = useState<boolean>(true);
   const [showCourts, setShowCourts] = useState<boolean>(true);
   const [showProfesores, setShowProfesores] = useState<boolean>(true);
@@ -168,6 +169,7 @@ export default function Settings() {
     setClassHourlyRate(classRate > 0 ? String(classRate) : "");
     setSportPrices(data.sportPrices ?? {});
     setSportClassPrices(data.sportClassPrices ?? {});
+    setSportTournamentPrices(data.sportTournamentPrices ?? {});
     setShowTournaments(data.showTournaments ?? true);
     setShowCourts(data.showCourts ?? true);
     setShowProfesores(data.showProfesores ?? true);
@@ -191,11 +193,12 @@ export default function Settings() {
     if (tournamentSetsCount !== (data.tournamentSetsCount ?? 3)) return true;
     if (JSON.stringify(sportPrices) !== JSON.stringify(data.sportPrices ?? {})) return true;
     if (JSON.stringify(sportClassPrices) !== JSON.stringify(data.sportClassPrices ?? {})) return true;
+    if (JSON.stringify(sportTournamentPrices) !== JSON.stringify(data.sportTournamentPrices ?? {})) return true;
     if (JSON.stringify(tournamentDurations) !== JSON.stringify(data.tournamentDurations ?? {})) return true;
     if (JSON.stringify(tournamentSets) !== JSON.stringify(data.tournamentSets ?? {})) return true;
     if (JSON.stringify(discountSlots) !== JSON.stringify(data.discountSlots ?? [])) return true;
     return false;
-  }, [data, hourlyRate, classHourlyRate, showTournaments, showCourts, showProfesores, tournamentMatchDuration, tournamentSetsCount, sportPrices, sportClassPrices, tournamentDurations, tournamentSets, discountSlots]);
+  }, [data, hourlyRate, classHourlyRate, showTournaments, showCourts, showProfesores, tournamentMatchDuration, tournamentSetsCount, sportPrices, sportClassPrices, sportTournamentPrices, tournamentDurations, tournamentSets, discountSlots]);
 
   function handleSave() {
     mutation.mutate({
@@ -203,6 +206,7 @@ export default function Settings() {
       classHourlyRate: Number(classHourlyRate) || 0,
       sportPrices,
       sportClassPrices,
+      sportTournamentPrices,
       showTournaments,
       showCourts,
       showProfesores,
@@ -239,86 +243,84 @@ export default function Settings() {
           {/* ── Precios de canchas ── */}
           <Section icon={<MonetizationOnOutlinedIcon />} title="Precios de canchas">
             {(() => {
-              const courtRows = toPriceRows(courts, clubSports);
-              if (courtRows.length === 0) {
+              const rows = toPriceRows(courts, clubSports);
+              if (rows.length === 0) {
                 return (
                   <Typography variant="body2" color="text.secondary">
                     No hay canchas cargadas. Agregá canchas para configurar sus precios.
                   </Typography>
                 );
               }
-              const showLabels = courtRows.length > 1;
-              const inputSx = { width: { xs: "100%", sm: 160 } };
+              const multiSport = rows.length > 1;
+              const captionSx = { textTransform: "uppercase" as const, letterSpacing: "0.06em", fontSize: "0.62rem", fontWeight: 700, color: "text.disabled" };
+
+              function PriceInput({ val, setter }: {
+                val: Record<string, number>;
+                setter: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+              }) {
+                return (key: string) => (
+                  <TextField
+                    key={key}
+                    type="text" inputMode="decimal" size="small" placeholder="0"
+                    value={val[key] != null ? String(val[key]) : ""}
+                    onChange={e => {
+                      const raw = e.target.value;
+                      if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+                        const v = raw.replace(/^0+(\d)/, "$1");
+                        setter(prev => { const n = { ...prev }; if (v === "") delete n[key]; else n[key] = Number(v); return n; });
+                      }
+                    }}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
+                    sx={{ width: "100%" }}
+                  />
+                );
+              }
+
+              const renderReserva = PriceInput({ val: sportPrices, setter: setSportPrices });
+              const renderClase   = PriceInput({ val: sportClassPrices, setter: setSportClassPrices });
+              const renderTorneo  = PriceInput({ val: sportTournamentPrices, setter: setSportTournamentPrices });
+
               return (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  <Typography variant="caption" color="text.disabled" fontWeight={700}
-                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
-                    Precio / hora
-                  </Typography>
-                  {courtRows.map(row => (
-                    <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      {showLabels && (
-                        <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
+                <Box>
+                  {/* Column headers */}
+                  <Box sx={{
+                    display: "grid",
+                    gridTemplateColumns: multiSport ? "100px 1fr 1fr 1fr" : "1fr 1fr 1fr",
+                    gap: 1.5,
+                    pb: 1,
+                    mb: 0.5,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}>
+                    {multiSport && <Box />}
+                    <Typography variant="caption" sx={captionSx}>Reserva / h</Typography>
+                    <Typography variant="caption" sx={captionSx}>Clase / h</Typography>
+                    <Typography variant="caption" sx={captionSx}>Torneo / h</Typography>
+                  </Box>
+
+                  {rows.map(row => (
+                    <Box key={row.key} sx={{
+                      display: "grid",
+                      gridTemplateColumns: multiSport ? "100px 1fr 1fr 1fr" : "1fr 1fr 1fr",
+                      gap: 1.5,
+                      alignItems: "center",
+                      py: 1.25,
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                      "&:last-child": { borderBottom: "none" },
+                    }}>
+                      {multiSport && (
+                        <Typography variant="body2" fontWeight={700} sx={{ alignSelf: "center" }}>{row.label}</Typography>
                       )}
-                      <TextField
-                        type="text" inputMode="decimal" size="small" placeholder="0"
-                        value={sportPrices[row.key] != null ? String(sportPrices[row.key]) : ""}
-                        onChange={e => {
-                          const raw = e.target.value;
-                          if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-                            const val = raw.replace(/^0+(\d)/, "$1");
-                            setSportPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
-                          }
-                        }}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                        sx={inputSx}
-                      />
+                      {renderReserva(row.key)}
+                      {renderClase(row.key)}
+                      {renderTorneo(row.key)}
                     </Box>
                   ))}
                 </Box>
               );
             })()}
           </Section>
-
-          {/* ── Precios de clases / entrenamiento ── */}
-          {toPriceRows(courts, sportsWithClass).length > 0 && (() => {
-            const classRows = toPriceRows(courts, sportsWithClass);
-            const showLabels = classRows.length > 1;
-            const inputSx = { width: { xs: "100%", sm: 160 } };
-            return (
-              <Section icon={<SchoolOutlinedIcon />} title="Precios de clases">
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: "0.82rem" }}>
-                    Precio por hora de clase o entrenamiento con profesor. Se aplica automáticamente al crear reservas de profesores.
-                  </Typography>
-                  <Typography variant="caption" color="text.disabled" fontWeight={700}
-                    sx={{ textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.65rem" }}>
-                    Precio / hora
-                  </Typography>
-                  {classRows.map(row => (
-                    <Box key={row.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      {showLabels && (
-                        <Typography variant="body2" fontWeight={600} sx={{ minWidth: 90 }}>{row.label}</Typography>
-                      )}
-                      <TextField
-                        type="text" inputMode="decimal" size="small" placeholder="0"
-                        value={sportClassPrices[row.key] != null ? String(sportClassPrices[row.key]) : ""}
-                        onChange={e => {
-                          const raw = e.target.value;
-                          if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
-                            const val = raw.replace(/^0+(\d)/, "$1");
-                            setSportClassPrices(prev => { const n = { ...prev }; if (val === "") delete n[row.key]; else n[row.key] = Number(val); return n; });
-                          }
-                        }}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
-                        sx={inputSx}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Section>
-            );
-          })()}
 
           {/* ── Torneos ── */}
           <Section icon={<EmojiEventsOutlinedIcon />} title="Torneos">

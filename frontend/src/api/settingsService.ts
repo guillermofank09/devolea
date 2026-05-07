@@ -10,12 +10,14 @@ function parseSettings(raw: any): AppSettings {
   let tournamentDurations: Record<string, number> = {};
   if (raw.sportPricesJson) { try { sportPrices = JSON.parse(raw.sportPricesJson); } catch { /* ignore */ } }
   if (raw.sportClassPricesJson) { try { sportClassPrices = JSON.parse(raw.sportClassPricesJson); } catch { /* ignore */ } }
+  let sportTournamentPrices: Record<string, number> = {};
+  if (raw.sportTournamentPricesJson) { try { sportTournamentPrices = JSON.parse(raw.sportTournamentPricesJson); } catch { /* ignore */ } }
   if (raw.tournamentDurationsJson) { try { tournamentDurations = JSON.parse(raw.tournamentDurationsJson); } catch { /* ignore */ } }
   let tournamentSets: Record<string, number> = {};
   if (raw.tournamentSetsJson) { try { tournamentSets = JSON.parse(raw.tournamentSetsJson); } catch { /* ignore */ } }
   let discountSlots: DiscountSlot[] = [];
   if (raw.discountHoursJson) { try { discountSlots = JSON.parse(raw.discountHoursJson); } catch { /* ignore */ } }
-  return { ...raw, sportPrices, sportClassPrices, tournamentDurations, tournamentSets, discountSlots };
+  return { ...raw, sportPrices, sportClassPrices, sportTournamentPrices, tournamentDurations, tournamentSets, discountSlots };
 }
 
 export async function fetchSettings(): Promise<AppSettings> {
@@ -28,6 +30,7 @@ export async function saveSettings(s: AppSettings): Promise<AppSettings> {
     ...s,
     sportPricesJson: JSON.stringify(s.sportPrices ?? {}),
     sportClassPricesJson: JSON.stringify(s.sportClassPrices ?? {}),
+    sportTournamentPricesJson: JSON.stringify(s.sportTournamentPrices ?? {}),
     tournamentDurationsJson: JSON.stringify(s.tournamentDurations ?? {}),
     tournamentSetsJson: JSON.stringify(s.tournamentSets ?? {}),
     discountHoursJson: JSON.stringify(s.discountSlots ?? []),

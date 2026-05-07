@@ -20,8 +20,10 @@ export interface AppSettings {
   tournamentSetsCount: number;
   sportPricesJson?: string;
   sportClassPricesJson?: string;
+  sportTournamentPricesJson?: string;
   sportPrices?: Record<string, number>;
   sportClassPrices?: Record<string, number>;
+  sportTournamentPrices?: Record<string, number>;
   tournamentDurationsJson?: string;
   tournamentDurations?: Record<string, number>;
   tournamentSetsJson?: string;
