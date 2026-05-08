@@ -24,6 +24,8 @@ export interface Tournament {
   status: TournamentStatus;
   format?: TournamentFormat;
   sport?: string;
+  inscriptionFee?: number | null;
+  prize?: number | null;
   createdAt: string;
 }
 
@@ -34,6 +36,8 @@ export interface TournamentFormData {
   startDate: string;
   endDate: string;
   sport?: string;
+  inscriptionFee?: string;
+  prize?: string;
 }
 
 export interface Pair {

@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   FormLabel,
+  InputAdornment,
   MenuItem,
   Select,
   TextField,
@@ -66,6 +67,8 @@ const EMPTY: TournamentFormData = {
   startDate: "",
   endDate: "",
   sport: "",
+  inscriptionFee: "",
+  prize: "",
 };
 
 
@@ -122,6 +125,8 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
         startDate: tournament.startDate,
         endDate: tournament.endDate,
         sport: tournament.sport ?? "",
+        inscriptionFee: tournament.inscriptionFee != null ? String(tournament.inscriptionFee) : "",
+        prize: tournament.prize != null ? String(tournament.prize) : "",
       });
     } else {
       if (sportOptions.length === 1) {
@@ -170,7 +175,11 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    mutation.mutate(form);
+    mutation.mutate({
+      ...form,
+      inscriptionFee: form.inscriptionFee !== "" ? form.inscriptionFee : undefined,
+      prize: form.prize !== "" ? form.prize : undefined,
+    } as any);
   };
 
   const isValid = form.name.trim() && form.startDate && form.endDate;
@@ -291,6 +300,32 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
                 </Box>
               </Box>
             </LocalizationProvider>
+
+            {/* Inscripción + Premio */}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Inscripción por pareja/equipo <Typography component="span" variant="caption" color="text.disabled">(opcional)</Typography></FormLabel>
+                <TextField
+                  fullWidth size="small" type="text" inputMode="decimal"
+                  placeholder="0"
+                  value={form.inscriptionFee ?? ""}
+                  onChange={e => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) set("inscriptionFee", v); }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
+                  sx={FORM_INPUT_SX}
+                />
+              </Box>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Premio <Typography component="span" variant="caption" color="text.disabled">(opcional)</Typography></FormLabel>
+                <TextField
+                  fullWidth size="small" type="text" inputMode="decimal"
+                  placeholder="0"
+                  value={form.prize ?? ""}
+                  onChange={e => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) set("prize", v); }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }}
+                  sx={FORM_INPUT_SX}
+                />
+              </Box>
+            </Box>
 
             {error && (
               <Typography variant="body2" color="error">{error}</Typography>

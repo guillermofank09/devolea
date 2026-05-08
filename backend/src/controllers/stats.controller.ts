@@ -8,6 +8,8 @@ import { Profesor } from "../entities/Profesor";
 import { Player } from "../entities/Player";
 import { Tournament } from "../entities/Tournament";
 import { TournamentMatch } from "../entities/TournamentMatch";
+import { Pair } from "../entities/Pair";
+import { TournamentTeam } from "../entities/TournamentTeam";
 import { StatsService } from "../services/stats.service";
 
 function getService() {
@@ -19,7 +21,9 @@ function getService() {
     AppDataSource.getRepository(Profesor),
     AppDataSource.getRepository(Player),
     AppDataSource.getRepository(Tournament),
-    AppDataSource.getRepository(TournamentMatch)
+    AppDataSource.getRepository(TournamentMatch),
+    AppDataSource.getRepository(Pair),
+    AppDataSource.getRepository(TournamentTeam)
   );
 }
 
@@ -39,6 +43,12 @@ export async function getPlayerStats(req: Request, res: Response) {
   const userId = req.authUser!.sub;
   const stats = await getService().getPlayerStats(userId);
   res.json(stats);
+}
+
+export async function getTournamentStats(req: Request, res: Response) {
+  const userId = req.authUser!.sub;
+  const data = await getService().getTournamentStats(userId);
+  res.json(data);
 }
 
 export async function getRanking(req: Request, res: Response) {

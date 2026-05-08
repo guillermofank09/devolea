@@ -106,6 +106,29 @@ export interface RankingResponse {
   ranking: RankingEntry[];
 }
 
+export interface TournamentRevenueEntry {
+  tournamentId: number;
+  name: string;
+  sport: string | null;
+  status: string;
+  inscriptions: number;
+  inscriptionFee: number;
+  totalInscriptions: number;
+  scheduledMatches: number;
+  courtHours: number;
+  courtHourPrice: number;
+  totalCourtCost: number;
+  prize: number;
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+}
+
+export async function fetchTournamentStats(): Promise<TournamentRevenueEntry[]> {
+  const { data } = await axios.get<TournamentRevenueEntry[]>(`${API}/stats/tournaments`);
+  return data;
+}
+
 export async function fetchRanking(sport?: string, category?: string): Promise<RankingResponse> {
   const params: Record<string, string> = {};
   if (sport) params.sport = sport;

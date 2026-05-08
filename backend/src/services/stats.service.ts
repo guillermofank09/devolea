@@ -7,6 +7,8 @@ import { Profesor } from "../entities/Profesor";
 import { Player } from "../entities/Player";
 import { Tournament } from "../entities/Tournament";
 import { TournamentMatch } from "../entities/TournamentMatch";
+import { Pair } from "../entities/Pair";
+import { TournamentTeam } from "../entities/TournamentTeam";
 
 export interface RevenueEntry {
   label: string;
@@ -173,6 +175,24 @@ export interface RankingResponse {
   ranking: RankingEntry[];
 }
 
+export interface TournamentRevenueEntry {
+  tournamentId: number;
+  name: string;
+  sport: string | null;
+  status: string;
+  inscriptions: number;
+  inscriptionFee: number;
+  totalInscriptions: number;
+  scheduledMatches: number;
+  courtHours: number;
+  courtHourPrice: number;
+  totalCourtCost: number;
+  prize: number;
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+}
+
 export class StatsService {
   constructor(
     private bookingRepo: Repository<Booking>,
@@ -182,7 +202,9 @@ export class StatsService {
     private profesorRepo: Repository<Profesor>,
     private playerRepo: Repository<Player>,
     private tournamentRepo: Repository<Tournament>,
-    private matchRepo: Repository<TournamentMatch>
+    private matchRepo: Repository<TournamentMatch>,
+    private pairRepo: Repository<Pair>,
+    private teamRepo: Repository<TournamentTeam>
   ) {}
 
   async getRevenue(userId: number): Promise<RevenueStats> {
@@ -541,5 +563,77 @@ export class StatsService {
       .sort((a, b) => b.total - a.total);
 
     return { sport: sport ?? null, category: category ?? null, availableSports, availableCategories, ranking };
+  }
+
+  async getTournamentStats(userId: number): Promise<TournamentRevenueEntry[]> {
+    const [tournaments, settings] = await Promise.all([
+      this.tournamentRepo.find({ where: { userId }, order: { createdAt: "DESC" } }),
+      this.settingsRepo.findOneBy({ userId }),
+    ]);
+
+    const hourlyRate = Number(settings?.hourlyRate ?? 0);
+    let sportPrices: Record<string, number> = {};
+    let sportTournamentPrices: Record<string, number> = {};
+    let tournamentDurations: Record<string, number> = {};
+    const globalMatchDuration = Number(settings?.tournamentMatchDuration ?? 60);
+    if (settings?.sportPricesJson) { try { sportPrices = JSON.parse(settings.sportPricesJson); } catch { /* ignore */ } }
+    if (settings?.sportTournamentPricesJson) { try { sportTournamentPrices = JSON.parse(settings.sportTournamentPricesJson); } catch { /* ignore */ } }
+    if (settings?.tournamentDurationsJson) { try { tournamentDurations = JSON.parse(settings.tournamentDurationsJson); } catch { /* ignore */ } }
+
+    const results: TournamentRevenueEntry[] = [];
+
+    for (const t of tournaments) {
+      const tId = t.id;
+      const sport = t.sport ?? null;
+      const priceKey = sport;
+
+      const courtHourPrice = priceKey && sportTournamentPrices[priceKey] != null
+        ? sportTournamentPrices[priceKey]
+        : (priceKey && sportPrices[priceKey] != null ? sportPrices[priceKey] : hourlyRate);
+
+      const matchDurationHours = (priceKey && tournamentDurations[priceKey] != null
+        ? tournamentDurations[priceKey]
+        : globalMatchDuration) / 60;
+
+      const [matches, pairs, teams] = await Promise.all([
+        this.matchRepo.find({ where: { tournament: { id: tId } } }),
+        this.pairRepo.find({ where: { tournament: { id: tId } } }),
+        this.teamRepo.find({ where: { tournament: { id: tId } } }),
+      ]);
+
+      const isTeamBased = teams.length > 0;
+      const inscriptions = isTeamBased ? teams.length : pairs.length;
+      const inscriptionFee = Number(t.inscriptionFee ?? 0);
+      const prize = Number(t.prize ?? 0);
+
+      const scheduledMatches = matches.filter(m => m.scheduledAt != null && m.status !== "BYE").length;
+      const courtHours = scheduledMatches * matchDurationHours;
+
+      const totalInscriptions = inscriptionFee * inscriptions;
+      const totalCourtCost = courtHours * courtHourPrice;
+      const totalIncome = totalInscriptions;
+      const totalExpense = totalCourtCost + prize;
+      const net = totalIncome - totalExpense;
+
+      results.push({
+        tournamentId: tId,
+        name: t.name,
+        sport,
+        status: t.status,
+        inscriptions,
+        inscriptionFee,
+        totalInscriptions,
+        scheduledMatches,
+        courtHours: Math.round(courtHours * 100) / 100,
+        courtHourPrice,
+        totalCourtCost: Math.round(totalCourtCost * 100) / 100,
+        prize,
+        totalIncome,
+        totalExpense: Math.round(totalExpense * 100) / 100,
+        net: Math.round(net * 100) / 100,
+      });
+    }
+
+    return results;
   }
 }

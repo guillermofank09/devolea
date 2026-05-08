@@ -16,6 +16,8 @@ export class Tournament {
   @Column({ default: "DRAFT" }) status!: TournamentStatus;
   @Column({ type: "varchar", nullable: true }) format?: TournamentFormat;
   @Column({ type: "varchar", nullable: true }) sport?: string;
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true }) inscriptionFee?: number | null;
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true }) prize?: number | null;
   @Column({ nullable: true }) userId?: number;
   @CreateDateColumn() createdAt!: Date;
 }

@@ -34,12 +34,14 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ProfesorBillingCard from "./ProfesorBillingCard";
+import TournamentRevenueCard from "./TournamentRevenueCard";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchRevenue,
   fetchProfesorStats,
   fetchPlayerStats,
   fetchRanking,
+  fetchTournamentStats,
 } from "../../api/statsService";
 import type { CourtOccupancy, OccupancySummary, PlayerCategoryEntry, RankingEntry } from "../../api/statsService";
 import PageLoader from "../../components/common/PageLoader";
@@ -614,6 +616,13 @@ export default function Stats() {
     retry: 1,
   });
 
+  const { data: tournamentStatsData, isPending: tournamentStatsPending, isError: tournamentStatsError } = useQuery({
+    queryKey: ["stats", "tournaments"],
+    queryFn: fetchTournamentStats,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   if (isPending) return <PageLoader />;
 
   if (isError || !data) {
@@ -771,6 +780,11 @@ export default function Stats() {
             </Card>
           </Grid>
         )}
+
+        {/* Recaudación torneos */}
+        <Grid size={{ xs: 12 }}>
+          <TournamentRevenueCard data={tournamentStatsData ?? []} isLoading={tournamentStatsPending} isError={tournamentStatsError} />
+        </Grid>
 
         {/* Ranking de torneos */}
         <Grid size={{ xs: 12 }}>
