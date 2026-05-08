@@ -88,16 +88,17 @@ export default function BookingDialog({ open, onClose, slot, courtId, courtSport
     let rate: number;
     // For Fútbol, price is keyed by court type (e.g. "FUTBOL5"); for others, by sport.
     const priceKey = courtSport === "FUTBOL" && courtType ? courtType : courtSport;
+    const sportCourtRate = priceKey ? (settings.sportPrices?.[priceKey] ?? null) : null;
+    const courtFallback  = sportCourtRate ?? Number(settings.hourlyRate);
     if (bookingType === "profesor") {
       if (selectedProfesor?.hourlyRate != null) {
         rate = Number(selectedProfesor.hourlyRate);
       } else {
-        const sportClassRate = priceKey ? settings.sportClassPrices?.[priceKey] : undefined;
-        rate = sportClassRate != null ? sportClassRate : Number(settings.classHourlyRate);
+        const sportClassRate = priceKey ? (settings.sportClassPrices?.[priceKey] ?? null) : null;
+        rate = sportClassRate ?? courtFallback;
       }
     } else {
-      const sportRate = priceKey ? settings.sportPrices?.[priceKey] : undefined;
-      rate = sportRate != null ? sportRate : Number(settings.hourlyRate);
+      rate = courtFallback;
     }
     const computed = hrs * rate;
     setPrice(computed > 0 ? String(computed) : "");

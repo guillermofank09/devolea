@@ -187,14 +187,25 @@ export class StatsService {
 
   async getRevenue(userId: number): Promise<RevenueStats> {
     const [bookings, settings, profile, allCourts] = await Promise.all([
-      this.bookingRepo.find({ where: { userId, status: "CONFIRMED" } }),
+      this.bookingRepo.find({ where: { userId, status: "CONFIRMED" }, relations: ["court", "profesor"] }),
       this.settingsRepo.findOneBy({ userId }),
       this.profileRepo.findOneBy({ userId }),
       this.courtRepo.find({ where: { userId } }),
     ]);
 
     const hourlyRate = Number(settings?.hourlyRate ?? 0);
-    const classHourlyRate = Number(settings?.classHourlyRate ?? 0);
+    let sportPrices: Record<string, number> = {};
+    let sportClassPrices: Record<string, number> = {};
+    if (settings?.sportPricesJson) { try { sportPrices = JSON.parse(settings.sportPricesJson); } catch { /* ignore */ } }
+    if (settings?.sportClassPricesJson) { try { sportClassPrices = JSON.parse(settings.sportClassPricesJson); } catch { /* ignore */ } }
+
+    function resolveRate(courtSport: string | null, courtType: string | null, isProfesor: boolean): number {
+      const key = courtSport === "FUTBOL" && courtType ? courtType : courtSport;
+      const courtRate = (key && sportPrices[key] != null) ? sportPrices[key] : hourlyRate;
+      if (!isProfesor) return courtRate;
+      const classRate = key && sportClassPrices[key] != null ? sportClassPrices[key] : null;
+      return classRate ?? courtRate;
+    }
     const now = new Date();
     const todayKey = isoDay(now);
 
@@ -246,8 +257,8 @@ export class StatsService {
       const hrs   = durationHours(start, end);
       if (hrs <= 0) continue;
 
-      // Revenue: use custom price if set, otherwise rate × hours
-      const defaultRate = b.profesor ? classHourlyRate : hourlyRate;
+      // Revenue: use explicit price if set, otherwise derive from sport-specific rates
+      const defaultRate = resolveRate((b as any).court?.sport ?? null, (b as any).court?.type ?? null, !!(b as any).profesor);
       const revenue = b.price != null ? Number(b.price) : hrs * defaultRate;
 
       // Revenue accumulators (all-time)
@@ -323,7 +334,7 @@ export class StatsService {
 
     return {
       hourlyRate,
-      classHourlyRate,
+      classHourlyRate: Number(settings?.classHourlyRate ?? 0),
       daily:   buildDaily(),
       weekly:  buildWeekly(),
       monthly: buildMonthly(),
@@ -358,7 +369,12 @@ export class StatsService {
       this.settingsRepo.findOneBy({ userId }),
     ]);
 
-    const classHourlyRate = Number(settings?.classHourlyRate ?? 0);
+    const globalHourlyRate = Number(settings?.hourlyRate ?? 0);
+    let spPrices: Record<string, number> = {};
+    let spClassPrices: Record<string, number> = {};
+    if (settings?.sportPricesJson) { try { spPrices = JSON.parse(settings.sportPricesJson); } catch { /* ignore */ } }
+    if (settings?.sportClassPricesJson) { try { spClassPrices = JSON.parse(settings.sportClassPricesJson); } catch { /* ignore */ } }
+
     const now = new Date();
     const currentMonthKey = isoMonth(now);
 
@@ -368,6 +384,11 @@ export class StatsService {
     return profesores
       .map((p) => {
         const ownRate = p.hourlyRate != null ? Number(p.hourlyRate) : null;
+        // Resolve club's class rate for this professor's sport
+        const sport = p.sport ?? (Array.isArray(p.sports) && p.sports.length > 0 ? p.sports[0] : null);
+        const sportClassRate = sport && spClassPrices[sport] != null ? spClassPrices[sport] : null;
+        const sportCourtRate = sport && spPrices[sport] != null ? spPrices[sport] : globalHourlyRate;
+        const classHourlyRate = sportClassRate ?? sportCourtRate;
         const effectiveRate = ownRate ?? classHourlyRate;
         const pBookings = profesorBookings.filter((b) => b.profesor!.id === p.id);
 
