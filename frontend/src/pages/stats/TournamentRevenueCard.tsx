@@ -142,7 +142,9 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
                               <Divider sx={{ mb: 1.5 }} />
                               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
                                 <Box>
-                                  <Typography variant="caption" color="text.disabled" display="block">Inscripciones</Typography>
+                                  <Typography variant="caption" color="text.disabled" display="block">
+                                    {t.sport === "PADEL" || t.sport === "TENIS" ? "Jugadores" : "Equipos"}
+                                  </Typography>
                                   <Typography variant="body2" fontWeight={600}>{t.inscriptions} × {fmt(t.inscriptionFee)}</Typography>
                                   <Typography variant="caption" color="success.main" fontWeight={700}>{fmt(t.totalInscriptions)}</Typography>
                                 </Box>

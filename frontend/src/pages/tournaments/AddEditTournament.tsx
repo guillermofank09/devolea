@@ -304,7 +304,10 @@ export default function AddEditTournament({ open, onClose, tournament, hasMatche
             {/* Inscripción + Premio */}
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
-                <FormLabel sx={FORM_LABEL_SX}>Inscripción por pareja/equipo <Typography component="span" variant="caption" color="text.disabled">(opcional)</Typography></FormLabel>
+                <FormLabel sx={FORM_LABEL_SX}>
+                  {form.sport === "PADEL" || form.sport === "TENIS" ? "Inscripción por jugador" : "Inscripción por equipo"}
+                  {" "}<Typography component="span" variant="caption" color="text.disabled">(opcional)</Typography>
+                </FormLabel>
                 <TextField
                   fullWidth size="small" type="text" inputMode="decimal"
                   placeholder="0"

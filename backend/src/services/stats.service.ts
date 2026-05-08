@@ -602,7 +602,8 @@ export class StatsService {
       ]);
 
       const isTeamBased = teams.length > 0;
-      const inscriptions = isTeamBased ? teams.length : pairs.length;
+      const isPairPerPlayer = sport === "PADEL" || sport === "TENIS";
+      const inscriptions = isTeamBased ? teams.length : (isPairPerPlayer ? pairs.length * 2 : pairs.length);
       const inscriptionFee = Number(t.inscriptionFee ?? 0);
       const prize = Number(t.prize ?? 0);
 
