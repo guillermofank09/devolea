@@ -112,19 +112,20 @@ function ChartHeader({ icon, title, meta }: { icon: React.ReactNode; title: stri
   );
 }
 
-// ── Section group header ──────────────────────────────────────────────────────
+// ── Section header (non-Grid, used inside a Grid item) ───────────────────────
 
-function SectionGroup({ title, icon }: { title: string; icon: React.ReactNode }) {
+function SectionHeader({ title, icon }: { title: string; icon: React.ReactNode }) {
   return (
-    <Grid size={{ xs: 12 }} sx={{ mt: 1, mb: -0.5 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box sx={{ color: "#F5AD27", display: "flex", alignItems: "center" }}>{icon}</Box>
-        <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-          {title}
-        </Typography>
-        <Box sx={{ flex: 1, height: "1px", bgcolor: "divider" }} />
-      </Box>
-    </Grid>
+    <Box sx={{
+      display: "flex", alignItems: "center", gap: 1.5,
+      pl: 2, py: 0.875,
+      borderLeft: "3px solid #F5AD27",
+      bgcolor: "rgba(245,173,39,0.07)",
+      borderRadius: "0 8px 8px 0",
+    }}>
+      <Box sx={{ color: "#F5AD27", display: "flex", alignItems: "center" }}>{icon}</Box>
+      <Typography variant="subtitle1" fontWeight={700}>{title}</Typography>
+    </Box>
   );
 }
 
@@ -660,129 +661,136 @@ export default function Stats() {
     <Box>
       <PageHeader title="Estadísticas" subtitle="Métricas del club" />
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={3} alignItems="flex-start">
 
-        {/* ── Facturación ───────────────────────────────────────── */}
-        <SectionGroup title="Facturación" icon={<TrendingUpIcon fontSize="small" />} />
-
-        <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day}   bookings={data.bookingTotals.day} />
-        </Grid>
-        <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana" value={data.totals.week}  bookings={data.bookingTotals.week} />
-        </Grid>
-        <Grid size={{ xs: 4 }}>
-          <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} bookings={data.bookingTotals.month} />
-        </Grid>
-
+        {/* ── Facturación (full width) ───────────────────────────── */}
         <Grid size={{ xs: 12 }}>
-          <Card elevation={0} sx={cardSx}>
-            <CardContent sx={{ p: 3 }}>
-              <ChartHeader
-                icon={<TrendingUpIcon />}
-                title="Evolución"
-                meta={data.hourlyRate > 0 && (
-                  <Typography variant="caption" color="text.secondary">Precio/hora: {fmt(data.hourlyRate)}</Typography>
-                )}
-              />
-              <Tabs
-                value={period}
-                onChange={(_, v) => setPeriod(v)}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{ mb: 2, minHeight: 34, "& .MuiTab-root": { minHeight: 34, textTransform: "none", fontSize: "0.82rem" } }}
-              >
-                {TAB_OPTIONS.map((t) => (
-                  <Tab key={t.key} value={t.key} label={t.label} />
-                ))}
-              </Tabs>
-              {(() => {
-                const trendMap = new Map<string, number | null>();
-                periodData.forEach((e, i) => {
-                  trendMap.set(e.label, i > 0 ? periodData[i - 1].revenue : null);
-                });
-                const rows = [...periodData].reverse().filter((e) => e.bookings > 0);
-                return (
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                          <TableCell sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Período</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Reservas</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem", display: { xs: "none", sm: "table-cell" } }}>Horas</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Facturado</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {rows.map((entry) => {
-                          const prev = trendMap.get(entry.label) ?? null;
-                          const diff = prev !== null ? entry.revenue - prev : null;
-                          const pct  = diff !== null && prev! > 0 ? (diff / prev!) * 100 : null;
-                          const isUp = diff !== null && diff > 0;
-                          const isDown = diff !== null && diff < 0;
-                          return (
-                            <TableRow key={entry.label} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
-                              <TableCell>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                                  <Typography variant="body2">{shortLabel(entry.label, period)}</Typography>
-                                  {(isUp || isDown) && pct !== null && (
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
-                                      {isUp
-                                        ? <ArrowUpwardIcon sx={{ fontSize: 12, color: "success.main" }} />
-                                        : <ArrowDownwardIcon sx={{ fontSize: 12, color: "error.main" }} />
-                                      }
-                                      <Typography variant="caption" sx={{ fontSize: "0.68rem", color: isUp ? "success.main" : "error.main", lineHeight: 1 }}>
-                                        {Math.abs(pct).toFixed(0)}%
-                                      </Typography>
-                                    </Box>
-                                  )}
-                                </Box>
-                              </TableCell>
-                              <TableCell align="right"><Typography variant="body2">{entry.bookings}</Typography></TableCell>
-                              <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}><Typography variant="body2">{entry.hours.toFixed(1)}</Typography></TableCell>
-                              <TableCell align="right"><Typography variant="body2" fontWeight={600}>{fmt(entry.revenue)}</Typography></TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        {periodData.every((e) => e.bookings === 0) && (
-                          <TableRow>
-                            <TableCell colSpan={4} sx={{ textAlign: "center", py: 3 }}>
-                              <Typography variant="body2" color="text.secondary">Sin reservas en este período.</Typography>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                );
-              })()}
-            </CardContent>
-          </Card>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <SectionHeader title="Facturación" icon={<TrendingUpIcon fontSize="small" />} />
+
+            <Grid container spacing={2.5}>
+              <Grid size={{ xs: 4 }}>
+                <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day}   bookings={data.bookingTotals.day} />
+              </Grid>
+              <Grid size={{ xs: 4 }}>
+                <SummaryCard icon={<DateRangeIcon    sx={{ fontSize: 18 }} />} label="Esta semana" value={data.totals.week}  bookings={data.bookingTotals.week} />
+              </Grid>
+              <Grid size={{ xs: 4 }}>
+                <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} bookings={data.bookingTotals.month} />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: hasRacketSport ? 7 : 12 }}>
+                <Card elevation={0} sx={cardSx}>
+                  <CardContent sx={{ p: 3 }}>
+                    <ChartHeader
+                      icon={<TrendingUpIcon />}
+                      title="Evolución"
+                      meta={data.hourlyRate > 0 && (
+                        <Typography variant="caption" color="text.secondary">Precio/hora: {fmt(data.hourlyRate)}</Typography>
+                      )}
+                    />
+                    <Tabs
+                      value={period}
+                      onChange={(_, v) => setPeriod(v)}
+                      variant="scrollable"
+                      scrollButtons="auto"
+                      sx={{ mb: 2, minHeight: 34, "& .MuiTab-root": { minHeight: 34, textTransform: "none", fontSize: "0.82rem" } }}
+                    >
+                      {TAB_OPTIONS.map((t) => (
+                        <Tab key={t.key} value={t.key} label={t.label} />
+                      ))}
+                    </Tabs>
+                    {(() => {
+                      const trendMap = new Map<string, number | null>();
+                      periodData.forEach((e, i) => {
+                        trendMap.set(e.label, i > 0 ? periodData[i - 1].revenue : null);
+                      });
+                      const rows = [...periodData].reverse().filter((e) => e.bookings > 0);
+                      return (
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: "#f5f5f5" }}>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Período</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Reservas</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem", display: { xs: "none", sm: "table-cell" } }}>Horas</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "0.8rem" }}>Facturado</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {rows.map((entry) => {
+                                const prev = trendMap.get(entry.label) ?? null;
+                                const diff = prev !== null ? entry.revenue - prev : null;
+                                const pct  = diff !== null && prev! > 0 ? (diff / prev!) * 100 : null;
+                                const isUp = diff !== null && diff > 0;
+                                const isDown = diff !== null && diff < 0;
+                                return (
+                                  <TableRow key={entry.label} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
+                                    <TableCell>
+                                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                        <Typography variant="body2">{shortLabel(entry.label, period)}</Typography>
+                                        {(isUp || isDown) && pct !== null && (
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                                            {isUp
+                                              ? <ArrowUpwardIcon sx={{ fontSize: 12, color: "success.main" }} />
+                                              : <ArrowDownwardIcon sx={{ fontSize: 12, color: "error.main" }} />
+                                            }
+                                            <Typography variant="caption" sx={{ fontSize: "0.68rem", color: isUp ? "success.main" : "error.main", lineHeight: 1 }}>
+                                              {Math.abs(pct).toFixed(0)}%
+                                            </Typography>
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="right"><Typography variant="body2">{entry.bookings}</Typography></TableCell>
+                                    <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}><Typography variant="body2">{entry.hours.toFixed(1)}</Typography></TableCell>
+                                    <TableCell align="right"><Typography variant="body2" fontWeight={600}>{fmt(entry.revenue)}</Typography></TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {periodData.every((e) => e.bookings === 0) && (
+                                <TableRow>
+                                  <TableCell colSpan={4} sx={{ textAlign: "center", py: 3 }}>
+                                    <Typography variant="body2" color="text.secondary">Sin reservas en este período.</Typography>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {hasRacketSport && (
+                <Grid size={{ xs: 12, md: 5 }}>
+                  <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
+                </Grid>
+              )}
+            </Grid>
+          </Box>
         </Grid>
 
-        {hasRacketSport && (
-          <Grid size={{ xs: 12 }}>
-            <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
-          </Grid>
-        )}
-
-        {/* ── Canchas ───────────────────────────────────────────── */}
-        <SectionGroup title="Canchas" icon={<DonutLargeIcon fontSize="small" />} />
-
-        <Grid size={{ xs: 12 }}>
-          <Card elevation={0} sx={cardSx}>
-            <CardContent sx={{ p: 3 }}>
-              <ChartHeader icon={<DonutLargeIcon />} title="Ocupación por cancha" />
-              <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
-            </CardContent>
-          </Card>
+        {/* ── Canchas (md:6, o full si no hay jugadores) ─────────── */}
+        <Grid size={{ xs: 12, md: hasPadel ? 6 : 12 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <SectionHeader title="Canchas" icon={<DonutLargeIcon fontSize="small" />} />
+            <Card elevation={0} sx={cardSx}>
+              <CardContent sx={{ p: 3 }}>
+                <ChartHeader icon={<DonutLargeIcon />} title="Ocupación por cancha" />
+                <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
+              </CardContent>
+            </Card>
+          </Box>
         </Grid>
 
-        {/* ── Jugadores ─────────────────────────────────────────── */}
+        {/* ── Jugadores (md:6) ──────────────────────────────────── */}
         {hasPadel && (
-          <>
-            <SectionGroup title="Jugadores" icon={<PeopleAltIcon fontSize="small" />} />
-            <Grid size={{ xs: 12 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <SectionHeader title="Jugadores" icon={<PeopleAltIcon fontSize="small" />} />
               <Card elevation={0} sx={cardSx}>
                 <CardContent sx={{ p: 3 }}>
                   <ChartHeader
@@ -799,18 +807,17 @@ export default function Stats() {
                   {!playerPending && !playerError && <PlayerCategoryChart data={playerData ?? []} />}
                 </CardContent>
               </Card>
-            </Grid>
-          </>
+            </Box>
+          </Grid>
         )}
 
-        {/* ── Torneos ───────────────────────────────────────────── */}
-        <SectionGroup title="Torneos" icon={<EmojiEventsIcon fontSize="small" />} />
-
+        {/* ── Torneos (full width) ───────────────────────────────── */}
         <Grid size={{ xs: 12 }}>
-          <TournamentRevenueCard data={tournamentStatsData ?? []} isLoading={tournamentStatsPending} isError={tournamentStatsError} />
-        </Grid>
-        <Grid size={{ xs: 12 }}>
-          <RankingSection />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <SectionHeader title="Torneos" icon={<EmojiEventsIcon fontSize="small" />} />
+            <TournamentRevenueCard data={tournamentStatsData ?? []} isLoading={tournamentStatsPending} isError={tournamentStatsError} />
+            <RankingSection />
+          </Box>
         </Grid>
 
       </Grid>
