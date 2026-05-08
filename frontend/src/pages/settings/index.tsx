@@ -41,7 +41,7 @@ import PageLoader from "../../components/common/PageLoader";
 import { useAuth } from "../../context/AuthContext";
 import { SPORT_LABEL } from "../../constants/sports";
 
-const SPORTS_WITH_CLASS = ["PADEL", "TENIS", "FUTBOL", "BASQUET", "VOLEY"];
+
 const SPORTS_WITH_SETS  = ["PADEL", "TENIS", "VOLEY"];
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -119,7 +119,7 @@ function Section({
 export default function Settings() {
   const { user } = useAuth();
   const clubSports = user?.sports ?? ["PADEL"];
-  const sportsWithClass = clubSports.filter(s => SPORTS_WITH_CLASS.includes(s));
+
   const qc = useQueryClient();
   const showToast = useToast();
 
