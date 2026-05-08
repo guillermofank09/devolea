@@ -280,6 +280,28 @@ export default function Settings() {
               const renderClase   = PriceInput({ val: sportClassPrices, setter: setSportClassPrices });
               const renderTorneo  = PriceInput({ val: sportTournamentPrices, setter: setSportTournamentPrices });
 
+              if (isMobile) {
+                return (
+                  <Box>
+                    {rows.map(row => (
+                      <Box key={row.key} sx={{ py: 1.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: "none" } }}>
+                        {multiSport && (
+                          <Typography variant="body2" fontWeight={700} sx={{ mb: 1.25 }}>{row.label}</Typography>
+                        )}
+                        <Box sx={{ display: "grid", gridTemplateColumns: "76px 1fr", gap: 1, rowGap: 1.25, alignItems: "center" }}>
+                          <Typography variant="caption" sx={captionSx}>Reserva / h</Typography>
+                          {renderReserva(row.key)}
+                          <Typography variant="caption" sx={captionSx}>Clase / h</Typography>
+                          {renderClase(row.key)}
+                          <Typography variant="caption" sx={captionSx}>Torneo / h</Typography>
+                          {renderTorneo(row.key)}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                );
+              }
+
               return (
                 <Box>
                   {/* Column headers */}
