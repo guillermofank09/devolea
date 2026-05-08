@@ -40,30 +40,37 @@ interface Props {
 export default function TournamentRevenueCard({ data, isLoading, isError }: Props) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  const totalNet = data.reduce((s, t) => s + t.net, 0);
-  const totalIncome = data.reduce((s, t) => s + t.totalIncome, 0);
-  const totalExpense = data.reduce((s, t) => s + t.totalExpense, 0);
+  const totalNet          = data.reduce((s, t) => s + t.net, 0);
+  const totalInscriptions = data.reduce((s, t) => s + t.totalInscriptions, 0);
+  const totalCourtCost    = data.reduce((s, t) => s + t.totalCourtCost, 0);
+  const totalPrize        = data.reduce((s, t) => s + t.prize, 0);
 
-  const cellSx = { fontSize: "0.8rem", py: 1 };
+  const cellSx   = { fontSize: "0.8rem", py: 1 };
   const headerSx = { fontWeight: 700, fontSize: "0.78rem" };
+  const hideSx   = { display: { xs: "none", sm: "table-cell" } };
 
   return (
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3 }}>
       <CardContent sx={{ p: 3 }}>
+        {/* Card header + totals */}
         <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, gap: { xs: 0.5, sm: 1.5 }, mb: 2.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
             <EmojiEventsIcon sx={{ color: "#F5AD27", flexShrink: 0 }} />
             <Typography variant="subtitle1" fontWeight={700}>Recaudación por Torneo</Typography>
           </Box>
           {!isLoading && !isError && data.length > 0 && (
-            <Box sx={{ display: "flex", gap: 2, pl: { xs: "36px", sm: 0 } }}>
+            <Box sx={{ display: "flex", gap: 2, pl: { xs: "36px", sm: 0 }, flexWrap: "wrap" }}>
               <Box sx={{ textAlign: "right" }}>
-                <Typography variant="caption" color="text.disabled" display="block">Ingresos totales</Typography>
-                <Typography variant="caption" fontWeight={700} color="success.main">{fmt(totalIncome)}</Typography>
+                <Typography variant="caption" color="text.disabled" display="block">Inscripciones</Typography>
+                <Typography variant="caption" fontWeight={700} color="success.main">{fmt(totalInscriptions)}</Typography>
               </Box>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="caption" color="text.disabled" display="block">Egresos totales</Typography>
-                <Typography variant="caption" fontWeight={700} color="error.main">{fmt(totalExpense)}</Typography>
+              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                <Typography variant="caption" color="text.disabled" display="block">Canchas</Typography>
+                <Typography variant="caption" fontWeight={700} color="error.main">{fmt(totalCourtCost)}</Typography>
+              </Box>
+              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                <Typography variant="caption" color="text.disabled" display="block">Premios</Typography>
+                <Typography variant="caption" fontWeight={700} color="error.main">{fmt(totalPrize)}</Typography>
               </Box>
               <Box sx={{ textAlign: "right" }}>
                 <Typography variant="caption" color="text.disabled" display="block">Resultado</Typography>
@@ -90,8 +97,9 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
               <TableHead>
                 <TableRow sx={{ bgcolor: "#f5f5f5" }}>
                   <TableCell sx={headerSx}>Torneo</TableCell>
-                  <TableCell align="right" sx={headerSx}>Ingresos</TableCell>
-                  <TableCell align="right" sx={headerSx}>Egresos</TableCell>
+                  <TableCell align="right" sx={headerSx}>Inscripciones</TableCell>
+                  <TableCell align="right" sx={{ ...headerSx, ...hideSx }}>Alquiler Canchas</TableCell>
+                  <TableCell align="right" sx={{ ...headerSx, ...hideSx }}>Premio</TableCell>
                   <TableCell align="right" sx={headerSx}>Resultado</TableCell>
                 </TableRow>
               </TableHead>
@@ -118,10 +126,13 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
                           </Box>
                         </TableCell>
                         <TableCell align="right" sx={cellSx}>
-                          <Typography variant="body2" color="success.main" fontWeight={600}>{fmt(t.totalIncome)}</Typography>
+                          <Typography variant="body2" color="success.main" fontWeight={600}>{fmt(t.totalInscriptions)}</Typography>
                         </TableCell>
-                        <TableCell align="right" sx={cellSx}>
-                          <Typography variant="body2" color="error.main" fontWeight={600}>{fmt(t.totalExpense)}</Typography>
+                        <TableCell align="right" sx={{ ...cellSx, ...hideSx }}>
+                          <Typography variant="body2" color="error.main" fontWeight={600}>{fmt(t.totalCourtCost)}</Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, ...hideSx }}>
+                          <Typography variant="body2" color="error.main" fontWeight={600}>{fmt(t.prize)}</Typography>
                         </TableCell>
                         <TableCell align="right" sx={cellSx}>
                           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 0.5 }}>
@@ -137,10 +148,10 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
 
                       {isOpen && (
                         <TableRow key={`${t.tournamentId}-detail`}>
-                          <TableCell colSpan={4} sx={{ py: 0, bgcolor: "#fafafa" }}>
+                          <TableCell colSpan={5} sx={{ py: 0, bgcolor: "#fafafa" }}>
                             <Box sx={{ px: 2, py: 1.5 }}>
                               <Divider sx={{ mb: 1.5 }} />
-                              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
+                              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" }, gap: 1.5 }}>
                                 <Box>
                                   <Typography variant="caption" color="text.disabled" display="block">
                                     {t.sport === "PADEL" || t.sport === "TENIS" ? "Jugadores" : "Equipos"}
@@ -149,17 +160,14 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
                                   <Typography variant="caption" color="success.main" fontWeight={700}>{fmt(t.totalInscriptions)}</Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" color="text.disabled" display="block">Canchas (hs)</Typography>
+                                  <Typography variant="caption" color="text.disabled" display="block">Canchas</Typography>
                                   <Typography variant="body2" fontWeight={600}>{t.courtHours}h × {fmt(t.courtHourPrice)}</Typography>
                                   <Typography variant="caption" color="error.main" fontWeight={700}>{fmt(t.totalCourtCost)}</Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" color="text.disabled" display="block">Premio</Typography>
+                                  <Typography variant="caption" color="text.disabled" display="block">Partidos · Premio</Typography>
+                                  <Typography variant="body2" fontWeight={600}>{t.scheduledMatches} partidos</Typography>
                                   <Typography variant="caption" color="error.main" fontWeight={700}>{fmt(t.prize)}</Typography>
-                                </Box>
-                                <Box>
-                                  <Typography variant="caption" color="text.disabled" display="block">Partidos programados</Typography>
-                                  <Typography variant="body2" fontWeight={600}>{t.scheduledMatches}</Typography>
                                 </Box>
                               </Box>
                             </Box>
