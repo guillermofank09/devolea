@@ -40,11 +40,6 @@ interface Props {
 export default function TournamentRevenueCard({ data, isLoading, isError }: Props) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  const totalNet          = data.reduce((s, t) => s + t.net, 0);
-  const totalInscriptions = data.reduce((s, t) => s + t.totalInscriptions, 0);
-  const totalCourtCost    = data.reduce((s, t) => s + t.totalCourtCost, 0);
-  const totalPrize        = data.reduce((s, t) => s + t.prize, 0);
-
   const cellSx   = { fontSize: "0.8rem", py: 1 };
   const headerSx = { fontWeight: 700, fontSize: "0.78rem" };
   const hideSx   = { display: { xs: "none", sm: "table-cell" } };
@@ -52,34 +47,10 @@ export default function TournamentRevenueCard({ data, isLoading, isError }: Prop
   return (
     <Card elevation={0} sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 3 }}>
       <CardContent sx={{ p: 3 }}>
-        {/* Card header + totals */}
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, gap: { xs: 0.5, sm: 1.5 }, mb: 2.5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
-            <EmojiEventsIcon sx={{ color: "#F5AD27", flexShrink: 0 }} />
-            <Typography variant="subtitle1" fontWeight={700}>Recaudación por Torneo</Typography>
-          </Box>
-          {!isLoading && !isError && data.length > 0 && (
-            <Box sx={{ display: "flex", gap: 2, pl: { xs: "36px", sm: 0 }, flexWrap: "wrap" }}>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="caption" color="text.disabled" display="block">Inscripciones</Typography>
-                <Typography variant="caption" fontWeight={700} color="success.main">{fmt(totalInscriptions)}</Typography>
-              </Box>
-              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
-                <Typography variant="caption" color="text.disabled" display="block">Canchas</Typography>
-                <Typography variant="caption" fontWeight={700} color="error.main">{fmt(totalCourtCost)}</Typography>
-              </Box>
-              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
-                <Typography variant="caption" color="text.disabled" display="block">Premios</Typography>
-                <Typography variant="caption" fontWeight={700} color="error.main">{fmt(totalPrize)}</Typography>
-              </Box>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="caption" color="text.disabled" display="block">Resultado</Typography>
-                <Typography variant="caption" fontWeight={700} color={totalNet >= 0 ? "success.main" : "error.main"}>
-                  {fmt(totalNet)}
-                </Typography>
-              </Box>
-            </Box>
-          )}
+        {/* Card header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+          <EmojiEventsIcon sx={{ color: "#F5AD27", flexShrink: 0 }} />
+          <Typography variant="subtitle1" fontWeight={700}>Recaudación por Torneo</Typography>
         </Box>
 
         {isLoading && <PageLoader />}
