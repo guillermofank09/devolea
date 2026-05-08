@@ -25,6 +25,7 @@ import {
   useTheme,
 } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
@@ -108,6 +109,22 @@ function ChartHeader({ icon, title, meta }: { icon: React.ReactNode; title: stri
       </Box>
       <Divider sx={{ mb: 2.5 }} />
     </>
+  );
+}
+
+// ── Section group header ──────────────────────────────────────────────────────
+
+function SectionGroup({ title, icon }: { title: string; icon: React.ReactNode }) {
+  return (
+    <Grid size={{ xs: 12 }} sx={{ mt: 1, mb: -0.5 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ color: "#F5AD27", display: "flex", alignItems: "center" }}>{icon}</Box>
+        <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+          {title}
+        </Typography>
+        <Box sx={{ flex: 1, height: "1px", bgcolor: "divider" }} />
+      </Box>
+    </Grid>
   );
 }
 
@@ -641,11 +658,13 @@ export default function Stats() {
 
   return (
     <Box>
-      <PageHeader title="Estadísticas" subtitle="Facturación y ocupación de canchas" />
+      <PageHeader title="Estadísticas" subtitle="Métricas del club" />
 
       <Grid container spacing={3} alignItems="stretch">
 
-        {/* Summary cards */}
+        {/* ── Facturación ───────────────────────────────────────── */}
+        <SectionGroup title="Facturación" icon={<TrendingUpIcon fontSize="small" />} />
+
         <Grid size={{ xs: 4 }}>
           <SummaryCard icon={<CalendarTodayIcon sx={{ fontSize: 18 }} />} label="Hoy"        value={data.totals.day}   bookings={data.bookingTotals.day} />
         </Grid>
@@ -656,13 +675,12 @@ export default function Stats() {
           <SummaryCard icon={<EventNoteIcon    sx={{ fontSize: 18 }} />} label="Este mes"    value={data.totals.month} bookings={data.bookingTotals.month} />
         </Grid>
 
-        {/* Facturación */}
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
+        <Grid size={{ xs: 12 }}>
+          <Card elevation={0} sx={cardSx}>
             <CardContent sx={{ p: 3 }}>
               <ChartHeader
                 icon={<TrendingUpIcon />}
-                title="Facturación"
+                title="Evolución"
                 meta={data.hourlyRate > 0 && (
                   <Typography variant="caption" color="text.secondary">Precio/hora: {fmt(data.hourlyRate)}</Typography>
                 )}
@@ -742,9 +760,17 @@ export default function Stats() {
           </Card>
         </Grid>
 
-        {/* Ocupación */}
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
+        {hasRacketSport && (
+          <Grid size={{ xs: 12 }}>
+            <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
+          </Grid>
+        )}
+
+        {/* ── Canchas ───────────────────────────────────────────── */}
+        <SectionGroup title="Canchas" icon={<DonutLargeIcon fontSize="small" />} />
+
+        <Grid size={{ xs: 12 }}>
+          <Card elevation={0} sx={cardSx}>
             <CardContent sx={{ p: 3 }}>
               <ChartHeader icon={<DonutLargeIcon />} title="Ocupación por cancha" />
               <OccupancyChart data={data.courtOccupancy} summary={data.occupancySummary} />
@@ -752,41 +778,37 @@ export default function Stats() {
           </Card>
         </Grid>
 
-        {/* Profesor billing */}
-        {hasRacketSport && (
-          <Grid size={{ xs: 12, md: hasPadel ? 7 : 12 }}>
-            <ProfesorBillingCard data={profesorData ?? []} isLoading={profesorPending} isError={profesorError} />
-          </Grid>
-        )}
-
-        {/* Jugadores por categoría */}
+        {/* ── Jugadores ─────────────────────────────────────────── */}
         {hasPadel && (
-          <Grid size={{ xs: 12, md: hasRacketSport ? 5 : 12 }}>
-            <Card elevation={0} sx={{ ...cardSx, height: "100%" }}>
-              <CardContent sx={{ p: 3 }}>
-                <ChartHeader
-                  icon={<PeopleAltIcon />}
-                  title="Jugadores por Categoría"
-                  meta={!playerPending && !playerError && playerData && (
-                    <Typography variant="caption" color="text.secondary">
-                      {playerData.reduce((s, d) => s + d.total, 0)} en total
-                    </Typography>
-                  )}
-                />
-                {playerPending && <PageLoader />}
-                {playerError && <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudieron cargar los datos de jugadores.</Alert>}
-                {!playerPending && !playerError && <PlayerCategoryChart data={playerData ?? []} />}
-              </CardContent>
-            </Card>
-          </Grid>
+          <>
+            <SectionGroup title="Jugadores" icon={<PeopleAltIcon fontSize="small" />} />
+            <Grid size={{ xs: 12 }}>
+              <Card elevation={0} sx={cardSx}>
+                <CardContent sx={{ p: 3 }}>
+                  <ChartHeader
+                    icon={<PeopleAltIcon />}
+                    title="Jugadores por Categoría"
+                    meta={!playerPending && !playerError && playerData && (
+                      <Typography variant="caption" color="text.secondary">
+                        {playerData.reduce((s, d) => s + d.total, 0)} en total
+                      </Typography>
+                    )}
+                  />
+                  {playerPending && <PageLoader />}
+                  {playerError && <Alert severity="error" sx={{ borderRadius: 2 }}>No se pudieron cargar los datos de jugadores.</Alert>}
+                  {!playerPending && !playerError && <PlayerCategoryChart data={playerData ?? []} />}
+                </CardContent>
+              </Card>
+            </Grid>
+          </>
         )}
 
-        {/* Recaudación torneos */}
+        {/* ── Torneos ───────────────────────────────────────────── */}
+        <SectionGroup title="Torneos" icon={<EmojiEventsIcon fontSize="small" />} />
+
         <Grid size={{ xs: 12 }}>
           <TournamentRevenueCard data={tournamentStatsData ?? []} isLoading={tournamentStatsPending} isError={tournamentStatsError} />
         </Grid>
-
-        {/* Ranking de torneos */}
         <Grid size={{ xs: 12 }}>
           <RankingSection />
         </Grid>
