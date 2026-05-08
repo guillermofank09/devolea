@@ -12,16 +12,19 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  ListItemIcon,
+  Menu,
   MenuItem,
   OutlinedInput,
   Select,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useNavigate } from "react-router-dom";
@@ -76,6 +79,13 @@ export default function Tournaments() {
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Tournament | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Tournament | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; tournament: Tournament } | null>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>, tournament: Tournament) => {
+    e.stopPropagation();
+    setMenuAnchor({ el: e.currentTarget, tournament });
+  };
+  const closeMenu = () => setMenuAnchor(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TournamentCategory | "">("");
   const [sexFilter, setSexFilter] = useState<TournamentSex | "">("");
@@ -339,18 +349,9 @@ export default function Tournaments() {
                     <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2, flex: 1, mr: 1 }}>
                       {tournament.name}
                     </Typography>
-                    <Tooltip title="Eliminar torneo">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setDeleteTarget(tournament);
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <IconButton size="small" onClick={e => openMenu(e, tournament)}>
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
                   </Box>
 
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1.5 }}>
@@ -407,6 +408,25 @@ export default function Tournaments() {
           ))}
         </Grid>
       )}
+
+      <Menu
+        anchorEl={menuAnchor?.el}
+        open={!!menuAnchor}
+        onClose={closeMenu}
+        slotProps={{ paper: { sx: { borderRadius: 2, minWidth: 160 } } }}
+      >
+        <MenuItem onClick={() => { setEditTarget(menuAnchor!.tournament); closeMenu(); }}>
+          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={() => { setDeleteTarget(menuAnchor!.tournament); closeMenu(); }}
+          sx={{ color: "error.main" }}
+        >
+          <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+          Eliminar
+        </MenuItem>
+      </Menu>
 
       <AddEditTournament open={addOpen} onClose={() => setAddOpen(false)} />
       <AddEditTournament open={!!editTarget} onClose={() => setEditTarget(null)} tournament={editTarget} />
