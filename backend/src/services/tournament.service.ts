@@ -235,10 +235,18 @@ export class TournamentService {
     if (startTime) for (const cId of effectiveCourts) nextFreeAt.set(cId, startTime.getTime());
     let courtRrIdx = 0;
 
+    // Spread rounds evenly across ALL tournament days.
+    // Formula anchors round 0 to day 0 and round numRounds-1 to day totalDays-1,
+    // distributing intermediate rounds proportionally — so every day in the range
+    // is used and players get maximum rest between rounds.
+    const dayForRound = (roundIdx: number): number => {
+      if (numRounds <= 1) return 0;
+      return Math.floor(roundIdx * (totalDays - 1) / (numRounds - 1));
+    };
+
     const resetRound = (roundIdx: number) => {
       if (!startTime || totalDays <= 1) return;
-      const dayOffset = Math.floor(roundIdx * totalDays / numRounds);
-      const roundStartMs = startTime.getTime() + dayOffset * msPerDay;
+      const roundStartMs = startTime.getTime() + dayForRound(roundIdx) * msPerDay;
       for (const cId of effectiveCourts) nextFreeAt.set(cId, roundStartMs);
     };
 
