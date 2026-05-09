@@ -369,6 +369,28 @@ export class TournamentService {
     return allMatches;
   }
 
+  // Circle-method round-robin: returns rounds where each pair index appears at most once.
+  // For N even: N-1 rounds of N/2 matches. For N odd: N rounds of floor(N/2) matches (byes skipped).
+  private buildRoundRobinSchedule(n: number): [number, number][][] {
+    const hasBye = n % 2 === 1;
+    const sz = hasBye ? n + 1 : n;
+    const arr = Array.from({ length: sz }, (_, i) => i);
+    const rounds: [number, number][][] = [];
+    for (let r = 0; r < sz - 1; r++) {
+      const round: [number, number][] = [];
+      for (let i = 0; i < sz / 2; i++) {
+        const a = arr[i], b = arr[sz - 1 - i];
+        if (a < n && b < n) round.push([a, b]);
+      }
+      if (round.length > 0) rounds.push(round);
+      // Rotate keeping arr[0] fixed
+      const last = arr[sz - 1];
+      for (let i = sz - 1; i > 1; i--) arr[i] = arr[i - 1];
+      arr[1] = last;
+    }
+    return rounds;
+  }
+
   private async generateMatchesAmericanoPair(tournamentId: number, startTime: Date | null, courtIds: number[], matchDuration: number): Promise<TournamentMatch[]> {
     const [pairs, tournament] = await Promise.all([
       this.pRepo.find({ where: { tournament: { id: tournamentId }, isMatchPair: false } }),
@@ -378,27 +400,14 @@ export class TournamentService {
 
     await this.tRepo.update(tournamentId, { format: "AMERICANO_PAIR", status: "ACTIVE" });
 
-    // Build all matchups (everyone vs everyone)
-    const allMatchups: { pair1: Pair; pair2: Pair }[] = [];
-    for (let i = 0; i < pairs.length; i++)
-      for (let j = i + 1; j < pairs.length; j++)
-        allMatchups.push({ pair1: pairs[i], pair2: pairs[j] });
+    // Proper round-robin schedule: each pair plays exactly once per round.
+    // Circle method guarantees no pair appears twice in the same round.
+    const schedule = this.buildRoundRobinSchedule(pairs.length);
 
-    // Greedy reorder: no pair plays two consecutive matches
-    const reordered: { pair1: Pair; pair2: Pair }[] = [];
-    const remaining = [...allMatchups];
-    while (remaining.length > 0) {
-      const last = reordered[reordered.length - 1];
-      const lastIds = last ? new Set([last.pair1.id, last.pair2.id]) : new Set<number>();
-      const safeIdx = remaining.findIndex(m => !lastIds.has(m.pair1.id) && !lastIds.has(m.pair2.id));
-      reordered.push(remaining.splice(safeIdx >= 0 ? safeIdx : 0, 1)[0]);
-    }
-
-    // Group into virtual rounds of floor(N/2) matches each
-    const matchesPerRound = Math.max(1, Math.floor(pairs.length / 2));
-    const rounds: { pair1: Pair; pair2: Pair }[][] = [];
-    for (let i = 0; i < reordered.length; i += matchesPerRound)
-      rounds.push(reordered.slice(i, i + matchesPerRound));
+    // Shuffle match order within each round for variety
+    const rounds = schedule.map(round =>
+      [...round].sort(() => Math.random() - 0.5).map(([a, b]) => ({ pair1: pairs[a], pair2: pairs[b] }))
+    );
 
     const { resetRound, getNextSlot } = this.buildAmericanoScheduler(startTime, courtIds, matchDuration, tournament, rounds.length);
 
