@@ -224,8 +224,49 @@ export class TournamentService {
     await this.mRepo.delete(matchId);
   }
 
+  private buildAmericanoScheduler(startTime: Date | null, courtIds: number[], matchDuration: number, tournament: Tournament | null, numRounds: number) {
+    const msPerDay = 86400000;
+    const totalDays = (startTime && tournament)
+      ? Math.round((new Date(tournament.endDate + 'T12:00:00').getTime() - new Date(tournament.startDate + 'T12:00:00').getTime()) / msPerDay) + 1
+      : 1;
+
+    const effectiveCourts = courtIds;
+    const nextFreeAt = new Map<number, number>();
+    if (startTime) for (const cId of effectiveCourts) nextFreeAt.set(cId, startTime.getTime());
+    let courtRrIdx = 0;
+
+    const resetRound = (roundIdx: number) => {
+      if (!startTime || totalDays <= 1) return;
+      const dayOffset = Math.floor(roundIdx * totalDays / numRounds);
+      const roundStartMs = startTime.getTime() + dayOffset * msPerDay;
+      for (const cId of effectiveCourts) nextFreeAt.set(cId, roundStartMs);
+    };
+
+    const getNextSlot = (): { court: any; scheduledAt: Date | null } | null => {
+      if (effectiveCourts.length === 0) return null;
+      if (!startTime) {
+        const cId = effectiveCourts[courtRrIdx % effectiveCourts.length];
+        courtRrIdx++;
+        return { court: { id: cId } as any, scheduledAt: null };
+      }
+      let bestCId = effectiveCourts[0];
+      let bestMs = nextFreeAt.get(bestCId)!;
+      for (const cId of effectiveCourts.slice(1)) {
+        const ms = nextFreeAt.get(cId)!;
+        if (ms < bestMs) { bestCId = cId; bestMs = ms; }
+      }
+      nextFreeAt.set(bestCId, bestMs + matchDuration * 60 * 1000);
+      return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
+    };
+
+    return { resetRound, getNextSlot };
+  }
+
   private async generateMatchesAmericanoInd(tournamentId: number, startTime: Date | null, courtIds: number[], matchDuration: number): Promise<TournamentMatch[]> {
-    const registeredPairs = await this.pRepo.find({ where: { tournament: { id: tournamentId }, isMatchPair: false } });
+    const [registeredPairs, tournament] = await Promise.all([
+      this.pRepo.find({ where: { tournament: { id: tournamentId }, isMatchPair: false } }),
+      this.tRepo.findOneBy({ id: tournamentId }),
+    ]);
     const players: Player[] = [];
     for (const pair of registeredPairs) {
       players.push(pair.player1);
@@ -239,51 +280,7 @@ export class TournamentService {
 
     await this.tRepo.update(tournamentId, { format: "AMERICANO_IND", status: "ACTIVE" });
 
-    // Court scheduling setup
-    const effectiveCourts = courtIds;
-    const courtBookingsMap = new Map<number, Array<{ startTime: Date; endTime: Date }>>();
-    if (startTime) {
-      const dayStart = new Date(startTime); dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(startTime); dayEnd.setHours(23, 59, 59, 999);
-      for (const cId of effectiveCourts) {
-        const bookings = await this.bRepo.find({
-          where: { court: { id: cId }, startTime: Between(dayStart, dayEnd), status: "CONFIRMED" },
-          order: { startTime: "ASC" },
-        });
-        courtBookingsMap.set(cId, bookings.map(b => ({ startTime: b.startTime, endTime: b.endTime })));
-      }
-    }
-    const nextFreeAt = new Map<number, number>();
-    if (startTime) for (const cId of effectiveCourts) nextFreeAt.set(cId, startTime.getTime());
-    const advancePastBookings = (cId: number, tMs: number): number => {
-      const bookings = courtBookingsMap.get(cId) ?? [];
-      let t = tMs; let changed = true;
-      while (changed) {
-        changed = false;
-        const tEnd = t + matchDuration * 60 * 1000;
-        for (const b of bookings) {
-          if (b.startTime.getTime() < tEnd && b.endTime.getTime() > t) { t = b.endTime.getTime(); changed = true; break; }
-        }
-      }
-      return t;
-    };
-    let courtRrIdx = 0;
-    const getNextSlot = (): { court: any; scheduledAt: Date | null } | null => {
-      if (effectiveCourts.length === 0) return null;
-      if (!startTime) {
-        const cId = effectiveCourts[courtRrIdx % effectiveCourts.length];
-        courtRrIdx++;
-        return { court: { id: cId } as any, scheduledAt: null };
-      }
-      let bestCId = effectiveCourts[0];
-      let bestMs = advancePastBookings(bestCId, nextFreeAt.get(bestCId)!);
-      for (const cId of effectiveCourts.slice(1)) {
-        const ms = advancePastBookings(cId, nextFreeAt.get(cId)!);
-        if (ms < bestMs) { bestCId = cId; bestMs = ms; }
-      }
-      nextFreeAt.set(bestCId, bestMs + matchDuration * 60 * 1000);
-      return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
-    };
+    const { resetRound, getNextSlot } = this.buildAmericanoScheduler(startTime, courtIds, matchDuration, tournament, numRounds);
 
     // Phase 1: Generate round assignments (player groups) — no DB writes yet
     interface PGroup { a: Player; b: Player; c: Player; d: Player; }
@@ -331,6 +328,7 @@ export class TournamentService {
     // Phase 3: Create DB pairs/matches and assign time slots
     const allMatches: TournamentMatch[] = [];
     for (let roundIdx = 0; roundIdx < orderedRounds.length; roundIdx++) {
+      resetRound(roundIdx);
       const round = roundIdx + 1;
       const roundMatchData: Partial<TournamentMatch>[] = [];
       for (let i = 0; i < orderedRounds[roundIdx].length; i++) {
@@ -358,6 +356,62 @@ export class TournamentService {
       }
       const roundMatches = await this.mRepo.save(roundMatchData.map(m => this.mRepo.create(m)));
       allMatches.push(...roundMatches);
+    }
+
+    return allMatches;
+  }
+
+  private async generateMatchesAmericanoPair(tournamentId: number, startTime: Date | null, courtIds: number[], matchDuration: number): Promise<TournamentMatch[]> {
+    const [pairs, tournament] = await Promise.all([
+      this.pRepo.find({ where: { tournament: { id: tournamentId }, isMatchPair: false } }),
+      this.tRepo.findOneBy({ id: tournamentId }),
+    ]);
+    if (pairs.length < 2) throw new Error("Se necesitan al menos 2 parejas para generar cruces");
+
+    await this.tRepo.update(tournamentId, { format: "AMERICANO_PAIR", status: "ACTIVE" });
+
+    // Build all matchups (everyone vs everyone)
+    const allMatchups: { pair1: Pair; pair2: Pair }[] = [];
+    for (let i = 0; i < pairs.length; i++)
+      for (let j = i + 1; j < pairs.length; j++)
+        allMatchups.push({ pair1: pairs[i], pair2: pairs[j] });
+
+    // Greedy reorder: no pair plays two consecutive matches
+    const reordered: { pair1: Pair; pair2: Pair }[] = [];
+    const remaining = [...allMatchups];
+    while (remaining.length > 0) {
+      const last = reordered[reordered.length - 1];
+      const lastIds = last ? new Set([last.pair1.id, last.pair2.id]) : new Set<number>();
+      const safeIdx = remaining.findIndex(m => !lastIds.has(m.pair1.id) && !lastIds.has(m.pair2.id));
+      reordered.push(remaining.splice(safeIdx >= 0 ? safeIdx : 0, 1)[0]);
+    }
+
+    // Group into virtual rounds of floor(N/2) matches each
+    const matchesPerRound = Math.max(1, Math.floor(pairs.length / 2));
+    const rounds: { pair1: Pair; pair2: Pair }[][] = [];
+    for (let i = 0; i < reordered.length; i += matchesPerRound)
+      rounds.push(reordered.slice(i, i + matchesPerRound));
+
+    const { resetRound, getNextSlot } = this.buildAmericanoScheduler(startTime, courtIds, matchDuration, tournament, rounds.length);
+
+    const allMatches: TournamentMatch[] = [];
+    for (let roundIdx = 0; roundIdx < rounds.length; roundIdx++) {
+      resetRound(roundIdx);
+      const roundData: Partial<TournamentMatch>[] = [];
+      for (let i = 0; i < rounds[roundIdx].length; i++) {
+        const { pair1, pair2 } = rounds[roundIdx][i];
+        const slot = getNextSlot();
+        roundData.push({
+          tournament: { id: tournamentId } as any,
+          pair1, pair2,
+          round: roundIdx + 1, matchNumber: i + 1,
+          status: "PENDING" as any,
+          court: slot?.court ?? null,
+          scheduledAt: slot?.scheduledAt ?? null,
+        });
+      }
+      const saved = await this.mRepo.save(roundData.map(m => this.mRepo.create(m)));
+      allMatches.push(...saved);
     }
 
     return allMatches;
@@ -494,12 +548,15 @@ export class TournamentService {
     if (formatOverride === "AMERICANO_IND") {
       return await this.generateMatchesAmericanoInd(tournamentId, startTime, courtIds, matchDuration);
     }
+    if (formatOverride === "AMERICANO_PAIR") {
+      return await this.generateMatchesAmericanoPair(tournamentId, startTime, courtIds, matchDuration);
+    }
 
     const pairs = await this.pRepo.find({ where: { tournament: { id: tournamentId }, isMatchPair: false } });
     if (pairs.length < 2) throw new Error("Se necesitan al menos 2 parejas para generar cruces");
 
     const format: TournamentFormat =
-      formatOverride === "ROUND_ROBIN" || formatOverride === "BRACKET" || formatOverride === "AMERICANO_PAIR"
+      formatOverride === "ROUND_ROBIN" || formatOverride === "BRACKET"
         ? (formatOverride as TournamentFormat)
         : pairs.length <= 4 ? "ROUND_ROBIN" : "BRACKET";
     await this.tRepo.update(tournamentId, { format, status: "ACTIVE" });
@@ -579,28 +636,10 @@ export class TournamentService {
       return pa.filter(ta => pb.some(tb => Math.abs(ta - tb) < 60_000)).length;
     };
 
-    if (format === "ROUND_ROBIN" || format === "AMERICANO_PAIR") {
+    if (format === "ROUND_ROBIN") {
       for (let i = 0; i < pairs.length; i++)
         for (let j = i + 1; j < pairs.length; j++)
           matchupList.push({ pair1: pairs[i], pair2: pairs[j], isBye: false });
-
-      // Americano Pair: reorder so no pair plays two consecutive matches (rest between games)
-      if (format === "AMERICANO_PAIR") {
-        const reordered: MatchupEntry[] = [];
-        const remaining = [...matchupList];
-        while (remaining.length > 0) {
-          const last = reordered[reordered.length - 1];
-          const lastIds = last
-            ? new Set([last.pair1.id, last.pair2?.id].filter((x): x is number => x != null))
-            : new Set<number>();
-          const safeIdx = remaining.findIndex(
-            m => !lastIds.has(m.pair1.id) && (m.pair2 == null || !lastIds.has(m.pair2.id))
-          );
-          reordered.push(remaining.splice(safeIdx >= 0 ? safeIdx : 0, 1)[0]);
-        }
-        matchupList.length = 0;
-        matchupList.push(...reordered);
-      }
     } else {
       // Greedy preference-aware seeding: highest-overlap pairs face each other first
       const combos: { shared: number; i: number; j: number }[] = [];
