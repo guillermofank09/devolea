@@ -377,7 +377,7 @@ export default function Tournaments() {
                     />
                     {tournament.format && (
                       <Chip
-                        label={tournament.format === "ROUND_ROBIN" ? "Round Robin" : "Llaves"}
+                        label={tournament.format === "ROUND_ROBIN" ? "Round Robin" : tournament.format === "AMERICANO_IND" ? "Americano Ind." : tournament.format === "AMERICANO_PAIR" ? "Americano" : "Llaves"}
                         size="small"
                         variant="outlined"
                         sx={{ fontWeight: 600, fontSize: "0.7rem" }}

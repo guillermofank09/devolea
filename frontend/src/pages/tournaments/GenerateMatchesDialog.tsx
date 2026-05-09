@@ -94,10 +94,14 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
   const [courtIds, setCourtIds] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [selectedFormat, setSelectedFormat] = useState<"BRACKET" | "ROUND_ROBIN" | "PERSONALIZADO">("BRACKET");
+  const [selectedFormat, setSelectedFormat] = useState<"BRACKET" | "ROUND_ROBIN" | "PERSONALIZADO" | "AMERICANO_IND" | "AMERICANO_PAIR">("BRACKET");
+  const [americanoMode, setAmericanoMode] = useState<"IND" | "PAIR">("IND");
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const queryClient = useQueryClient();
+
+  const isPadelTenis = sport === "PADEL" || sport === "TENIS";
+  const isAmericano = selectedFormat === "AMERICANO_IND" || selectedFormat === "AMERICANO_PAIR";
 
   useEffect(() => {
     if (open) {
@@ -106,12 +110,21 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
       setStartTime("");
       setError(null);
       setSelectedFormat("BRACKET");
+      setAmericanoMode("IND");
     }
   }, [open, tournamentStartDate]);
 
   const unit = teamMode ? "equipos" : tennisMode ? "jugadores" : "parejas";
+  const playerCount = isPadelTenis ? pairCount * 2 : pairCount;
+  const americanoRounds = playerCount - 1;
+  const americanoMatchesPerRound = Math.floor(playerCount / 4);
+  const americanoTotal = americanoRounds * americanoMatchesPerRound;
   const formatDesc =
-    selectedFormat === "ROUND_ROBIN"
+    selectedFormat === "AMERICANO_IND"
+      ? `Con ${playerCount} jugadores se generarán ${americanoRounds} rondas (${americanoTotal} partidos en total). Las parejas rotan aleatoriamente cada ronda.`
+      : selectedFormat === "AMERICANO_PAIR"
+      ? `Con ${pairCount} parejas se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos en total). Las parejas son fijas.`
+      : selectedFormat === "ROUND_ROBIN"
       ? `Con ${pairCount} ${unit} se jugará un torneo de todos contra todos (${(pairCount * (pairCount - 1)) / 2} partidos en total).`
       : selectedFormat === "PERSONALIZADO"
       ? "Armá el torneo a medida: agregá fases y partidos manualmente. Ideal para formatos especiales, cuadros personalizados o eventos con estructura propia."
@@ -186,9 +199,13 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     setStartTime("");
   };
 
+  const effectiveFormat = isAmericano
+    ? (americanoMode === "IND" ? "AMERICANO_IND" : "AMERICANO_PAIR")
+    : selectedFormat;
+
   const mutation = useMutation({
     mutationFn: async () => {
-      if (selectedFormat === "PERSONALIZADO") {
+      if (effectiveFormat === "PERSONALIZADO") {
         await setTournamentFormat(tournamentId, "PERSONALIZADO");
       } else {
         await generateMatches(
@@ -196,7 +213,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           startTime ? new Date(startTime).toISOString() : undefined,
           courtIds.length > 0 ? courtIds : undefined,
           matchDuration,
-          selectedFormat,
+          effectiveFormat,
         );
       }
     },
@@ -216,25 +233,29 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
     setStartTime("");
     setError(null);
     setSelectedFormat("BRACKET");
+    setAmericanoMode("IND");
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth fullScreen={fullScreen} PaperProps={{ sx: { borderRadius: fullScreen ? 0 : 3 } }}>
-      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>{selectedFormat === "PERSONALIZADO" ? "Torneo personalizado" : "Generar cruces"}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>{effectiveFormat === "PERSONALIZADO" ? "Torneo personalizado" : "Generar cruces"}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 0.5 }}>
           <Box>
             <FormLabel sx={FORM_LABEL_SX}>Formato</FormLabel>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
-              {(["BRACKET", "ROUND_ROBIN", "PERSONALIZADO"] as const).map(fmt => {
-                const labels: Record<string, string> = { BRACKET: "Llaves", ROUND_ROBIN: "Todos contra todos", PERSONALIZADO: "Personalizado" };
-                const selected = selectedFormat === fmt;
+              {(["BRACKET", isPadelTenis ? "AMERICANO" : "ROUND_ROBIN", "PERSONALIZADO"]).map(fmt => {
+                const labels: Record<string, string> = { BRACKET: "Llaves", ROUND_ROBIN: "Todos contra todos", AMERICANO: "Americano", PERSONALIZADO: "Personalizado" };
+                const selected = fmt === "AMERICANO" ? isAmericano : selectedFormat === fmt;
                 return (
                   <Chip
                     key={fmt}
                     label={labels[fmt]}
-                    onClick={() => setSelectedFormat(fmt)}
+                    onClick={() => {
+                      if (fmt === "AMERICANO") setSelectedFormat("AMERICANO_IND");
+                      else setSelectedFormat(fmt as any);
+                    }}
                     variant={selected ? "filled" : "outlined"}
                     sx={{
                       fontWeight: 600, fontSize: "0.78rem", cursor: "pointer",
@@ -246,6 +267,31 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
                 );
               })}
             </Box>
+
+            {isAmericano && (
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+                {(["IND", "PAIR"] as const).map(mode => {
+                  const modeLabels = { IND: "Individual", PAIR: "Pareja" };
+                  const sel = americanoMode === mode;
+                  return (
+                    <Chip
+                      key={mode}
+                      label={modeLabels[mode]}
+                      size="small"
+                      onClick={() => setAmericanoMode(mode)}
+                      variant={sel ? "filled" : "outlined"}
+                      sx={{
+                        fontWeight: 600, fontSize: "0.72rem", cursor: "pointer",
+                        ...(sel
+                          ? { bgcolor: "#555", color: "#fff", borderColor: "#555", "&:hover": { bgcolor: "#333" } }
+                          : { borderColor: "divider" }),
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            )}
+
             <Typography variant="body2" color="text.secondary">
               {formatDesc}
             </Typography>
@@ -371,7 +417,7 @@ export default function GenerateMatchesDialog({ open, onClose, pairCount, tourna
           fullWidth={fullScreen}
           sx={{ textTransform: "none", fontWeight: 600 }}
         >
-          {mutation.isPending ? <PageLoader size={18} /> : selectedFormat === "PERSONALIZADO" ? "Confirmar" : "Generar"}
+          {mutation.isPending ? <PageLoader size={18} /> : effectiveFormat === "PERSONALIZADO" ? "Confirmar" : "Generar"}
         </Button>
       </DialogActions>
     </Dialog>

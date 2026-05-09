@@ -228,7 +228,8 @@ export default function TournamentDetail() {
   const hasMatches = data.matches.length > 0;
   const isBracket = data.format === "BRACKET";
   const isCustom = data.format === "PERSONALIZADO";
-  const isRoundRobin = data.format === "ROUND_ROBIN";
+  const isAmericanoInd = data.format === "AMERICANO_IND";
+  const isRoundRobin = data.format === "ROUND_ROBIN" || data.format === "AMERICANO_PAIR" || isAmericanoInd;
   const teamMode = isTeamSport(data.sport);
   const tennisMode = data.sport === "TENIS";
 

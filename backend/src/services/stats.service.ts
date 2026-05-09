@@ -597,7 +597,7 @@ export class StatsService {
 
       const [matches, pairs, teams] = await Promise.all([
         this.matchRepo.find({ where: { tournament: { id: tId } } }),
-        this.pairRepo.find({ where: { tournament: { id: tId } } }),
+        this.pairRepo.find({ where: { tournament: { id: tId }, isMatchPair: false } as any }),
         this.teamRepo.find({ where: { tournament: { id: tId } } }),
       ]);
 

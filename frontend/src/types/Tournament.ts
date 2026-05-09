@@ -2,7 +2,7 @@ import type { Player } from "./Player";
 import type { Equipo } from "./Equipo";
 
 export type TournamentStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
-export type TournamentFormat = "ROUND_ROBIN" | "BRACKET" | "PERSONALIZADO";
+export type TournamentFormat = "ROUND_ROBIN" | "BRACKET" | "PERSONALIZADO" | "AMERICANO_IND" | "AMERICANO_PAIR";
 export type TournamentCategory = "PRIMERA" | "SEGUNDA" | "TERCERA" | "CUARTA" | "QUINTA" | "SEXTA" | "SEPTIMA" | "SIN_CATEGORIA";
 export type TournamentSex = "MASCULINO" | "FEMENINO" | "MIXTO";
 export type MatchStatus = "PENDING" | "COMPLETED" | "BYE" | "FORFEIT";
@@ -48,6 +48,7 @@ export interface Pair {
   player2InscriptionPaid: boolean;
   preferredStartTimes?: string[];
   disqualified?: boolean;
+  isMatchPair?: boolean;
 }
 
 export interface MatchGoal {
