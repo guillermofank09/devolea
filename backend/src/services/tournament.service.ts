@@ -285,11 +285,12 @@ export class TournamentService {
       return { court: { id: bestCId } as any, scheduledAt: new Date(bestMs) };
     };
 
-    // Greedy partner rotation: minimize repeated partnerships across rounds
+    // Phase 1: Generate round assignments (player groups) — no DB writes yet
+    interface PGroup { a: Player; b: Player; c: Player; d: Player; }
     const partnerships = new Set<string>();
-    const allMatches: TournamentMatch[] = [];
+    const rawRounds: PGroup[][] = [];
 
-    for (let round = 1; round <= numRounds; round++) {
+    for (let r = 0; r < numRounds; r++) {
       let bestOrder = [...players];
       let bestScore = Infinity;
       for (let attempt = 0; attempt < 500; attempt++) {
@@ -303,34 +304,53 @@ export class TournamentService {
         }
         if (score < bestScore) { bestScore = score; bestOrder = shuffled; if (score === 0) break; }
       }
-
-      const roundMatchData: Partial<TournamentMatch>[] = [];
+      const groups: PGroup[] = [];
       for (let i = 0; i < matchesPerRound; i++) {
-        const a = bestOrder[i * 4], b = bestOrder[i * 4 + 1];
-        const c = bestOrder[i * 4 + 2], d = bestOrder[i * 4 + 3];
-        partnerships.add([a.id, b.id].sort().join('-'));
-        partnerships.add([c.id, d.id].sort().join('-'));
+        groups.push({ a: bestOrder[i * 4], b: bestOrder[i * 4 + 1], c: bestOrder[i * 4 + 2], d: bestOrder[i * 4 + 3] });
+        partnerships.add([bestOrder[i * 4].id, bestOrder[i * 4 + 1].id].sort().join('-'));
+        partnerships.add([bestOrder[i * 4 + 2].id, bestOrder[i * 4 + 3].id].sort().join('-'));
+      }
+      rawRounds.push(groups);
+    }
 
+    // Phase 2: Reorder matches within each round so players from the last match of the
+    // previous round go LAST (they need rest before playing again on a single court).
+    let lastPlayerIds = new Set<number>();
+    const orderedRounds: PGroup[][] = [];
+    for (const groups of rawRounds) {
+      const sorted = [...groups].sort((a, b) => {
+        const ac = [a.a, a.b, a.c, a.d].filter(p => lastPlayerIds.has(p.id)).length;
+        const bc = [b.a, b.b, b.c, b.d].filter(p => lastPlayerIds.has(p.id)).length;
+        return ac - bc; // fewest conflicts first → most-conflicting (needs rest) goes last
+      });
+      const last = sorted[sorted.length - 1];
+      lastPlayerIds = new Set([last.a.id, last.b.id, last.c.id, last.d.id]);
+      orderedRounds.push(sorted);
+    }
+
+    // Phase 3: Create DB pairs/matches and assign time slots
+    const allMatches: TournamentMatch[] = [];
+    for (let roundIdx = 0; roundIdx < orderedRounds.length; roundIdx++) {
+      const round = roundIdx + 1;
+      const roundMatchData: Partial<TournamentMatch>[] = [];
+      for (let i = 0; i < orderedRounds[roundIdx].length; i++) {
+        const { a, b, c, d } = orderedRounds[roundIdx][i];
         const pair1 = await this.pRepo.save(this.pRepo.create({
           tournament: { id: tournamentId } as any,
-          player1: a, player2: b,
-          isMatchPair: true,
+          player1: a, player2: b, isMatchPair: true,
           player1InscriptionPaid: false, player2InscriptionPaid: false,
           preferredStartTimes: null, disqualified: false,
         }));
         const pair2 = await this.pRepo.save(this.pRepo.create({
           tournament: { id: tournamentId } as any,
-          player1: c, player2: d,
-          isMatchPair: true,
+          player1: c, player2: d, isMatchPair: true,
           player1InscriptionPaid: false, player2InscriptionPaid: false,
           preferredStartTimes: null, disqualified: false,
         }));
-
         const slot = getNextSlot();
         roundMatchData.push({
           tournament: { id: tournamentId } as any,
-          pair1, pair2,
-          round, matchNumber: i + 1,
+          pair1, pair2, round, matchNumber: i + 1,
           status: "PENDING" as any,
           court: slot?.court ?? null,
           scheduledAt: slot?.scheduledAt ?? null,
@@ -563,6 +583,24 @@ export class TournamentService {
       for (let i = 0; i < pairs.length; i++)
         for (let j = i + 1; j < pairs.length; j++)
           matchupList.push({ pair1: pairs[i], pair2: pairs[j], isBye: false });
+
+      // Americano Pair: reorder so no pair plays two consecutive matches (rest between games)
+      if (format === "AMERICANO_PAIR") {
+        const reordered: MatchupEntry[] = [];
+        const remaining = [...matchupList];
+        while (remaining.length > 0) {
+          const last = reordered[reordered.length - 1];
+          const lastIds = last
+            ? new Set([last.pair1.id, last.pair2?.id].filter((x): x is number => x != null))
+            : new Set<number>();
+          const safeIdx = remaining.findIndex(
+            m => !lastIds.has(m.pair1.id) && (m.pair2 == null || !lastIds.has(m.pair2.id))
+          );
+          reordered.push(remaining.splice(safeIdx >= 0 ? safeIdx : 0, 1)[0]);
+        }
+        matchupList.length = 0;
+        matchupList.push(...reordered);
+      }
     } else {
       // Greedy preference-aware seeding: highest-overlap pairs face each other first
       const combos: { shared: number; i: number; j: number }[] = [];
