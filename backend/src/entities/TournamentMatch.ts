@@ -32,5 +32,7 @@ export class TournamentMatch {
   @Column({ default: false }) isRepechage!: boolean;
   @Column({ type: "varchar", nullable: true }) liveStatus?: MatchLiveStatus | null;
   @Column({ type: "timestamptz", nullable: true }) delayedUntil?: Date | null;
+  @Column({ type: "varchar", nullable: true }) groupTag?: string | null;
+  @Column({ type: "varchar", nullable: true }) photoUrl?: string | null;
   @CreateDateColumn() createdAt!: Date;
 }

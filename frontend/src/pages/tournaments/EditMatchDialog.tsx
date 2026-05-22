@@ -23,8 +23,11 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import CloseIcon from "@mui/icons-material/Close";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateMatch, createPlaceholderMatch, fetchMatchesByCourt } from "../../api/tournamentService";
+import { uploadImage } from "../../api/uploadService";
 import { fetchCourts } from "../../api/courtService";
 import { fetchPlayers } from "../../api/playerService";
 import type { Player } from "../../types/Player";
@@ -143,6 +146,8 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
   const [goals, setGoals] = useState<MatchGoal[]>([]);
   const [liveStatus, setLiveStatus] = useState<MatchLiveStatus | null>(null);
   const [delayedUntilTime, setDelayedUntilTime] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -196,6 +201,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
       setLiveStatus(match.liveStatus ?? null);
       const delayedParts = toLocalDatetimeParts(match.delayedUntil);
       setDelayedUntilTime(delayedParts.time);
+      setPhotoUrl(match.photoUrl ?? null);
       setError(null);
       // Auto-open calendar when court is set but no time yet
       setShowCalendar(!!(match.court?.id) && !match.scheduledAt);
@@ -310,7 +316,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
 
       if (isPlaceholder) {
         // Only court + time — pairs are managed by the bracket engine
-        return updateMatch(match.id, { scheduledAt: scheduledAtISO, courtId: courtIdNum });
+        return updateMatch(match.id, { scheduledAt: scheduledAtISO, courtId: courtIdNum, photoUrl });
       }
 
       // Build delayedUntil: combine scheduledAt date with the entered time
@@ -348,6 +354,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           status: fbStatus,
           liveStatus: liveStatus ?? null,
           delayedUntil: delayedUntilISO,
+          photoUrl,
         });
       }
 
@@ -370,6 +377,7 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
         status,
         liveStatus: liveStatus ?? null,
         delayedUntil: delayedUntilISO,
+        photoUrl,
       });
     },
     onSuccess: () => {
@@ -829,6 +837,58 @@ export default function EditMatchDialog({ open, onClose, match, pairs, teams = [
           </Box>
         </>
       )}
+
+      {/* Photo upload */}
+      <Box>
+        <FormLabel sx={FORM_LABEL_SX}>Foto del partido</FormLabel>
+        {photoUrl ? (
+          <Box sx={{ position: "relative", display: "inline-block", mt: 0.5 }}>
+            <Box
+              component="img"
+              src={photoUrl}
+              alt="Foto del partido"
+              sx={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 2, display: "block" }}
+            />
+            <IconButton
+              size="small"
+              onClick={() => setPhotoUrl(null)}
+              sx={{ position: "absolute", top: 4, right: 4, bgcolor: "rgba(0,0,0,0.55)", color: "#fff", "&:hover": { bgcolor: "rgba(0,0,0,0.75)" } }}
+            >
+              <CloseIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Box>
+        ) : (
+          <Button
+            component="label"
+            variant="outlined"
+            size="small"
+            startIcon={photoUploading ? undefined : <AddPhotoAlternateIcon sx={{ fontSize: 16 }} />}
+            disabled={photoUploading}
+            sx={{ textTransform: "none", borderRadius: 2, fontSize: "0.82rem", mt: 0.5 }}
+          >
+            {photoUploading ? "Subiendo…" : "Agregar foto"}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                e.target.value = "";
+                setPhotoUploading(true);
+                try {
+                  const url = await uploadImage(file, "match-photos", 1600);
+                  setPhotoUrl(url);
+                } catch {
+                  setError("Error al subir la foto");
+                } finally {
+                  setPhotoUploading(false);
+                }
+              }}
+            />
+          </Button>
+        )}
+      </Box>
 
       {error && <Typography variant="body2" color="error">{error}</Typography>}
     </Box>

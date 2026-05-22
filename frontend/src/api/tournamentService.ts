@@ -69,6 +69,7 @@ export const updateMatch = (matchId: number, data: {
   courtId?: number | null;
   liveStatus?: string | null;
   delayedUntil?: string | null;
+  photoUrl?: string | null;
 }): Promise<TournamentMatch> =>
   axios.put(`${BASE}/tournaments/matches/${matchId}`, data).then(r => r.data);
 

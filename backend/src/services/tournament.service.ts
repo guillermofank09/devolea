@@ -644,7 +644,7 @@ export class TournamentService {
     // --- Determine all matchups ---
     // BRACKET: seed pairs with shared preferred times against each other so Pass 1
     // (both-prefer) covers the maximum number of first-round matches.
-    interface MatchupEntry { pair1: Pair; pair2: Pair | null; isBye: boolean; }
+    interface MatchupEntry { pair1: Pair; pair2: Pair | null; isBye: boolean; groupTag?: string | null; }
     const matchupList: MatchupEntry[] = [];
 
     const sharedPrefsCount = (a: Pair, b: Pair): number => {
@@ -652,6 +652,9 @@ export class TournamentService {
       const pb = pairPrefsMap.get(b.id) ?? [];
       return pa.filter(ta => pb.some(tb => Math.abs(ta - tb) < 60_000)).length;
     };
+
+    let rrCPair: Pair | null = null;
+    let rrGroupTag: string | null = null;
 
     if (format === "ROUND_ROBIN") {
       for (let i = 0; i < pairs.length; i++)
@@ -675,11 +678,23 @@ export class TournamentService {
       // Remaining pairs (no shared prefs) shuffled randomly
       pairs.filter((_, i) => !used.has(i)).sort(() => Math.random() - 0.5).forEach(p => seeded.push(p));
 
+      // Groups-of-4 with remainder 3: 1 R1 match (A vs B), C rests, then 2 R2 crosses vs C
+      const hasRRGroup = format === "BRACKET" && seeded.length > 16 && seeded.length % 4 === 3;
+      const rrPairs = hasRRGroup ? seeded.splice(seeded.length - 3) : [];
+      const rrGroupLetter = hasRRGroup ? String.fromCharCode(65 + Math.floor(seeded.length / 4)) : "";
+
       for (let i = 0; i < seeded.length; i += 2) {
         if (i + 1 < seeded.length)
           matchupList.push({ pair1: seeded[i], pair2: seeded[i + 1], isBye: false });
         else
           matchupList.push({ pair1: seeded[i], pair2: null, isBye: true });
+      }
+
+      if (hasRRGroup && rrPairs.length === 3) {
+        const [a, b, c] = rrPairs;
+        rrCPair = c; // C rests in R1, plays both R2 crosses
+        rrGroupTag = `RR-${rrGroupLetter}`;
+        matchupList.push({ pair1: a, pair2: b, isBye: false, groupTag: rrGroupTag });
       }
     }
 
@@ -774,32 +789,37 @@ export class TournamentService {
 
     const t = { id: tournamentId };
     const toCreate: Partial<TournamentMatch>[] = matchupList.map((m, i) => {
-      if (m.isBye) return { tournament: t as any, pair1: m.pair1, pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: i + 1, status: "BYE", winnerId: m.pair1.id };
+      if (m.isBye) return { tournament: t as any, pair1: m.pair1, pair2: null, court: null, scheduledAt: null, round: 1, matchNumber: i + 1, status: "BYE", winnerId: m.pair1.id, groupTag: null };
       const slot = scheduledSlots.get(i) ?? null;
-      return { tournament: t as any, pair1: m.pair1, pair2: m.pair2 as Pair, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: i + 1, status: "PENDING" };
+      return { tournament: t as any, pair1: m.pair1, pair2: m.pair2 as Pair, court: slot?.court ?? null, scheduledAt: slot?.scheduledAt ?? null, round: 1, matchNumber: i + 1, status: "PENDING", groupTag: m.groupTag ?? null };
     });
 
     const savedR1 = await this.mRepo.save(toCreate.map(m => this.mRepo.create(m)));
 
     // For bracket: pre-create placeholder matches for all future rounds
     if (format === "BRACKET") {
-      const r1Real = savedR1.filter(m => m.status !== "BYE");
-      const r1ByeCount = savedR1.length - r1Real.length;
+      const r1RR = savedR1.filter(m => m.groupTag?.startsWith("RR-"));
+      const r1Regular = savedR1.filter(m => m.status !== "BYE" && !m.groupTag?.startsWith("RR-"));
+      const r1ByeCount = savedR1.filter(m => m.status === "BYE").length;
 
-      // Round 2: cross matches (winner of A vs loser of B, winner of B vs loser of A)
-      // for each consecutive pair of R1 matches, plus BYEs for unpaired groups and R1 BYE pairs.
-      const r2CrossCount = Math.floor(r1Real.length / 2) * 2;
-      const r2ByeCount = (r1Real.length % 2) + r1ByeCount;
-      const r2Total = r2CrossCount + r2ByeCount;
+      // Round 2: cross matches for normal groups + 2 placeholders per RR group
+      const r2CrossCount = Math.floor(r1Regular.length / 2) * 2;
+      const r2ByeCount = (r1Regular.length % 2) + r1ByeCount;
+      const r2NormalCount = r2CrossCount + r2ByeCount;
+      const r2Total = r2NormalCount + (rrGroupTag ? 2 : 0);
 
       if (r2Total > 0) {
-        const r2Placeholders = Array.from({ length: r2Total }, (_, i) =>
+        const r2Normal = Array.from({ length: r2NormalCount }, (_, i) =>
           this.mRepo.create({
             tournament: t as any, pair1: null, pair2: null, court: null,
-            scheduledAt: null, round: 2, matchNumber: i + 1, status: "PENDING",
+            scheduledAt: null, round: 2, matchNumber: i + 1, status: "PENDING", groupTag: null,
           })
         );
-        await this.mRepo.save(r2Placeholders);
+        const r2RRCrosses = rrGroupTag && rrCPair ? [
+          this.mRepo.create({ tournament: t as any, pair1: null, pair2: rrCPair, court: null, scheduledAt: null, round: 2, matchNumber: r2NormalCount + 1, status: "PENDING", groupTag: `${rrGroupTag}-cross` }),
+          this.mRepo.create({ tournament: t as any, pair1: null, pair2: rrCPair, court: null, scheduledAt: null, round: 2, matchNumber: r2NormalCount + 2, status: "PENDING", groupTag: `${rrGroupTag}-cross` }),
+        ] : [];
+        await this.mRepo.save([...r2Normal, ...r2RRCrosses]);
       }
 
       // Rounds 3, 4, … : standard halving from r2Total
@@ -858,7 +878,7 @@ export class TournamentService {
       && !currentRoundMatches.some(m => m.isRepechage);
 
     if (isNewBracket) {
-      const r1Regular = currentRoundMatches.filter(m => m.status !== "BYE");
+      const r1Regular = currentRoundMatches.filter(m => m.status !== "BYE" && !m.groupTag?.startsWith("RR-"));
       const r1Byes   = currentRoundMatches.filter(m => m.status === "BYE");
 
       const nextRoundNum = maxRound + 1;
@@ -945,7 +965,17 @@ export class TournamentService {
         }
       }
 
-      return await this.mRepo.save(nextRoundMatches.slice(0, r2Idx));
+      // RR group: fill the 2 cross matches with winner/loser of the R1 RR match
+      const r1RRMatch = currentRoundMatches.find(m => m.groupTag?.match(/^RR-[A-Z]$/));
+      const rrCrossR2 = nextRoundMatches.filter(m => m.groupTag?.endsWith("-cross"));
+      if (!isTeamMode && r1RRMatch && rrCrossR2.length >= 2) {
+        const wRR = r1RRMatch.winnerId === r1RRMatch.pair1?.id ? r1RRMatch.pair1 : r1RRMatch.pair2;
+        const lRR = r1RRMatch.winnerId === r1RRMatch.pair1?.id ? r1RRMatch.pair2 : r1RRMatch.pair1;
+        if (wRR) { rrCrossR2[0].pair1 = wRR; rrCrossR2[0].status = "PENDING"; if (!rrCrossR2[0].scheduledAt) { rrCrossR2[0].scheduledAt = new Date(time); addDuration(); } }
+        if (lRR) { rrCrossR2[1].pair1 = lRR; rrCrossR2[1].status = "PENDING"; if (!rrCrossR2[1].scheduledAt) { rrCrossR2[1].scheduledAt = new Date(time); addDuration(); } }
+      }
+
+      return await this.mRepo.save([...nextRoundMatches.slice(0, r2Idx), ...rrCrossR2.filter(m => m.pair1)]);
     }
     // ── End cross-group logic ────────────────────────────────────────────────────
 
@@ -995,8 +1025,9 @@ export class TournamentService {
       .forEach(m => { if (m.pair1?.id != null) repechajeByByeTeam.set(m.pair1.id, m); });
 
     // Winners: for BYE matches that have a repechage, use the repechage winner
+    // Exclude RR cross matches — those are handled manually via score difference
     const winners = currentRoundMatches
-      .filter(m => !m.isRepechage)
+      .filter(m => !m.isRepechage && !m.groupTag?.startsWith("RR-"))
       .map(m => {
         if (m.status === "BYE") {
           const rep = m.pair1?.id != null ? repechajeByByeTeam.get(m.pair1.id) : undefined;
@@ -1130,7 +1161,7 @@ export class TournamentService {
     });
   }
 
-  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; team1Id?: number | null; team2Id?: number | null; winnerId?: number | null; result?: string; goals?: { playerName: string; teamId: number; minute: number }[] | null; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null }): Promise<TournamentMatch | null> {
+  async updateMatch(matchId: number, dto: { scheduledAt?: string; pair1Id?: number | null; pair2Id?: number | null; team1Id?: number | null; team2Id?: number | null; winnerId?: number | null; result?: string; goals?: { playerName: string; teamId: number; minute: number }[] | null; status?: string; courtId?: number | null; liveStatus?: string | null; delayedUntil?: string | null; photoUrl?: string | null }): Promise<TournamentMatch | null> {
     // Load the full entity including pair/team relations so propagation has the IDs
     const match = await this.mRepo.findOne({ where: { id: matchId }, relations: { court: true, tournament: true, pair1: true, pair2: true } });
     if (!match) return null;
@@ -1147,6 +1178,7 @@ export class TournamentService {
     if (dto.courtId !== undefined) match.court = dto.courtId != null ? { id: dto.courtId } as any : null;
     if (dto.liveStatus !== undefined) match.liveStatus = (dto.liveStatus ?? null) as any;
     if (dto.delayedUntil !== undefined) match.delayedUntil = dto.delayedUntil ? new Date(dto.delayedUntil) : null;
+    if (dto.photoUrl !== undefined) match.photoUrl = dto.photoUrl ?? null;
 
     await this.mRepo.save(match);
 

@@ -75,6 +75,8 @@ export interface TournamentMatch {
   liveStatus?: MatchLiveStatus | null;
   delayedUntil?: string | null;
   tournament?: { id: number; name: string };
+  groupTag?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface TournamentDetail extends Tournament {

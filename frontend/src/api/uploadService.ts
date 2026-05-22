@@ -25,8 +25,8 @@ async function compressImage(file: File, maxDimension = 400, quality = 0.82): Pr
   });
 }
 
-export async function uploadImage(file: File, folder = "images"): Promise<string> {
-  const compressed = await compressImage(file);
+export async function uploadImage(file: File, folder = "images", maxDimension = 400): Promise<string> {
+  const compressed = await compressImage(file, maxDimension);
   const formData = new FormData();
   formData.append("file", compressed, "image.webp");
   // Do NOT set Content-Type manually — axios derives it from FormData
