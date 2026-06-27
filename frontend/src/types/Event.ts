@@ -4,7 +4,7 @@ export interface CalendarEvent {
   start: Date;
   end: Date;
   courtId: number;
-  status: "BOOKED" | "AVAILABLE";
+  status: "BOOKED" | "AVAILABLE" | "PENDING";
   color: string;
   isRecurring: boolean;
   recurringGroupId: string | null;

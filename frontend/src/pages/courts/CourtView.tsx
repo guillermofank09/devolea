@@ -20,7 +20,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchBookingsByCourt, cancelBooking, cancelBookingGroup } from "../../api/bookingService";
+import { fetchBookingsByCourt, cancelBooking, cancelBookingGroup, confirmBooking } from "../../api/bookingService";
 import { fetchMatchesByCourt } from "../../api/tournamentService";
 import type { TournamentMatch } from "../../types/Tournament";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
@@ -90,6 +90,15 @@ const CourtView = ({
     enabled: isOpen,
   });
 
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => confirmBooking(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookingsData", court.id] });
+      queryClient.invalidateQueries({ queryKey: ["courtsData"] });
+      setSelectedBooking(null);
+    },
+  });
+
   const cancelMutation = useMutation({
     mutationFn: (id: number) => cancelBooking(id),
     onSuccess: () => {
@@ -110,15 +119,17 @@ const CourtView = ({
 
   const events: CalendarEvent[] = useMemo(() => {
     const bookingEvents: CalendarEvent[] = bookings.map((b) => {
-      const displayName = b.player?.name ?? b.profesor?.name ?? "Clase";
+      const isPending = b.status === "PENDING";
+      const displayName = b.player?.name ?? b.profesor?.name ?? b.guestName ?? "Reserva";
+      const title = isPending ? `⏳ ${displayName}` : displayName;
       return {
         id: b.id,
-        title: displayName,
+        title,
         start: new Date(b.startTime),
         end: new Date(b.endTime),
         courtId: court.id,
-        status: "BOOKED",
-        color: stringToColor(displayName),
+        status: isPending ? "PENDING" : "BOOKED",
+        color: isPending ? "#f59e0b" : stringToColor(displayName),
         isRecurring: b.isRecurring,
         recurringGroupId: b.recurringGroupId,
       };
@@ -289,11 +300,13 @@ const CourtView = ({
           const start = new Date(selectedBooking.startTime);
           const end   = new Date(selectedBooking.endTime);
           const durationH = (end.getTime() - start.getTime()) / 3_600_000;
+          const isPending = selectedBooking.status === "PENDING";
           const isProfesorBooking = !!selectedBooking.profesor && !selectedBooking.player;
+          const guestDisplayName = selectedBooking.player?.name ?? selectedBooking.guestName ?? "Reserva";
           const displayName = isProfesorBooking
             ? `Clase · ${selectedBooking.profesor!.name}`
-            : (selectedBooking.player?.name ?? "Reserva");
-          const color = stringToColor(isProfesorBooking ? selectedBooking.profesor!.name : displayName);
+            : guestDisplayName;
+          const color = isPending ? "#f59e0b" : stringToColor(isProfesorBooking ? selectedBooking.profesor!.name : displayName);
           return (
             <>
               {/* Colored top banner */}
@@ -323,12 +336,14 @@ const CourtView = ({
                 </Avatar>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography fontWeight={800} color="#fff" noWrap>
-                    {displayName}
+                    {isPending ? `Pendiente · ${guestDisplayName}` : displayName}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
-                    {isProfesorBooking
-                      ? (selectedBooking.profesor?.phone ? `+${selectedBooking.profesor.phone}` : "")
-                      : `${selectedBooking.player?.city ?? ""} · ${selectedBooking.player?.category ?? ""}`}
+                    {isPending
+                      ? (selectedBooking.guestPhone ? `+${selectedBooking.guestPhone}` : (selectedBooking.player?.phone ? `+${selectedBooking.player.phone}` : "Sin contacto"))
+                      : isProfesorBooking
+                        ? (selectedBooking.profesor?.phone ? `+${selectedBooking.profesor.phone}` : "")
+                        : `${selectedBooking.player?.city ?? ""} · ${selectedBooking.player?.category ?? ""}`}
                   </Typography>
                 </Box>
                 <IconButton
@@ -409,6 +424,20 @@ const CourtView = ({
               </DialogContent>
 
               <DialogActions sx={{ px: 3, pb: 2.5, pt: 0.5, gap: 1, flexDirection: isMobile ? "column" : "row" }}>
+                {isPending && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    fullWidth={isMobile}
+                    disabled={confirmMutation.isPending || cancelMutation.isPending}
+                    onClick={() => confirmMutation.mutate(selectedBooking.id)}
+                    startIcon={confirmMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}
+                    sx={{ textTransform: "none", borderRadius: 2, fontWeight: 700 }}
+                  >
+                    {confirmMutation.isPending ? "Confirmando…" : "Confirmar reserva"}
+                  </Button>
+                )}
+
                 {selectedBooking.isRecurring && selectedBooking.recurringGroupId && (
                   <Button
                     variant="outlined"

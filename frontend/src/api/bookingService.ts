@@ -29,6 +29,11 @@ export async function cancelBooking(id: number): Promise<Booking> {
   return res.data;
 }
 
+export async function confirmBooking(id: number): Promise<Booking> {
+  const res = await axios.put(`${API_URL}/bookings/${id}/confirm`);
+  return res.data;
+}
+
 export async function cancelBookingGroup(groupId: string): Promise<{ cancelled: number }> {
   const res = await axios.put(`${API_URL}/bookings/group/${groupId}/cancel`);
   return res.data;

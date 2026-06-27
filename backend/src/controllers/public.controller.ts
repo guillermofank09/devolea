@@ -8,8 +8,13 @@ import { TournamentMatch } from "../entities/TournamentMatch";
 import { Court } from "../entities/Court";
 import { Booking } from "../entities/Booking";
 import { Profesor } from "../entities/Profesor";
+import { Player } from "../entities/Player";
 import { AppSettings } from "../entities/AppSettings";
-import { Between, In, ILike, MoreThanOrEqual } from "typeorm";
+import { Between, In, ILike, MoreThanOrEqual, Not } from "typeorm";
+
+function normalizePhone(raw: string | null | undefined): string {
+  return (raw ?? "").replace(/\D/g, "");
+}
 
 const PAGE_SIZE = 10;
 
@@ -139,14 +144,14 @@ export const getPublicCourts = async (req: Request, res: Response) => {
     if (!courts.length) return res.json({ courts: [], bookings: [], total, totalPages: Math.ceil(total / PAGE_SIZE), availableSports });
 
     const courtIds = courts.map(c => c.id!);
-    let bookings: Array<{ courtId: number; startTime: string; endTime: string }> = [];
+    let bookings: Array<{ courtId: number; startTime: string; endTime: string; status: string }> = [];
 
     if (from && to) {
       const raw = await AppDataSource.getRepository(Booking).find({
         where: {
           court: { id: In(courtIds) },
           startTime: Between(new Date(from), new Date(to)),
-          status: "CONFIRMED",
+          status: Not("CANCELLED" as any),
         },
         relations: { court: true },
       });
@@ -154,6 +159,7 @@ export const getPublicCourts = async (req: Request, res: Response) => {
         courtId: b.court.id!,
         startTime: b.startTime.toISOString(),
         endTime: b.endTime.toISOString(),
+        status: b.status,
       }));
     }
 
@@ -201,6 +207,79 @@ export const getPublicProfesores = async (req: Request, res: Response) => {
       total,
       page,
       totalPages: Math.ceil(total / PAGE_SIZE),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+export const createPublicBooking = async (req: Request, res: Response) => {
+  const { username } = req.params;
+  const { courtId, startTime, endTime, name, phone } = req.body as {
+    courtId?: number;
+    startTime?: string;
+    endTime?: string;
+    name?: string;
+    phone?: string;
+  };
+
+  try {
+    if (!courtId || !startTime || !endTime || !name || !phone) {
+      return res.status(400).json({ error: "Faltan datos requeridos" });
+    }
+
+    const user = await resolveUser(username);
+    if (!user) return res.status(404).json({ error: "Club no encontrado" });
+
+    const court = await AppDataSource.getRepository(Court).findOneBy({ id: courtId, userId: user.id });
+    if (!court) return res.status(404).json({ error: "Cancha no encontrada" });
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      return res.status(400).json({ error: "Horario inválido" });
+    }
+    if (start < new Date()) {
+      return res.status(400).json({ error: "No se puede reservar en el pasado" });
+    }
+
+    const bookingRepo = AppDataSource.getRepository(Booking);
+    const overlap = await bookingRepo.findOne({
+      where: {
+        court: { id: courtId },
+        status: Not("CANCELLED" as any),
+        startTime: Between(start, end),
+      },
+    });
+    if (overlap) return res.status(409).json({ error: "El horario ya está reservado" });
+
+    const normalized = normalizePhone(phone);
+    let matchedPlayer: Player | null = null;
+    if (normalized.length >= 6) {
+      const candidates = await AppDataSource.getRepository(Player).find({ where: { userId: user.id } });
+      matchedPlayer = candidates.find(p => normalizePhone(p.phone) === normalized) ?? null;
+    }
+
+    const booking = bookingRepo.create({
+      court: { id: courtId } as any,
+      player: matchedPlayer ? ({ id: matchedPlayer.id } as any) : null,
+      profesor: null,
+      price: null,
+      startTime: start,
+      endTime: end,
+      status: "PENDING",
+      isRecurring: false,
+      recurringGroupId: null,
+      userId: user.id,
+      guestName: name.trim(),
+      guestPhone: normalized,
+    });
+    const saved = await bookingRepo.save(booking);
+
+    res.status(201).json({
+      id: saved.id,
+      status: saved.status,
+      matchedPlayer: matchedPlayer ? { id: matchedPlayer.id, name: matchedPlayer.name } : null,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });

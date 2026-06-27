@@ -63,6 +63,16 @@ export const getBookingsByCourt = async (req: Request, res: Response) => {
   }
 };
 
+export const confirmBooking = async (req: Request, res: Response) => {
+  try {
+    const booking = await getService().confirm(Number(req.params.id));
+    if (!booking) { res.status(404).json({ error: "Reserva no encontrada" }); return; }
+    res.json(booking);
+  } catch {
+    res.status(500).json({ error: "Error al confirmar la reserva" });
+  }
+};
+
 export const cancelBooking = async (req: Request, res: Response) => {
   try {
     const booking = await getService().cancel(Number(req.params.id));

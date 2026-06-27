@@ -1,4 +1,4 @@
-import { Repository, Between, Not } from "typeorm";
+import { Repository, Between, Not, In } from "typeorm";
 import { Booking } from "../entities/Booking";
 
 export interface CreateBookingDto {
@@ -28,11 +28,16 @@ export class BookingService {
     const overlap = await this.repo.findOne({
       where: {
         court: { id: courtId },
-        status: "CONFIRMED",
+        status: In(["CONFIRMED", "PENDING"]),
         startTime: Between(startTime, endTime),
       },
     });
     return !!overlap;
+  }
+
+  async confirm(id: number): Promise<Booking | null> {
+    await this.repo.update(id, { status: "CONFIRMED" });
+    return await this.repo.findOneBy({ id });
   }
 
   async create(dto: CreateBookingDto, userId: number): Promise<Booking | Booking[]> {

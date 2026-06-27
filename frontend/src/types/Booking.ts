@@ -2,7 +2,7 @@ import type { Court } from "./Court";
 import type { Player } from "./Player";
 import type { Profesor } from "./Profesor";
 
-export type BookingStatus = "CONFIRMED" | "CANCELLED";
+export type BookingStatus = "CONFIRMED" | "CANCELLED" | "PENDING";
 
 export interface Booking {
   id: number;
@@ -15,6 +15,8 @@ export interface Booking {
   status: BookingStatus;
   isRecurring: boolean;
   recurringGroupId: string | null;
+  guestName?: string | null;
+  guestPhone?: string | null;
   createdAt: string;
 }
 

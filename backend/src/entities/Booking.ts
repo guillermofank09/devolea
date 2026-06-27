@@ -10,7 +10,7 @@ import { Court } from "./Court";
 import { Player } from "./Player";
 import { Profesor } from "./Profesor";
 
-export type BookingStatus = "CONFIRMED" | "CANCELLED";
+export type BookingStatus = "CONFIRMED" | "CANCELLED" | "PENDING";
 
 @Entity()
 export class Booking {
@@ -49,6 +49,12 @@ export class Booking {
 
   @Column({ nullable: true })
   userId?: number;
+
+  @Column({ type: "varchar", nullable: true })
+  guestName?: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  guestPhone?: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -1,8 +1,9 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
 import devoleaLogo from "../../assets/logo.png";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -11,9 +12,11 @@ import {
   CardContent,
   Chip,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormLabel,
   Grid,
   IconButton,
   InputAdornment,
@@ -60,8 +63,10 @@ import type { TournamentMatch, Pair, TournamentDetail, TournamentTeam, Standings
 import { isTeamSport } from "../tournaments/AddEditTournament";
 import { StandingsTable } from "../tournaments/RoundRobinView";
 import type { DaySchedule } from "../../types/ClubProfile";
-import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores } from "../../api/publicService";
+import { fetchPublicProfile, fetchPublicTournaments, fetchPublicTournamentDetail, fetchPublicCourts, fetchPublicProfesores, createPublicBooking } from "../../api/publicService";
 import type { PublicBookingSlot, PublicCourt, PublicProfesor, PaginatedTournaments } from "../../api/publicService";
+import PhoneField from "../../components/common/PhoneField";
+import { FORM_LABEL_SX } from "../../styles/formStyles";
 import type { DiscountSlot } from "../../types/AppSettings";
 import PageLoader from "../../components/common/PageLoader";
 import GoogleMapView from "../../components/common/GoogleMapView";
@@ -742,11 +747,12 @@ function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number): string {
+function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number, guestName?: string): string {
   const dateLabel = day.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const hours = String(Math.floor(slotMin / 60)).padStart(2, "0");
   const mins  = String(slotMin % 60).padStart(2, "0");
-  const msg = `Hola! Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins} hs.`;
+  const intro = guestName ? `Hola! Soy ${guestName}.` : "Hola!";
+  const msg = `${intro} Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins} hs.`;
   return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -828,7 +834,7 @@ function PublicCourtCard({ court, onSelect, hasDiscount }: { court: PublicCourt;
 }
 
 function CourtCalendar({
-  court, bookings, businessHours, days, selectedDayIdx, clubPhone,
+  court, bookings, businessHours, days, selectedDayIdx, clubPhone, username,
 }: {
   court: PublicCourt;
   bookings: PublicBookingSlot[];
@@ -836,7 +842,64 @@ function CourtCalendar({
   days: Date[];
   selectedDayIdx: number;
   clubPhone?: string | null;
+  username: string;
 }) {
+  const queryClient = useQueryClient();
+  const [selectedSlot, setSelectedSlot] = useState<{ day: Date; slotMin: number } | null>(null);
+  const [reserveName, setReserveName] = useState("");
+  const [reservePhone, setReservePhone] = useState("54");
+  const [reserveError, setReserveError] = useState<string | null>(null);
+  const [reserveSubmitting, setReserveSubmitting] = useState(false);
+
+  const closeReserve = () => {
+    if (reserveSubmitting) return;
+    setSelectedSlot(null);
+    setReserveError(null);
+  };
+
+  const openReserve = (day: Date, slotMin: number) => {
+    setSelectedSlot({ day, slotMin });
+    setReserveName("");
+    setReservePhone("54");
+    setReserveError(null);
+  };
+
+  const submitReserve = async () => {
+    if (!selectedSlot) return;
+    const trimmedName = reserveName.trim();
+    const digits = reservePhone.replace(/\D/g, "");
+    if (trimmedName.length < 2) { setReserveError("Ingresá tu nombre"); return; }
+    if (digits.length < 8) { setReserveError("Ingresá un teléfono válido"); return; }
+
+    const start = new Date(selectedSlot.day);
+    start.setHours(Math.floor(selectedSlot.slotMin / 60), selectedSlot.slotMin % 60, 0, 0);
+    const end = new Date(start.getTime() + SLOT_MIN * 60 * 1000);
+
+    setReserveSubmitting(true);
+    setReserveError(null);
+    try {
+      await createPublicBooking(username, {
+        courtId: court.id,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        name: trimmedName,
+        phone: digits,
+      });
+      trackEvent("public_reserva_solicitada", { cancha: court.name });
+      if (clubPhone) {
+        const waUrl = buildWaUrl(clubPhone, court.name, selectedSlot.day, selectedSlot.slotMin, trimmedName);
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["publicCourts", username] });
+      setSelectedSlot(null);
+    } catch (e: any) {
+      const msg = e?.response?.data?.error ?? e?.message ?? "Error al reservar";
+      setReserveError(msg);
+    } finally {
+      setReserveSubmitting(false);
+    }
+  };
+
   const daySchedules = days.map(d => {
     const dow = (d.getDay() + 6) % 7;
     const schedule = businessHours.find(h => h.day === DAYS[dow]);
@@ -855,8 +918,9 @@ function CourtCalendar({
   const slots: number[] = [];
   for (let m = globalOpen; m < globalClose; m += SLOT_MIN) slots.push(m);
 
-  const occupiedKeys = useMemo(() => {
-    const s = new Set<string>();
+  const { occupiedKeys, pendingKeys } = useMemo(() => {
+    const occ = new Set<string>();
+    const pend = new Set<string>();
     bookings
       .filter(b => b.courtId === court.id)
       .forEach(b => {
@@ -865,11 +929,12 @@ function CourtCalendar({
         const startMin = start.getHours() * 60 + start.getMinutes();
         const endMin   = end.getHours()   * 60 + end.getMinutes();
         const dk = dateKey(start);
+        const target = b.status === "PENDING" ? pend : occ;
         for (let m = Math.floor(startMin / SLOT_MIN) * SLOT_MIN; m < endMin; m += SLOT_MIN) {
-          s.add(`${dk}-${m}`);
+          target.add(`${dk}-${m}`);
         }
       });
-    return s;
+    return { occupiedKeys: occ, pendingKeys: pend };
   }, [bookings, court.id]);
 
   const todayDk = dateKey(new Date());
@@ -880,10 +945,11 @@ function CourtCalendar({
       <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f0fdf4", border: "1px solid #d1fae5" }} /><Typography variant="caption">Libre</Typography></Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#fee2e2", border: "1px solid #fecaca" }} /><Typography variant="caption">Ocupado</Typography></Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#fef3c7", border: "1px solid #fde68a" }} /><Typography variant="caption">Pendiente</Typography></Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}><Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }} /><Typography variant="caption">Cerrado</Typography></Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, ml: { md: "auto" } }}>
           <WhatsAppIcon sx={{ fontSize: 14, color: "#16a34a" }} />
-          <Typography variant="caption" color="text.secondary">Tocá un horario libre para reservar por WhatsApp</Typography>
+          <Typography variant="caption" color="text.secondary">Tocá un horario libre para solicitar la reserva</Typography>
         </Box>
       </Box>
       {/* Desktop View */}
@@ -913,19 +979,17 @@ function CourtCalendar({
                 const { isClosed, openMin, closeMin } = daySchedules[di];
                 const outside = isClosed || openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
+                const pending  = !outside && !occupied && pendingKeys.has(`${dk}-${slotMin}`);
                 const isToday = dk === todayDk;
-                const clickable = clubPhone && !outside && !occupied;
+                const clickable = !outside && !occupied && !pending;
+                const bg = outside ? "#f8fafc" : occupied ? "#fee2e2" : pending ? "#fef3c7" : "#f0fdf4";
                 return (
                   <Box
                     key={dk}
-                    component={clickable ? "a" : "div"}
-                    href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
-                    target={clickable ? "_blank" : undefined}
-                    rel={clickable ? "noopener noreferrer" : undefined}
-                    onClick={clickable ? () => trackEvent("whatsapp_reserva", { cancha: court.name }) : undefined}
+                    onClick={clickable ? () => openReserve(day, slotMin) : undefined}
                     sx={{
                       height: 60,
-                      bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4",
+                      bgcolor: bg,
                       border: "0.5px solid",
                       borderColor: isToday ? "#bfdbfe" : "divider",
                       backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.02) 4px, rgba(0,0,0,0.02) 8px)" : undefined,
@@ -936,6 +1000,7 @@ function CourtCalendar({
                     }}
                   >
                     {occupied && <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 700, fontSize: "0.55rem", textTransform: "uppercase" }}>Ocupado</Typography>}
+                    {pending  && <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 700, fontSize: "0.55rem", textTransform: "uppercase" }}>Pendiente</Typography>}
                   </Box>
                 );
               })}
@@ -958,29 +1023,29 @@ function CourtCalendar({
               {slots.map(slotMin => {
                 const outside = openMin == null || closeMin == null || slotMin < openMin || slotMin >= closeMin;
                 const occupied = !outside && occupiedKeys.has(`${dk}-${slotMin}`);
-                const clickable = clubPhone && !outside && !occupied;
+                const pending  = !outside && !occupied && pendingKeys.has(`${dk}-${slotMin}`);
+                const clickable = !outside && !occupied && !pending;
+                const bg = outside ? "#f8fafc" : occupied ? "#fee2e2" : pending ? "#fef3c7" : "#f0fdf4";
                 return (
                   <Fragment key={slotMin}>
                     <Box sx={{ height: 64, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid", borderColor: "divider", bgcolor: "grey.50" }}>
                       <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary" }}>{`${String(Math.floor(slotMin / 60)).padStart(2, "0")}:00`}</Typography>
                     </Box>
                     <Box
-                      component={clickable ? "a" : "div"}
-                      href={clickable ? buildWaUrl(clubPhone!, court.name, day, slotMin) : undefined}
-                      target={clickable ? "_blank" : undefined}
-                      rel={clickable ? "noopener noreferrer" : undefined}
-                      onClick={clickable ? () => trackEvent("whatsapp_reserva", { cancha: court.name }) : undefined}
+                      onClick={clickable ? () => openReserve(day, slotMin) : undefined}
                       sx={{
                         height: 64,
-                        bgcolor: outside ? "#f8fafc" : occupied ? "#fee2e2" : "#f0fdf4",
+                        bgcolor: bg,
                         backgroundImage: outside ? "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.02) 4px, rgba(0,0,0,0.02) 8px)" : undefined,
                         borderBottom: "1px solid", borderColor: "divider",
                         display: "flex", alignItems: "center", px: 2, gap: 1.5,
-                        cursor: clickable ? "pointer" : "default", textDecoration: "none",
+                        cursor: clickable ? "pointer" : "default",
                         "&:active": clickable ? { bgcolor: "#dcfce7" } : undefined,
                       }}
                     >
                       {occupied && <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#ef4444" }} />}
+                      {pending  && <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f59e0b" }} />}
+                      {pending  && <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 700, fontSize: "0.65rem", textTransform: "uppercase" }}>Pendiente</Typography>}
                     </Box>
                   </Fragment>
                 );
@@ -989,6 +1054,49 @@ function CourtCalendar({
           );
         })()}
       </Box>
+
+      <Dialog open={!!selectedSlot} onClose={closeReserve} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>
+          Reservar {court.name}
+          {selectedSlot && (
+            <Typography variant="caption" display="block" color="text.secondary">
+              {selectedSlot.day.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+              {" · "}
+              {`${String(Math.floor(selectedSlot.slotMin / 60)).padStart(2, "0")}:${String(selectedSlot.slotMin % 60).padStart(2, "0")} hs`}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box>
+            <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
+            <TextField
+              fullWidth
+              size="small"
+              value={reserveName}
+              onChange={(e) => setReserveName(e.target.value)}
+              placeholder="Tu nombre"
+              disabled={reserveSubmitting}
+              autoFocus
+            />
+          </Box>
+          <PhoneField
+            value={reservePhone}
+            onChange={setReservePhone}
+            label="Teléfono / WhatsApp"
+            disabled={reserveSubmitting}
+          />
+          {reserveError && <Alert severity="error">{reserveError}</Alert>}
+          <Typography variant="caption" color="text.secondary">
+            La reserva queda pendiente hasta que el club la confirme. Te abriremos WhatsApp para enviar el mensaje al club.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeReserve} disabled={reserveSubmitting}>Cancelar</Button>
+          <Button variant="contained" onClick={submitReserve} disabled={reserveSubmitting}>
+            {reserveSubmitting ? "Enviando..." : "Reservar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -1193,6 +1301,7 @@ function CourtsSection({ username, businessHours, clubPhone, discountSlots }: { 
               days={days}
               selectedDayIdx={selectedDayIdx}
               clubPhone={clubPhone}
+              username={username}
             />
           )}
 

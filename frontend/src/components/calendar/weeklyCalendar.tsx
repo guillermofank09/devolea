@@ -252,10 +252,11 @@ export default function WeeklyCalendar({ events, onSelectSlot, onSelectEvent, in
   const eventPropGetter = (event: CalendarEvent) => ({
     style: {
       backgroundColor: event.color,
-      border: "none",
+      border: event.status === "PENDING" ? "2px dashed #b45309" : "none",
       borderRadius: "8px",
       padding: 0,
       boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+      opacity: event.status === "PENDING" ? 0.85 : 1,
     },
   });
 

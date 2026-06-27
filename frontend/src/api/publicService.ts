@@ -65,7 +65,28 @@ export interface PublicBookingSlot {
   courtId: number;
   startTime: string;
   endTime: string;
+  status: "CONFIRMED" | "PENDING";
 }
+
+export interface CreatePublicBookingPayload {
+  courtId: number;
+  startTime: string;
+  endTime: string;
+  name: string;
+  phone: string;
+}
+
+export interface PublicBookingResult {
+  id: number;
+  status: string;
+  matchedPlayer: { id: number; name: string } | null;
+}
+
+export const createPublicBooking = (
+  username: string,
+  payload: CreatePublicBookingPayload,
+): Promise<PublicBookingResult> =>
+  axios.post(`${BASE}/public/${username}/bookings/request`, payload).then(r => r.data);
 
 export interface PublicCourtsData {
   courts: PublicCourt[];
