@@ -747,15 +747,6 @@ function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function buildWaUrl(phone: string, courtName: string, day: Date, slotMin: number, guestName?: string): string {
-  const dateLabel = day.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
-  const hours = String(Math.floor(slotMin / 60)).padStart(2, "0");
-  const mins  = String(slotMin % 60).padStart(2, "0");
-  const intro = guestName ? `Hola! Soy ${guestName}.` : "Hola!";
-  const msg = `${intro} Quisiera reservar la ${courtName} para el ${dateLabel} a las ${hours}:${mins} hs.`;
-  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
-}
-
 function PublicCourtCard({ court, onSelect, hasDiscount }: { court: PublicCourt; onSelect: (c: any) => void; hasDiscount?: boolean }) {
   const { name, status, type, sport } = court;
   const { label, borderColor, chipColor } = STATUS_CONFIG[status] ?? STATUS_CONFIG["AVAILABLE"];
@@ -834,14 +825,13 @@ function PublicCourtCard({ court, onSelect, hasDiscount }: { court: PublicCourt;
 }
 
 function CourtCalendar({
-  court, bookings, businessHours, days, selectedDayIdx, clubPhone, username,
+  court, bookings, businessHours, days, selectedDayIdx, username,
 }: {
   court: PublicCourt;
   bookings: PublicBookingSlot[];
   businessHours: DaySchedule[];
   days: Date[];
   selectedDayIdx: number;
-  clubPhone?: string | null;
   username: string;
 }) {
   const queryClient = useQueryClient();
@@ -1114,7 +1104,7 @@ function CourtCalendar({
   );
 }
 
-function CourtsSection({ username, businessHours, clubPhone, discountSlots }: { username: string; businessHours: DaySchedule[]; clubPhone?: string | null; discountSlots?: DiscountSlot[] }) {
+function CourtsSection({ username, businessHours, discountSlots }: { username: string; businessHours: DaySchedule[]; discountSlots?: DiscountSlot[] }) {
   const todayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [windowStart, setWindowStart] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
@@ -1313,7 +1303,6 @@ function CourtsSection({ username, businessHours, clubPhone, discountSlots }: { 
               businessHours={businessHours}
               days={days}
               selectedDayIdx={selectedDayIdx}
-              clubPhone={clubPhone}
               username={username}
             />
           )}
@@ -2469,7 +2458,7 @@ export default function ClubPublicPage() {
                   <Box sx={{ width: 4, height: 26, bgcolor: COLORS.accent, borderRadius: 2, flexShrink: 0 }} />
                   <Typography variant="h5" fontWeight={800} sx={{ letterSpacing: "-0.02em", color: COLORS.text }}>Canchas</Typography>
                 </Box>
-                <CourtsSection username={username!} businessHours={profile.businessHours} clubPhone={profile.phone} discountSlots={profile.discountSlots} />
+                <CourtsSection username={username!} businessHours={profile.businessHours} discountSlots={profile.discountSlots} />
               </Box>
             )}
 
