@@ -90,6 +90,13 @@ export class BookingService {
     return created;
   }
 
+  async getPendingBookings(userId: number): Promise<Booking[]> {
+    return await this.repo.find({
+      where: { userId, status: "PENDING" },
+      order: { startTime: "ASC" },
+    });
+  }
+
   async getTodayBookings(userId: number): Promise<Booking[]> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);

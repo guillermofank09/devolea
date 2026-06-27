@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { createBooking, getTodayBookings, getBookingsByCourt, getBookingsByProfesor, cancelBooking, cancelBookingGroup, deleteBooking, confirmBooking } from "../controllers/booking.controller";
+import { createBooking, getTodayBookings, getBookingsByCourt, getBookingsByProfesor, cancelBooking, cancelBookingGroup, deleteBooking, confirmBooking, getPendingBookings } from "../controllers/booking.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 
 const router = Router();
 
 router.post("/bookings", requireAuth, createBooking);
 router.get("/bookings/today", requireAuth, getTodayBookings);
+router.get("/bookings/pending", requireAuth, getPendingBookings);
 router.get("/bookings/court/:courtId", requireAuth, getBookingsByCourt);
 router.get("/bookings/profesor/:profesorId", requireAuth, getBookingsByProfesor);
 router.put("/bookings/:id/cancel", requireAuth, cancelBooking);

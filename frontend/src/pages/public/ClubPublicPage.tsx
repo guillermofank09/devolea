@@ -850,11 +850,13 @@ function CourtCalendar({
   const [reservePhone, setReservePhone] = useState("54");
   const [reserveError, setReserveError] = useState<string | null>(null);
   const [reserveSubmitting, setReserveSubmitting] = useState(false);
+  const [reserveSuccess, setReserveSuccess] = useState(false);
 
   const closeReserve = () => {
     if (reserveSubmitting) return;
     setSelectedSlot(null);
     setReserveError(null);
+    setReserveSuccess(false);
   };
 
   const openReserve = (day: Date, slotMin: number) => {
@@ -862,6 +864,7 @@ function CourtCalendar({
     setReserveName("");
     setReservePhone("54");
     setReserveError(null);
+    setReserveSuccess(false);
   };
 
   const submitReserve = async () => {
@@ -886,12 +889,8 @@ function CourtCalendar({
         phone: digits,
       });
       trackEvent("public_reserva_solicitada", { cancha: court.name });
-      if (clubPhone) {
-        const waUrl = buildWaUrl(clubPhone, court.name, selectedSlot.day, selectedSlot.slotMin, trimmedName);
-        window.open(waUrl, "_blank", "noopener,noreferrer");
-      }
       await queryClient.invalidateQueries({ queryKey: ["publicCourts", username] });
-      setSelectedSlot(null);
+      setReserveSuccess(true);
     } catch (e: any) {
       const msg = e?.response?.data?.error ?? e?.message ?? "Error al reservar";
       setReserveError(msg);
@@ -1067,34 +1066,48 @@ function CourtCalendar({
           )}
         </DialogTitle>
         <DialogContent sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box>
-            <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
-            <TextField
-              fullWidth
-              size="small"
-              value={reserveName}
-              onChange={(e) => setReserveName(e.target.value)}
-              placeholder="Tu nombre"
-              disabled={reserveSubmitting}
-              autoFocus
-            />
-          </Box>
-          <PhoneField
-            value={reservePhone}
-            onChange={setReservePhone}
-            label="Teléfono / WhatsApp"
-            disabled={reserveSubmitting}
-          />
-          {reserveError && <Alert severity="error">{reserveError}</Alert>}
-          <Typography variant="caption" color="text.secondary">
-            La reserva queda pendiente hasta que el club la confirme. Te abriremos WhatsApp para enviar el mensaje al club.
-          </Typography>
+          {reserveSuccess ? (
+            <Alert severity="success">
+              ¡Solicitud enviada! El club te va a contactar por WhatsApp para confirmar la reserva.
+            </Alert>
+          ) : (
+            <>
+              <Box>
+                <FormLabel sx={FORM_LABEL_SX}>Nombre</FormLabel>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={reserveName}
+                  onChange={(e) => setReserveName(e.target.value)}
+                  placeholder="Tu nombre"
+                  disabled={reserveSubmitting}
+                  autoFocus
+                />
+              </Box>
+              <PhoneField
+                value={reservePhone}
+                onChange={setReservePhone}
+                label="Teléfono / WhatsApp"
+                disabled={reserveSubmitting}
+              />
+              {reserveError && <Alert severity="error">{reserveError}</Alert>}
+              <Typography variant="caption" color="text.secondary">
+                La reserva queda pendiente hasta que el club la confirme. Te avisarán por WhatsApp cuando esté lista.
+              </Typography>
+            </>
+          )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={closeReserve} disabled={reserveSubmitting}>Cancelar</Button>
-          <Button variant="contained" onClick={submitReserve} disabled={reserveSubmitting}>
-            {reserveSubmitting ? "Enviando..." : "Reservar"}
-          </Button>
+          {reserveSuccess ? (
+            <Button variant="contained" onClick={closeReserve}>Cerrar</Button>
+          ) : (
+            <>
+              <Button onClick={closeReserve} disabled={reserveSubmitting}>Cancelar</Button>
+              <Button variant="contained" onClick={submitReserve} disabled={reserveSubmitting}>
+                {reserveSubmitting ? "Enviando..." : "Reservar"}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

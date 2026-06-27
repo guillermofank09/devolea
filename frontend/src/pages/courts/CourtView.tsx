@@ -20,7 +20,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import RepeatIcon from "@mui/icons-material/Repeat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchBookingsByCourt, cancelBooking, cancelBookingGroup, confirmBooking } from "../../api/bookingService";
+import { fetchBookingsByCourt, cancelBooking, cancelBookingGroup, confirmBooking, buildConfirmWaUrl } from "../../api/bookingService";
 import { fetchMatchesByCourt } from "../../api/tournamentService";
 import type { TournamentMatch } from "../../types/Tournament";
 import WeeklyCalendar from "../../components/calendar/weeklyCalendar";
@@ -92,9 +92,18 @@ const CourtView = ({
 
   const confirmMutation = useMutation({
     mutationFn: (id: number) => confirmBooking(id),
-    onSuccess: () => {
+    onSuccess: (_booking, _id, _ctx) => {
+      const b = selectedBooking;
       queryClient.invalidateQueries({ queryKey: ["bookingsData", court.id] });
       queryClient.invalidateQueries({ queryKey: ["courtsData"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingBookings"] });
+      if (b?.guestPhone) {
+        const url = buildConfirmWaUrl(b.guestPhone, court.name, new Date(b.startTime));
+        window.open(url, "_blank", "noopener,noreferrer");
+      } else if (b?.player?.phone) {
+        const url = buildConfirmWaUrl(b.player.phone, court.name, new Date(b.startTime));
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
       setSelectedBooking(null);
     },
   });
@@ -104,6 +113,7 @@ const CourtView = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookingsData", court.id] });
       queryClient.invalidateQueries({ queryKey: ["courtsData"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingBookings"] });
       setSelectedBooking(null);
     },
   });
